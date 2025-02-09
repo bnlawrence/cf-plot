@@ -20,7 +20,7 @@ class ContourFactory:
     """
     @classmethod
     def create(cls, field, proj=None, radius=60, bbox=[],
-                        blockfill=False, fill=True, lines=False):
+                        blockfill=False, fill=True, lines=False, ax=None):
         """
         Create with a two dimensional and a plot-type requirement.
         Plot-types (xy,xz,xt ...) are inferred from the data provided.
@@ -47,13 +47,17 @@ class ContourFactory:
             yb=yb
             )
         if ptype == 'xy':
-            return ContourMap(cfp, field, data, xx, yy, proj, radius, bbox)
+            return ContourMap(cfp, field, data, xx, yy, proj, radius, bbox, ax)
         else:
-            return ContourData(cfp, field, data, xx, yy)
+            return ContourData(cfp, field, data, xx, yy, ax)
         
 class ContourData:
+    """ 
+    This class is responsible for actually handling the 
+    drawing of a contour map 
+    """
 
-    def __init__(self, cfp, field, data, xx, yy):
+    def __init__(self, cfp, field, data, xx, yy, ax=None):
         self.cfp = cfp
         self.field = field
         self.data = data
@@ -64,6 +68,7 @@ class ContourData:
         self.set_levels()
         self.nx = len(xx)
         self.ny = len(yy)
+        self.ax = ax
 
         # data specific
         self.irregular = False
@@ -186,12 +191,20 @@ class ContourData:
             colmap = self.cfp.cs
         return (colmap)
 
+    def label_axes(self):
+        pass
+
 
 class ContourMap(ContourData):
+    """ 
+    This class is responsible for all the activities necessary
+    for getting a georeferenced contour map 
+    """
 
-    def __init__(self, cfp, field, data, xx, yy, proj, radius, bbox):
 
-        super().__init__(cfp, field, data, xx, yy)
+    def __init__(self, cfp, field, data, xx, yy, proj, radius, bbox, ax=None):
+
+        super().__init__(cfp, field, data, xx, yy, ax=ax)
         self.proj = proj
         self.radius = radius
         self.bbox = bbox
@@ -214,8 +227,7 @@ class ContourMap(ContourData):
             self.cfp.latmax = bbox[3]
 
         projection = ccrs.PlateCarree()
-
-        self.ax = plt.axes(projection=projection)
+        self.ax = self._setup_axis(ax, projection)
         self.transform = projection
 
         # For fast map contours add transform_first=True to contourf command
@@ -250,7 +262,23 @@ class ContourMap(ContourData):
 
     def decorate_axes(self, coastlines=True):
 
+        self.label_axes()
+
         if coastlines:
             self.ax.coastlines()
+
+    def _setup_axis(self, ax, proj):
+        """ Ensure the axis is in the right place with the right projection  """
+
+        if ax is not None:
+            # we don't really want it, but we like knowing where it is
+            fig = ax.figure  # Get the existing figure
+            new_ax = fig.add_axes(ax.get_position(), projection=proj)
+            fig.delaxes(ax)  # Remove the old axis
+            ax = new_ax  # Assign new axis with projection
+        else:
+            ax = plt.axes(projection=projection)  # Create new axis if none provided
+        return ax  # Return the updated axis
+
 
 
