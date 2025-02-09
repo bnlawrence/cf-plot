@@ -13,20 +13,18 @@ def find_package_data_files(directory):
                 filename = os.path.join(root, basename)
                 yield filename.replace("cfplot/", "", 1)
 
-
 package_data = [f for f in find_package_data_files("cfplot/colourmaps")]
 
-
 setup(
-    name="cf-plot",
-    version="3.3.0",
+    name="cf-plot4",
+    version="3.9.9",
     author="Andy Heaps",
     author_email="andy.heaps@ncas.ac.uk",
     maintainer="Sadie Bartholomew",
     maintainer_email="sadie.bartholomew@ncas.ac.uk",
-    packages=["cfplot"],
-    package_dir={"cfplot": "cfplot"},
-    package_data={"cfplot": package_data},
+    packages=["cfplot4"],
+    package_dir={"cfplot4": "cfplot4"},
+    package_data={"cfplot4": package_data},
     include_package_data=True,
     install_requires=[
         "matplotlib >=3.1.0",
