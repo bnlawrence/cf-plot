@@ -1,6 +1,6 @@
 import cf
 from cfplot4.core import CFP
-from cfplot4.cfdata import get_cfdims
+from cfplot4.cfdata import get_cfdata
 from matplotlib import pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.ticker import MaxNLocator
@@ -37,7 +37,7 @@ class ContourFactory:
         ndims = data.ndim
         if ndims > 2:
             raise ValueError(f'ContourFactory: Can only contour 2D fields (got {ndims})')
-        ptype, xx, yy, xb, yb = get_cfdims(field)
+        ptype, xx, yy, xb, yb = get_cfdata(field)
         cfp = CFP(
             blockfill=blockfill,
             lines=lines,
@@ -225,10 +225,23 @@ class ContourMap(ContourData):
             self.cfp.lonmax = bbox[1]
             self.cfp.latmin = bbox[2]
             self.cfp.latmax = bbox[3]
+        else:
+            self.cfp.lonmin=self.xx[0]
+            self.cfp.lonmax=self.xx[-1]
+            self.cfp.latmin=self.yy[0]
+            self.cfp.latmax=self.yy[-1]
 
-        projection = ccrs.PlateCarree()
-        self.ax = self._setup_axis(ax, projection)
-        self.transform = projection
+        # Cartopy treats values as cyclic on the globe, so in order to avoid
+        # errors where it thinks we are inputting the same value, e.g:
+        #     UserWarning: Attempting to set identical low and high ylims makes
+        #     transformation singular; automatically expanding.
+        lon_diff = self.cfp.lonmax - self.cfp.lonmin
+        lon_mid = self.cfp.lonmin + lon_diff / 2.0
+        if proj in ("cyl", "merc") and lon_diff == 360.0:
+            self.cfp.lonmax += 0.01  # ask to plot a tiny extra increment to distinguish
+
+        self.ax = self._get_map_attributes(ax, proj, lon_mid)
+        print('X=',self.cfp.lonmin,self.cfp.lonmax,lon_mid)
 
         # For fast map contours add transform_first=True to contourf command
         # and make lons and lats 2D.
@@ -267,18 +280,103 @@ class ContourMap(ContourData):
         if coastlines:
             self.ax.coastlines()
 
-    def _setup_axis(self, ax, proj):
+    def _setup_axis(self, ax):
         """ Ensure the axis is in the right place with the right projection  """
 
         if ax is not None:
             # we don't really want it, but we like knowing where it is
             fig = ax.figure  # Get the existing figure
-            new_ax = fig.add_axes(ax.get_position(), projection=proj)
+            new_ax = fig.add_axes(ax.get_position(), projection=self.transform)
             fig.delaxes(ax)  # Remove the old axis
             ax = new_ax  # Assign new axis with projection
         else:
-            ax = plt.axes(projection=projection)  # Create new axis if none provided
+            ax = plt.axes(projection=self.transform)  # Create new axis if none provided
         return ax  # Return the updated axis
 
+    def _get_map_attributes(self, ax, proj, lon_mid):
+        """ handles all the projection specific logic """
+        if proj is None:
+            proj = 'cylc'
+        match proj:
+            case "cylc":
+                self.transform = ccrs.PlateCarree(central_longitude=lon_mid)
+            case "merc":
+                min_latitude = -80.0
+                if self.cfp.lonmin > min_latitude:
+                    min_latitude = self.cfp.lonmin
+                max_latitude = 84.0
+                if self.cfp.lonmax < max_latitude:
+                    max_latitude = self.cfp.lonmax
+                self.transform = ccrs.Mercator(
+                    central_longitude=self.cfp.lon_0,
+                    min_latitude=min_latitude,
+                    max_latitude=max_latitude,
+                )
+            case "npstere":
+                self.transform = ccrs.NorthPolarStereo(central_longitude=self.cfp.lon_0)
+                # **cartopy 0.16 fix
+                # Here we add in 0.01 to the longitude extent as this helps with
+                # plotting lines and line labels
+                self.cfp.lonmin = self.cfp.lon_0 - 180
+                self.cfp.lonmax = self.cfp.lon_0 + 180.01
+                self.cfp.latmin = self.cfp.boundinglat
+                self.cfp.latmax = 90
+            case "spstere":
+                self.transform = ccrs.SouthPolarStereo(central_longitude=self.cfp.lon_0)
+                # **cartopy 0.16 fix
+                # Here we add in 0.01 to the longitude extent as this helps with
+                # plotting lines and line labels
+                self.cfp.lonmin = self.cfp.lon_0 - 180
+                self.cfp.lonmax = self.cfp.lonmax + 180.01
+                self.cfp.latmin = -90
+                self.cfp.latmax = self.cfp.boundinglat
+            case "ortho":
+                self.transform = ccrs.Orthographic(
+                    central_longitude=self.cfp.lon_0, 
+                    central_latitude=self.cp.lat_0
+                )
+                self.cfp.lonmin = self.cfp.lon_0 - 180.0
+                self.cfp.lonmax = self.cfp.lon_0 + 180.01
+                self.extent = False
+            case "moll": 
+                self.transform = ccrs.Mollweide(central_longitude=self.cfp.lon_0)
+                self.cfp.lonmin = self.cfp.lon_0 - 180.0
+                self.cfp.lonmax = self.cfp.lon_0 + 180.01
+                self.cfp.extent = False
+            case "robin":
+                self.transform = ccrs.Robinson(central_longitude=self.cfp.lon_0)
+            case "lcc":
+                self.cfp.lon_0 = self.cfp.lonmin + (self.cfp.lonmax - self.cfp.lonmin) / 2.0
+                self.cfp.lat_0 = self.cfp.latmin + (self.cfp.latmax - self.cfp.latmin) / 2.0
+                cutoff = -40
+                if self.cfp.lat_0 <= 0:
+                    cutoff = 40
+                self.cfp.standard_parallels = [33, 45]
+                if latmin <= 0 and latmax <= 0:
+                    self.cfp.standard_parallels = [-45, -33]
+                self.transform = ccrs.LambertConformal(
+                    central_longitude=self.cfp.lon_0,
+                    central_latitude=self.cfp.lat_0,
+                    cutoff=cutoff,
+                    standard_parallels=self.cfp.standard_parallels,
+                )
+            case "rotated":
+                self.transform = ccrs.PlateCarree(central_longitude=self.cfp.lon_mid)
+            case 'OSGB':
+                self.transform = ccrs.OSGB()
+            case "EuroPP":
+                self.transform = ccrs.EuroPP()
+            case "UKCP":
+                # Special case of TransverseMercator for UKCP
+                self.transform = ccrs.TransverseMercator()
+            case "TransverseMercator":
+                self.transform = ccrs.TransverseMercator()
+                self.cfp.lonmin = self.cfp.lon_0 - 180.0
+                self.cfp.lonmax = self.cfp.lon_0 + 180.01
+                self.cfp.extent = False
+            case "LambertCylindrical":
+                self.transform = ccrs.LambertCylindrical()
+        return self._setup_axis(ax)
+ 
 
 
