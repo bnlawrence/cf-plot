@@ -29,7 +29,7 @@ import cf
 faulthandler.enable()  # to debug seg faults and timeouts
 
 
-DATA_DIR = "cfplot_data"
+DATA_DIR = "../../docs/source/data"
 TEST_REF_DIR = "./reference-example-images"
 TEST_GEN_DIR = "./generated-example-images"
 if not os.path.exists(TEST_GEN_DIR):
