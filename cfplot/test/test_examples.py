@@ -28,8 +28,9 @@ import cf
 
 faulthandler.enable()  # to debug seg faults and timeouts
 
-
-DATA_DIR = "../../docs/source/data"
+# Must unzip data first from _downloads/example-datasets.zip to the source/
+# dir if this isn't already the case locally!
+DATA_DIR = "../../docs/source/example-datasets"
 TEST_REF_DIR = "./reference-example-images"
 TEST_GEN_DIR = "./generated-example-images"
 if not os.path.exists(TEST_GEN_DIR):
