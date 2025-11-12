@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Gallery of examples &#8212; cf-plot 3.4.0 documentation</title>
+    <title>Examples &#8212; cf-plot 3.4.0 documentation</title>
   
   
   
@@ -29,7 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=fd3f3429" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
@@ -38,7 +38,7 @@
   <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
     <script src="_static/documentation_options.js?v=b0e360d0"></script>
-    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'gallery_of_examples';</script>
@@ -161,7 +161,7 @@
 
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="#">
-    Gallery of examples
+    Examples
   </a>
 </li>
 
@@ -329,7 +329,7 @@ document.write(`
 
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="#">
-    Gallery of examples
+    Examples
   </a>
 </li>
 
@@ -504,7 +504,7 @@ document.write(`
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page">Gallery of examples</li>
+    <li class="breadcrumb-item active" aria-current="page">Examples</li>
   </ul>
 </nav>
 </div>
@@ -521,8 +521,112 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="gallery-of-examples">
-<span id="examplesgallery"></span><h1>Gallery of examples<a class="headerlink" href="#gallery-of-examples" title="Link to this heading">#</a></h1>
+  <section id="examples">
+<span id="examplesgallery"></span><h1>Examples<a class="headerlink" href="#examples" title="Link to this heading">#</a></h1>
+<section id="listing-of-all-examples">
+<span id="allexamples"></span><h2>Listing of all examples<a class="headerlink" href="#listing-of-all-examples" title="Link to this heading">#</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All example code assumes the following imports have been made,
+where <code class="docutils literal notranslate"><span class="pre">numpy</span></code> is usually not required but it is for some
+of the examples:</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">Imports required as setup for the examples, noting that
+cfplot is always aliased to <code class="docutils literal notranslate"><span class="pre">cfp</span></code> by convention</span><a class="headerlink" href="#id1" title="Link to this code">#</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cfplot</span> <span class="k">as</span> <span class="nn">cfp</span>
+<span class="kn">import</span> <span class="nn">cf</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>  <span class="c1"># only required for some examples</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_1.html">Example 1: Basic contour plot in default projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_2.html">Example 2: Basic blockfill plot in default projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_3.html">Example 3: Contour plot with altered map limits and levels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_4.html">Example 4: North Pole polar stereographic projection contour plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_5.html">Example 5: South Pole polar projection contour plot with bounding latitude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_6.html">Example 6: Latitude-pressure plot at set longitude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_7.html">Example 7: Latitude-pressure plot over zonal mean</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_8.html">Example 8: Latitude against log of pressure over longitude zonal mean</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_9.html">Example 9: Longitude-pressure plot over latitude mean</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_10.html">Example 10: Latitude-time Hovmöller plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_11.html">Example 11: Latitude-time subset view Hovmöller plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_12.html">Example 12: Longitude-time Hovmöller plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_13.html">Example 13: Basic vector plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_14.html">Example 14: Vector plot overlaid on a contour map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_15.html">Example 15: Polar projection vector plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_16a.html">Example 16a: Zonal vector plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_16b.html">Example 16b: Basic stream plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_16c.html">Example 16c: Stream plot in a colour scale</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_17.html">Example 17: Basic stipple plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_18.html">Example 18: Polar stipple plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_19a.html">Example 19a: Multiple plots</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_19b.html">Example 19b: Multiple plots with user-specified plot positions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_19c.html">Example 19c: Accomodating more than one colour bar</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_20.html">Example 20: Case where user-defined axis labels are required</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_21a.html">Example 21a: User-defined axes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_21b.html">Example 21b: Plot of rotated pole data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_22.html">Example 22: Plot of rotated pole data on its native grid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_23a.html">Example 23a: Rotated pole plot from data which is not CF Compliant</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_23b.html">Example 23b: Overlaying vectors over a rotated pole data plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_24a.html">Example 24a: UGRID blockfill plot with LFRic cubed sphere mesh output</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_24b.html">Example 24b: UGRID plot in the polar stereographic projection view</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_25.html">Example 25: UGRID contour plot with ORCA 2 output</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_26a.html">Example 26a: Contour plot based on discrete feature values</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_26b.html">Example 26b: Contour plot from discrete feature values with labelling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_27.html">Example 27: Basic line plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_28.html">Example 28: Line plot with a legend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_29.html">Example 29: Time series line plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_30.html">Example 30: Line plot with two x axes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_31.html">Example 31: UKCP projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_32.html">Example 32: UKCP projection with blockfill</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_33.html">Example 33: OSGB and EuroPP projections</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_34.html">Example 34: Cropping the Lambert Conformal Conic (LCC) projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_35.html">Example 35: Mollweide projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_36.html">Example 36: Mercator projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_37.html">Example 37: Orthographic projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_38.html">Example 38: Robinson projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_39.html">Example 39: Basic track plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_39b.html">Example 39b: plotting a single (1D) DSG trajectory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_40.html">Example 40: Tracks in the polar stereographic projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_41.html">Example 41: Feature propagation over Europe</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_42a.html">Example 42a: Tracks with labelled data points</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_42b.html">Example 42b: Tracks displayed in a colour scale</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_43.html">Example 43: CF-compliant WRF model output data</a></li>
+</ul>
+</div>
+<section id="example-datasets">
+<h3>Example Datasets<a class="headerlink" href="#example-datasets" title="Link to this heading">#</a></h3>
+<p>The examples make use of a small number of sample datasets. These are
+available to view and download from a
+<a class="reference external" href="https://github.com/NCAS-CMS/cf-plot/tree/main/docs/source/data">dedicated directory in the codebase repository</a>.
+Alternatively, they may be downloaded together as a pair of zip files</p>
+<blockquote>
+<div><p>(split into two parts to fit within GitHub file</p>
+</div></blockquote>
+<p>size limits, total size ~125 MB) available
+from <a class="reference download internal" download="" href="_downloads/4d33aa3c8539abd0ed550df689ff74fa/example-datasets.z01"><code class="xref download docutils literal notranslate"><span class="pre">here</span> <span class="pre">(part</span> <span class="pre">1</span> <span class="pre">of</span> <span class="pre">2)</span></code></a> and
+<a class="reference download internal" download="" href="_downloads/a1d64e4e03a8a3c2717a96c368a25c03/example-datasets.zip"><code class="xref download docutils literal notranslate"><span class="pre">here</span> <span class="pre">(part</span> <span class="pre">2</span> <span class="pre">of</span> <span class="pre">2)</span></code></a> which can be
+unzipped together to the full dataset directory as follows:</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text"><em>Accessing all of the datasets for the cf-plot examples</em></span><a class="headerlink" href="#id2" title="Link to this code">#</a></div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Download the split zip parts: either use &#39;wget&#39; as below or</span>
+<span class="c1"># download both files from the links above</span>
+wget<span class="w"> </span>https://github.com/NCAS-CMS/cf-plot/tree/main/docs/source/_downloads/example-datasets.z01
+wget<span class="w"> </span>https://github.com/NCAS-CMS/cf-plot/tree/main/docs/source/_downloads/example-datasets.zip
+
+<span class="c1"># Recombine into a single zip (zip -s0 merges split parts)</span>
+zip<span class="w"> </span>-s0<span class="w"> </span>example-datasets.zip<span class="w"> </span>--out<span class="w"> </span>all-example-datasets.zip
+
+<span class="c1"># Unzip the merged file</span>
+unzip<span class="w"> </span>all-example-datasets.zip
+</pre></div>
+</div>
+</div>
+</section>
+</section>
 <section id="gallery">
 <h2>Gallery<a class="headerlink" href="#gallery" title="Link to this heading">#</a></h2>
 <div class="sd-container-fluid sd-sphinx-override sd-m-0 sd-p-0 docutils">
@@ -665,77 +769,6 @@ Flexible customisation e.g. user-defined axes</div>
 </div>
 </div>
 </section>
-<section id="listing-of-all-examples">
-<span id="allexamples"></span><h2>Listing of all examples<a class="headerlink" href="#listing-of-all-examples" title="Link to this heading">#</a></h2>
-<p>Note: all example code assumes the following imports have been made,
-where <code class="docutils literal notranslate"><span class="pre">numpy</span></code> is usually not required but it may be for some examples:</p>
-<div class="literal-block-wrapper docutils container" id="id1">
-<div class="code-block-caption"><span class="caption-text">Imports required as setup for the examples, noting that
-cfplot is always aliased to <code class="docutils literal notranslate"><span class="pre">cfp</span></code> by convention</span><a class="headerlink" href="#id1" title="Link to this code">#</a></div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cfplot</span> <span class="k">as</span> <span class="nn">cfp</span>
-<span class="kn">import</span> <span class="nn">cf</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>  <span class="c1"># only required for some examples</span>
-</pre></div>
-</div>
-</div>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_1.html">Example 1: Basic contour plot in default projection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_2.html">Example 2: Basic blockfill plot in default projection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_3.html">Example 3: Contour plot with altered map limits and levels</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_4.html">Example 4: North Pole polar stereographic projection contour plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_5.html">Example 5: South Pole polar projection contour plot with bounding latitude</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_6.html">Example 6: Latitude-pressure plot at set longitude</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_7.html">Example 7: Latitude-pressure plot over zonal mean</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_8.html">Example 8: Latitude against log of pressure over longitude zonal mean</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_9.html">Example 9: Longitude-pressure plot over latitude mean</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_10.html">Example 10: Latitude-time Hovmöller plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_11.html">Example 11: Latitude-time subset view Hovmöller plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_12.html">Example 12: Longitude-time Hovmöller plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_13.html">Example 13: Basic vector plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_14.html">Example 14: Vector plot overlaid on a contour map</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_15.html">Example 15: Polar projection vector plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_16a.html">Example 16a: Zonal vector plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_16b.html">Example 16b: Basic stream plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_16c.html">Example 16c: Stream plot in a colour scale</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_17.html">Example 17: Basic stipple plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_18.html">Example 18: Polar stipple plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_19a.html">Example 19a: Multiple plots</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_19b.html">Example 19b: Multiple plots with user-specified plot positions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_19c.html">Example 19c: Accomodating more than one colour bar</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_20.html">Example 20: Case where user-defined axis labels are required</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_21a.html">Example 21a: User-defined axes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_21b.html">Example 21b: Plot of rotated pole data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_22.html">Example 22: Plot of rotated pole data on its native grid</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_23a.html">Example 23a: Rotated pole plot from data which is not CF Compliant</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_23b.html">Example 23b: Overlaying vectors over a rotated pole data plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_24a.html">Example 24a: UGRID blockfill plot with LFRic cubed sphere mesh output</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_24b.html">Example 24b: UGRID plot in the polar stereographic projection view</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_25.html">Example 25: UGRID contour plot with ORCA 2 output</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_26a.html">Example 26a: Contour plot based on discrete feature values</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_26b.html">Example 26b: Contour plot from discrete feature values with labelling</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_27.html">Example 27: Basic line plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_28.html">Example 28: Line plot with a legend</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_29.html">Example 29: Time series line plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_30.html">Example 30: Line plot with two x axes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_31.html">Example 31: UKCP projection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_32.html">Example 32: UKCP projection with blockfill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_33.html">Example 33: OSGB and EuroPP projections</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_34.html">Example 34: Cropping the Lambert Conformal Conic (LCC) projection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_35.html">Example 35: Mollweide projection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_36.html">Example 36: Mercator projection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_37.html">Example 37: Orthographic projection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_38.html">Example 38: Robinson projection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_39.html">Example 39: Basic track plotting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_39b.html">Example 39b: plotting a single (1D) DSG trajectory</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_40.html">Example 40: Tracks in the polar stereographic projection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_41.html">Example 41: Feature propagation over Europe</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_42a.html">Example 42a: Tracks with labelled data points</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_42b.html">Example 42b: Tracks displayed in a colour scale</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/example_43.html">Example 43: CF-compliant WRF model output data</a></li>
-</ul>
-</div>
-</section>
 </section>
 
 
@@ -784,8 +817,11 @@ cfplot is always aliased to <code class="docutils literal notranslate"><span cla
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#listing-of-all-examples">Listing of all examples</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-datasets">Example Datasets</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#gallery">Gallery</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#listing-of-all-examples">Listing of all examples</a></li>
 </ul>
   </nav></div>
 
@@ -832,7 +868,7 @@ cfplot is always aliased to <code class="docutils literal notranslate"><span cla
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
     <br/>
   </p>
 </div>
