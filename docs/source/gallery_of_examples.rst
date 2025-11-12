@@ -1,7 +1,7 @@
 .. _examplesgallery:
 
-Gallery of examples
-===================
+Examples
+========
 
 .. _allexamples:
 
