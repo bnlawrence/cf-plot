@@ -93,16 +93,18 @@ Gallery
 Listing of all examples
 -----------------------
 
-Note: all example code assumes the following imports have been made,
-where ``numpy`` is usually not required but it may be for some examples:
+.. note::
+   All example code assumes the following imports have been made,
+   where ``numpy`` is usually not required but it is for some
+   of the examples:
 
-.. code-block:: python
-   :caption: Imports required as setup for the examples, noting that
-             cfplot is always aliased to ``cfp`` by convention
+   .. code-block:: python
+      :caption: Imports required as setup for the examples, noting that
+                cfplot is always aliased to ``cfp`` by convention
 
-   import cfplot as cfp
-   import cf
-   import numpy as np  # only required for some examples
+      import cfplot as cfp
+      import cf
+      import numpy as np  # only required for some examples
 
 
 .. toctree::
@@ -162,3 +164,13 @@ where ``numpy`` is usually not required but it may be for some examples:
    examples/example_42b.rst
    examples/example_43.rst
 
+
+Example Datasets
+~~~~~~~~~~~~~~~~
+
+The examples make use of a small number of sample datasets. These are
+available to view and download from a
+`dedicated directory in the codebase repository <https://github.com/NCAS-CMS/cf-plot/tree/main/docs/source/data>`_.
+Alternatively, they may be downloaded together as a zip file
+`example-datasets.zip` (total size on the order of 100 MB)
+from :download:`here <_downloads/example-datasets.zip>`.
