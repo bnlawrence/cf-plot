@@ -85,7 +85,7 @@ Example Datasets
 
 The examples make use of a small number of sample datasets. These are
 available to view and download from a
-`dedicated directory in the codebase repository <https://github.com/NCAS-CMS/cf-plot/tree/main/docs/source/data>`_.
+`dedicated directory in the codebase repository <https://github.com/NCAS-CMS/cf-plot/tree/main/docs/source/example-datasets>`_.
 Alternatively, they may be downloaded together as a pair of zip files
 (split into two parts to fit within GitHub file size limits,
 total size ~125 MB) available from
