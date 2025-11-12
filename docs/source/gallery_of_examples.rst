@@ -172,5 +172,25 @@ The examples make use of a small number of sample datasets. These are
 available to view and download from a
 `dedicated directory in the codebase repository <https://github.com/NCAS-CMS/cf-plot/tree/main/docs/source/data>`_.
 Alternatively, they may be downloaded together as a zip file
-`example-datasets.zip` (total size on the order of 100 MB)
-from :download:`here <_downloads/example-datasets.zip>`.
+``example-datasets.zip`` (total size on the order of 100 MB)
+from :download:`here <_downloads/example-datasets.zip>`:
+
+.. code-block:: console
+   :caption: *Accessing all of the datasets for the cf-plot examples.*
+
+   $ unzip -q example-datasets.zip
+   $ ls -1 example-datasets                                                                       ─╯
+   20160601-05T0000Z_INCOMPASS_km4p4_uv_RH_500.nc
+   curvi_salinity.nc
+   dsg_trajectory.nc
+   ff_trs_pos.nc
+   Geostropic_Adjustment.nc
+   ggap.nc
+   lfric_initial.nc
+   orca2.nc
+   rgp.nc
+   synop_data.txt
+   tas_A1.nc
+   ukcp_rcm_test.nc
+   vaAMIPlcd_DJF.nc
+   wapAMIPlcd_DJF.nc
