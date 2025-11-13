@@ -572,23 +572,29 @@ along with the package, but you can also find information on installing
 these dependencies separately on the links in the list above to the relevant
 documentation pages of each dependency library.</p>
 </section>
-<section id="sample-data-sets">
-<h3>Sample data sets<a class="headerlink" href="#sample-data-sets" title="Link to this heading">#</a></h3>
-<p>Sample data sets, which are used for instance in the examples throughout
-this documentation, are
-<a class="reference external" href="http://gws-access.ceda.ac.uk/public/ncas_climate/ajh/data_analysis_tools/cfplot_data.tar">available for download generally from this link</a>.</p>
-<p>If you have access to JASMIN or RACC, they are also available already in
-directories named <code class="docutils literal notranslate"><span class="pre">cfplot_data</span></code> in each location,
-which can be linked as follows:</p>
+<section id="sample-datasets">
+<h3>Sample datasets<a class="headerlink" href="#sample-datasets" title="Link to this heading">#</a></h3>
+<p id="exampledatasets">The examples make use of a small number of sample datasets. These are
+available to view and download from a
+<a class="reference external" href="https://github.com/NCAS-CMS/cf-plot/tree/main/docs/source/example-datasets">dedicated directory in the codebase repository</a>.
+Alternatively, they may be downloaded together as a pair of zip files
+(split into two parts to fit within GitHub file size limits,
+total size ~125 MB) available from
+<a class="reference download external" download="" href="https://github.com/NCAS-CMS/cf-plot/raw/main/docs/source/_downloads/example-datasets.z01"><code class="xref download docutils literal notranslate"><span class="pre">here</span> <span class="pre">(part</span> <span class="pre">1</span> <span class="pre">of</span> <span class="pre">2)</span></code></a> and
+<a class="reference download external" download="" href="https://github.com/NCAS-CMS/cf-plot/raw/main/docs/source/_downloads/example-datasets.zip"><code class="xref download docutils literal notranslate"><span class="pre">here</span> <span class="pre">(part</span> <span class="pre">2</span> <span class="pre">of</span> <span class="pre">2)</span></code></a> which can be
+unzipped together to the full dataset directory as follows:</p>
 <div class="literal-block-wrapper docutils container" id="id7">
-<div class="code-block-caption"><span class="caption-text">Locations of sample datasets on JASMIN</span><a class="headerlink" href="#id7" title="Link to this code">#</a></div>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>ln<span class="w"> </span>-s<span class="w"> </span>/home/users/ajh/cfplot_data<span class="w"> </span>~
-</pre></div>
-</div>
-</div>
-<div class="literal-block-wrapper docutils container" id="id8">
-<div class="code-block-caption"><span class="caption-text">Locations of sample datasets on the Reading Academic Computing Cluster (RACC)</span><a class="headerlink" href="#id8" title="Link to this code">#</a></div>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>ln<span class="w"> </span>-s<span class="w"> </span>/share/apps/NCAS/cfplot_data<span class="w"> </span>~
+<div class="code-block-caption"><span class="caption-text"><em>Accessing all of the datasets for the cf-plot examples</em></span><a class="headerlink" href="#id7" title="Link to this code">#</a></div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Download the split zip parts: either use &#39;wget&#39; as below or</span>
+<span class="c1"># download both files from the links above</span>
+wget<span class="w"> </span>https://github.com/NCAS-CMS/cf-plot/tree/main/docs/source/_downloads/example-datasets.z01
+wget<span class="w"> </span>https://github.com/NCAS-CMS/cf-plot/tree/main/docs/source/_downloads/example-datasets.zip
+
+<span class="c1"># Recombine into a single zip (zip -s0 merges split parts)</span>
+zip<span class="w"> </span>-s0<span class="w"> </span>example-datasets.zip<span class="w"> </span>--out<span class="w"> </span>all-example-datasets.zip
+
+<span class="c1"># Unzip the merged file</span>
+unzip<span class="w"> </span>all-example-datasets.zip
 </pre></div>
 </div>
 </div>
@@ -652,7 +658,7 @@ which can be linked as follows:</p>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#windows">Windows</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dependencies">Dependencies</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sample-data-sets">Sample data sets</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sample-datasets">Sample datasets</a></li>
 </ul>
 </li>
 </ul>
