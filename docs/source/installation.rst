@@ -121,24 +121,7 @@ these dependencies separately on the links in the list above to the relevant
 documentation pages of each dependency library.
 
 
-Sample data sets
-################
+Sample datasets
+###############
 
-Sample data sets, which are used for instance in the examples throughout
-this documentation, are
-`available for download generally from this link <http://gws-access.ceda.ac.uk/public/ncas_climate/ajh/data_analysis_tools/cfplot_data.tar>`_.
-
-If you have access to JASMIN or RACC, they are also available already in
-directories named ``cfplot_data`` in each location,
-which can be linked as follows:
-
-.. code-block:: console
-   :caption: Locations of sample datasets on JASMIN
-             
-   $ ln -s /home/users/ajh/cfplot_data ~
-
-
-.. code-block:: console
-   :caption: Locations of sample datasets on the Reading Academic Computing Cluster (RACC)
-             
-   $ ln -s /share/apps/NCAS/cfplot_data ~
+.. include:: datasets.rst
