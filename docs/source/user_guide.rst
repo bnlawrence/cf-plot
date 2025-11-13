@@ -25,9 +25,9 @@ line and more plots with the power of Python, `matplotlib`_,
 the introduction page for a brief overview, before diving into this
 section which is intended as a tutorial for those new to the library.
 
-
+^^^^^^^^^^^^^^^
 Core operations
----------------
+^^^^^^^^^^^^^^^
 
 At the core of cf-plot are a set of functions for making and controlling plots,
 as follows.
@@ -98,7 +98,7 @@ cf-python and cf-plot are pre-installed on the following platforms.
 |    ln -s /share/apps/NCAS/cfplot_data ~
 
 
-For other platforms follow the :ref:`cf-plot installation instructions<download>`
+For other platforms follow the :ref:`cf-plot installation instructions<install>`
 
 .. _contours:
 
