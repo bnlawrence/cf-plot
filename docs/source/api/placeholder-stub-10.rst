@@ -1,0 +1,4 @@
+none
+****
+
+.. autofunction:: cfplot.axes
