@@ -6,7 +6,7 @@ User guide
              cf-plot and is likely to be out-of-date. It will be updated
              in the near future, but until now note that parts may not be
              applicable, or work, with the latest version (3.4.0+). For now
-             please reference the :ref:`examplesgallery` pages for code
+             please reference the :ref:`examples` pages for code
              that is tested to be up-to-date and working.
 
 .. _introduction-to-ug:

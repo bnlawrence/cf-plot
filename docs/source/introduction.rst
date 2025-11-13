@@ -53,8 +53,8 @@ Examples Gallery
 
 A gallery of outputs made with cf-plot, showcasing a range of plotting
 possibilities with links to relevant documentation pages and to example code,
-can be found on the :ref:`gallery page<examplesgallery>`, as also linked to the static image
-of the gallery at the to of this page.
+can be found on the :ref:`examples page<examples>`, as also linked to the
+static image of the gallery at the top of this page.
 
 
 ############
