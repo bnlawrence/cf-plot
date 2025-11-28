@@ -1685,7 +1685,7 @@ def _cf_data_assign(
             if str(f.Units) == "":
                 colorbar_title = colorbar_title
             else:
-                colorbar_title = f"{colorbar_title}({_supscr(str(f.Units))})"
+                colorbar_title = f"{colorbar_title} ({_supscr(str(f.Units))})"
 
     # Return data
     return (field, x, y, ptype, colorbar_title, xlabel, ylabel, xpole, ypole)

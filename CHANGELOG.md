@@ -13,9 +13,17 @@ of being developed elsewhere.
 
 -----
 
+
+### Version `3.5.X`, first released TBC
+
+#### Version `3.5.0`, release TBC
+
+* Add missing space between variable name and units in
+  colour bar titles (https://github.com/NCAS-CMS/cf-plot/issues/115)
+
 ### Version `3.4.X`, first released (`3.4.0`) `2025-04-28`
 
-#### Version `3.4.0`, release soon (date `2025-04-28`)
+#### Version `3.4.0`, released `2025-04-28`
 
 * Move of codebase home from old repository location of `github.com/ajheaps/cf-plot` to
   `github.com/NCAS-CMS/cf-plot` - the former URL will redirect for the time being
