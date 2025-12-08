@@ -164,6 +164,57 @@ def axes_plot(
         )
 
 
+def cf_var_name(field=None, dim=None):
+    """
+    | Return the name from a supplied dimension in order.
+    |
+    | Names are returned in the following order:
+    | * ncvar
+    | * short_name
+    | * long_name
+    | * standard_name
+    |
+    | field=None - field
+    | dim=None - dimension required - 'dim0', 'dim1' etc.
+    |
+    :Returns:
+     name
+    """
+
+    # Check for multiple Z coordinates
+    # Adjust dim if necessary
+    if dim == "Z":
+        z_count = 0
+        z_names = []
+        for mycoord in list(field.coords()):
+            if field.coord(mycoord).Z:
+                z_count += 1
+                z_names.append(mycoord)
+
+        if z_count > 1:
+            dim = z_names[-1]
+
+    id = getattr(field.construct(dim), "id", False)
+    ncvar = field.construct(dim).nc_get_variable(False)
+    short_name = getattr(field.construct(dim), "short_name", False)
+    long_name = getattr(field.construct(dim), "long_name", False)
+    standard_name = getattr(field.construct(dim), "standard_name", False)
+
+    name = "No Name"
+    if id:
+        name = id
+    if ncvar:
+        name = ncvar
+    if short_name:
+        name = short_name
+    if long_name:
+        name = long_name
+    if standard_name:
+        name = standard_name
+
+    return name
+
+
 def find_dim_names(field):
     """Find the field dimension coordinate names.
     Ignores auxiliary coordinates (for now).

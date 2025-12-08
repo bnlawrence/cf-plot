@@ -9,6 +9,301 @@ from ..internal import (
 )
 
 
+def _process_color_scales():
+    """
+    | Process colour scales to generate images of them for the web
+    | documentation and the rst code for inclusion in the
+    | colour_scale.rst file.
+    |
+    |
+    | No inputs
+    | This is an internal routine and not used by the user
+    |
+    :Returns:
+     None
+    """
+
+    # Define scale categories
+    uniform = ["viridis", "magma", "inferno", "plasma", "parula", "gray"]
+
+    ncl_large = [
+        "amwg256",
+        "BkBlAqGrYeOrReViWh200",
+        "BlAqGrYeOrRe",
+        "BlAqGrYeOrReVi200",
+        "BlGrYeOrReVi200",
+        "BlRe",
+        "BlueRed",
+        "BlueRedGray",
+        "BlueWhiteOrangeRed",
+        "BlueYellowRed",
+        "BlWhRe",
+        "cmp_b2r",
+        "cmp_haxby",
+        "detail",
+        "extrema",
+        "GrayWhiteGray",
+        "GreenYellow",
+        "helix",
+        "helix1",
+        "hotres",
+        "matlab_hot",
+        "matlab_hsv",
+        "matlab_jet",
+        "matlab_lines",
+        "ncl_default",
+        "ncview_default",
+        "OceanLakeLandSnow",
+        "rainbow",
+        "rainbow_white_gray",
+        "rainbow_white",
+        "rainbow_gray",
+        "tbr_240_300",
+        "tbr_stdev_0_30",
+        "tbr_var_0_500",
+        "tbrAvg1",
+        "tbrStd1",
+        "tbrVar1",
+        "thelix",
+        "ViBlGrWhYeOrRe",
+        "wh_bl_gr_ye_re",
+        "WhBlGrYeRe",
+        "WhBlReWh",
+        "WhiteBlue",
+        "WhiteBlueGreenYellowRed",
+        "WhiteGreen",
+        "WhiteYellowOrangeRed",
+        "WhViBlGrYeOrRe",
+        "WhViBlGrYeOrReWh",
+        "wxpEnIR",
+        "3gauss",
+        "3saw",
+        "BrBG",
+    ]
+
+    ncl_meteoswiss = [
+        "hotcold_18lev",
+        "hotcolr_19lev",
+        "mch_default",
+        "perc2_9lev",
+        "percent_11lev",
+        "precip2_15lev",
+        "precip2_17lev",
+        "precip3_16lev",
+        "precip4_11lev",
+        "precip4_diff_19lev",
+        "precip_11lev",
+        "precip_diff_12lev",
+        "precip_diff_1lev",
+        "rh_19lev",
+        "spread_15lev",
+    ]
+
+    ncl_color_blindness = [
+        "StepSeq25",
+        "posneg_2",
+        "posneg_1",
+        "BlueDarkOrange18",
+        "BlueDarkRed18",
+        "GreenMagenta16",
+        "BlueGreen14",
+        "BrownBlue12",
+        "Cat12",
+    ]
+
+    ncl_small = [
+        "amwg",
+        "amwg_blueyellowred",
+        "BlueDarkRed18",
+        "BlueDarkOrange18",
+        "BlueGreen14",
+        "BrownBlue12",
+        "Cat12",
+        "cmp_flux",
+        "cosam12",
+        "cosam",
+        "GHRSST_anomaly",
+        "GreenMagenta16",
+        "hotcold_18lev",
+        "hotcolr_19lev",
+        "mch_default",
+        "nrl_sirkes",
+        "nrl_sirkes_nowhite",
+        "perc2_9lev",
+        "percent_11lev",
+        "posneg_2",
+        "prcp_1",
+        "prcp_2",
+        "prcp_3",
+        "precip_11lev",
+        "precip_diff_12lev",
+        "precip_diff_1lev",
+        "precip2_15lev",
+        "precip2_17lev",
+        "precip3_16lev",
+        "precip4_11lev",
+        "precip4_diff_19lev",
+        "radar",
+        "radar_1",
+        "rh_19lev",
+        "seaice_1",
+        "seaice_2",
+        "so4_21",
+        "spread_15lev",
+        "StepSeq25",
+        "sunshine_9lev",
+        "sunshine_diff_12lev",
+        "temp_19lev",
+        "temp_diff_18lev",
+        "temp_diff_1lev",
+        "topo_15lev",
+        "wgne15",
+        "wind_17lev",
+    ]
+
+    orography = [
+        "os250kmetres",
+        "wiki_1_0_2",
+        "wiki_1_0_3",
+        "wiki_2_0",
+        "wiki_2_0_reduced",
+        "arctic",
+    ]
+
+    idl_guide = []
+    for i in np.arange(1, 45):
+        idl_guide.append("scale" + str(i))
+
+    # TODO SLB improve string formatting below and consolidate
+    for category in [
+        "uniform",
+        "ncl_meteoswiss",
+        "ncl_small",
+        "ncl_large",
+        "ncl_color_blindness",
+        "orography",
+        "idl_guide",
+    ]:
+        if category == "uniform":
+            scales = uniform
+            div = "================== ====="
+            chars = 10
+            title = (
+                "Perceptually uniform colour maps for use with continuous "
+                "data"
+            )
+            print(title)
+            print("----------------------------------------------")
+            print("")
+            print(div)
+            print("Name               Scale")
+            print(div)
+
+        if category == "ncl_meteoswiss":
+            scales = ncl_meteoswiss
+            div = "================== ====="
+            chars = 19
+            print("NCAR Command Language - MeteoSwiss colour maps")
+            print("----------------------------------------------")
+            print("")
+            print(div)
+            print("Name               Scale")
+            print(div)
+        if category == "ncl_small":
+            scales = ncl_small
+            div = "=================== ====="
+            chars = 20
+            print("NCAR Command Language - small color maps (<50 colours)")
+            print("------------------------------------------------------")
+            print("")
+            print(div)
+            print("Name                Scale")
+            print(div)
+        if category == "ncl_large":
+            scales = ncl_large
+            div = "======================= ====="
+            chars = 24
+            print("NCAR Command Language - large colour maps (>50 colours)")
+            print("-------------------------------------------------------")
+            print("")
+            print(div)
+            print("Name                    Scale")
+            print(div)
+        if category == "ncl_color_blindness":
+            scales = ncl_color_blindness
+            div = "================ ====="
+            chars = 17
+            title = (
+                "NCAR Command Language - Enhanced to help with colour "
+                "blindness"
+            )
+            print(title)
+            title = (
+                "-----------------------------------------------------"
+                "---------"
+            )
+            print(title)
+            print("")
+            print(div)
+            print("Name             Scale")
+            print(div)
+            chars = 17
+        if category == "orography":
+            scales = orography
+            div = "================ ====="
+            chars = 17
+            print("Orography/bathymetry colour scales")
+            print("----------------------------------")
+            print("")
+            print(div)
+            print("Name             Scale")
+            print(div)
+            chars = 17
+        if category == "idl_guide":
+            scales = idl_guide
+            div = "======= ====="
+            chars = 8
+            print("IDL guide scales")
+            print("----------------")
+            print("")
+            print(div)
+            print("Name    Scale")
+            print(div)
+            chars = 8
+
+        for scale in scales:
+            # Make image of scale
+            fig = plot.figure(figsize=(8, 0.5))
+            ax1 = fig.add_axes([0.05, 0.1, 0.9, 0.2])
+            cscale(scale)
+            cmap = matplotlib.colors.ListedColormap(plotvars.cs)
+            cb1 = matplotlib.colorbar.ColorbarBase(
+                ax1, cmap=cmap, orientation="horizontal", ticks=None
+            )
+            cb1.set_ticks([0.0, 1.0])
+            cb1.set_ticklabels(["", ""])
+            # TODO SLB, update path below to non-specific one
+            file = (
+                "/home/andy/cf-docs/cfplot_sphinx/images/"
+                f"colour_scales/{scale}.png"
+            )
+            plot.savefig(file)
+            plot.close()
+
+            # Use convert to trim the png file to remove white space
+            subprocess.call(["convert", "-trim", file, file])
+
+            name_pad = scale
+            while len(name_pad) < chars:
+                name_pad = name_pad + " "
+            fn = f"{name_pad}.. image:: images/colour_scales/{scale}.png"
+            print(fn)
+
+        print(div)
+        print("")
+        print("")
+
+
 def cbar(
     labels=None,
     orientation=None,

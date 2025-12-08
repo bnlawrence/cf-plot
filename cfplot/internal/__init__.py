@@ -1,5 +1,6 @@
 from .internal import (
     axes_plot,
+    cf_var_name,
     find_dim_names,
     find_z,
     _bfill,
