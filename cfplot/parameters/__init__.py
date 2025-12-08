@@ -2,6 +2,7 @@ from .parameters import (
     allvars_defaults,
     axes,
     cscale,
+    cscale1,
     global_blockfill,
     global_fill,
     global_lines,
@@ -14,4 +15,5 @@ from .parameters import (
     reset,
     setvars,
     setvars_defaults,
+    viridis,
 )
