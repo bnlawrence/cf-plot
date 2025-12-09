@@ -1016,7 +1016,9 @@ def cscale(
             b.append(rgb[2])
     else:
         package_path = os.path.dirname(__file__)
-        file = os.path.join(package_path, "colourmaps/" + scale + ".rgb")
+        # TODO improve path processing - eventually move to Pathlib
+        file = os.path.join(
+            package_path, "../colourmaps/" + scale + ".rgb")
         if os.path.isfile(file) is False:
             if os.path.isfile(scale) is False:
                 errstr = (
