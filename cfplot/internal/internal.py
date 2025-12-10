@@ -15,7 +15,7 @@ from ..mapping import (
     _mapaxis,
     map_grid,
 )
-from ..misc import (
+from ..utils import (
     add_cyclic,
 )
 

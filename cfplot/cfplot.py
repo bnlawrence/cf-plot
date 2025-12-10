@@ -60,7 +60,7 @@ from .mapping import (
     axes_plot,
     map_grid,
 )
-from .misc import (
+from .utils import (
     add_cyclic,
     cf_var_name_titles,
     check_well_formed,

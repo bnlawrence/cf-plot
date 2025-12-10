@@ -5,13 +5,12 @@ import numpy as np
 from ..internal import (
     _gvals,
 )
-from ..misc import (
+from ..utils import (
     fix_floats,
 )
 from ..parameters import (
     plotvars,
 )
-
 
 def calculate_levels(field=None, level_spacing=None, verbose=None):
     """Calculate contour levels."""
