@@ -7,6 +7,28 @@ from ..parameters import (
 )
 
 
+def _which(program):
+    """Check if the ImageMagick display command is available."""
+
+    def is_exe(fpath):
+        """TODO DOCS."""
+        return os.path.exists(fpath) and os.access(fpath, os.X_OK)
+
+    def ext_candidates(fpath):
+        """TODO DOCS."""
+        yield fpath
+        for ext in os.environ.get("PATHEXT", "").split(os.pathsep):
+            yield fpath + ext
+
+    for path in os.environ["PATH"].split(os.pathsep):
+        exe_file = os.path.join(path, program)
+        for candidate in ext_candidates(exe_file):
+            if is_exe(candidate):
+                return candidate
+
+    return None
+
+
 def gopen(
     rows=1,
     columns=1,

@@ -33,6 +33,7 @@ from .colour import (
     cbar,
 )
 from .graphic import (
+    _which,
     gclose,
     gopen,
     gpos,
@@ -50,16 +51,13 @@ from .utils import (
     _bfill,
     _bfill_ugrid,
     _cf_data_assign,
-    _check_data,
     _dim_titles,
     _gvals,
     _supscr,
     _timeaxis,
-    _which,
     add_cyclic,
     cf_var_name,
     cf_var_name_titles,
-    check_well_formed,
     find_dim_names,
     find_pos_in_array,
     find_z,
@@ -73,6 +71,11 @@ from .utils import (
     rgaxes,
     stipple_points,
     vloc,
+)
+from .validate import (
+    _check_data,
+    check_well_formed,
+    orca_check,
 )
 from .parameters import (
     allvars_defaults,
