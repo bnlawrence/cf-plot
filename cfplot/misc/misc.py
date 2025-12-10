@@ -12,95 +12,6 @@ from ..parameters import (
 )
 
 
-def _mapaxis(min=None, max=None, type=None):
-    """
-    | Work out a sensible set of longitude and latitude
-    | tick marks and labels. This is an internal routine and is not used
-    | by the user.
-
-    | min=None - minimum axis value
-    | max=None - maximum axis value
-    | type=None - 1 = longitude, 2 = latitude
-
-    :Returns:
-     longtitude/latitude ticks and longitude/latitude tick labels
-    |
-    """
-
-    degsym = ""
-    if plotvars.degsym:
-        degsym = r"$\degree$"
-    if type == 1:
-        lonmin = min
-        lonmax = max
-        lonrange = lonmax - lonmin
-        lonstep = 60
-        if lonrange <= 180:
-            lonstep = 30
-        if lonrange <= 90:
-            lonstep = 10
-        if lonrange <= 30:
-            lonstep = 5
-        if lonrange <= 10:
-            lonstep = 2
-        if lonrange <= 5:
-            lonstep = 1
-
-        lons = np.arange(-720, 720 + lonstep, lonstep)
-        lonticks = []
-        for lon in lons:
-            if lon >= lonmin and lon <= lonmax:
-                lonticks.append(lon)
-
-        lonlabels = []
-        for lon in lonticks:
-            lon2 = np.mod(lon + 180, 360) - 180
-            if lon2 < 0 and lon2 > -180:
-                if lon != 180:
-                    lonlabels.append(str(abs(lon2)) + degsym + "W")
-
-            if lon2 > 0 and lon2 <= 180:
-                lonlabels.append(str(lon2) + degsym + "E")
-            if lon2 == 0:
-                lonlabels.append("0" + degsym)
-
-            if lon == 180 or lon == -180:
-                lonlabels.append("180" + degsym)
-
-        return (lonticks, lonlabels)
-
-    if type == 2:
-        latmin = min
-        latmax = max
-        latrange = latmax - latmin
-        latstep = 30
-        if latrange <= 90:
-            latstep = 10
-        if latrange <= 30:
-            latstep = 5
-        if latrange <= 10:
-            latstep = 2
-        if latrange <= 5:
-            latstep = 1
-
-        lats = np.arange(-90, 90 + latstep, latstep)
-        latticks = []
-        for lat in lats:
-            if lat >= latmin and lat <= latmax:
-                latticks.append(lat)
-
-        latlabels = []
-        for lat in latticks:
-            if lat < 0:
-                latlabels.append(str(abs(lat)) + degsym + "S")
-            if lat > 0:
-                latlabels.append(str(lat) + degsym + "N")
-            if lat == 0:
-                latlabels.append("0" + degsym)
-
-        return (latticks, latlabels)
-
-
 def add_cyclic(field, lons):
     """
     | A wrapper for `cartopy_util.add_cyclic_point(field, lons)`.
@@ -446,30 +357,6 @@ def fix_floats(data):
             data = data_temp
 
     return data
-
-
-def map_grid():
-    """Plot a grid on a map."""
-
-    lons = (
-        np.arange((360 / plotvars.grid_x_spacing) + 1)
-        * plotvars.grid_x_spacing
-    )
-    lons = np.concatenate([lons - 360, lons])
-    lats = (
-        np.arange((180 / plotvars.grid_y_spacing) + 1)
-        * plotvars.grid_y_spacing
-        - 90
-    )
-
-    plotvars.mymap.gridlines(
-        color=plotvars.grid_colour,
-        linewidth=plotvars.grid_thickness,
-        linestyle=plotvars.grid_linestyle,
-        xlocs=lons,
-        ylocs=lats,
-        zorder=plotvars.grid_zorder,
-    )
 
 
 def max_ndecs_data(data):

@@ -38,7 +38,6 @@ from .graphic import (
     gpos,
 )
 from .internal import (
-    axes_plot,
     cf_var_name,
     find_dim_names,
     find_z,
@@ -46,25 +45,28 @@ from .internal import (
     _bfill_ugrid,
     _cf_data_assign,
     _check_data,
-    _cscale_get_map,
     _dim_titles,
     _gvals,
-    _map_title,
-    _plot_map_axes,
-    _set_map,
     _supscr,
     _timeaxis,
     _which,
 )
-from .misc import (
+from .mapping import (
+    _cscale_get_map,
     _mapaxis,
+    _map_title,
+    _plot_map_axes,
+    _set_map,
+    axes_plot,
+    map_grid,
+)
+from .misc import (
     add_cyclic,
     cf_var_name_titles,
     check_well_formed,
     irregular_window,
     fix_floats,
     find_pos_in_array,
-    map_grid,
     max_ndecs_data,
     ndecs,
     pcon,

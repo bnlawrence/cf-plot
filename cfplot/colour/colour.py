@@ -4,7 +4,7 @@ import numpy as np
 from ..parameters import (
     plotvars,
 )
-from ..internal import (
+from ..mapping import (
     _cscale_get_map,
 )
 

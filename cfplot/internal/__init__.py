@@ -1,5 +1,4 @@
 from .internal import (
-    axes_plot,
     cf_var_name,
     find_dim_names,
     find_z,
@@ -7,12 +6,8 @@ from .internal import (
     _bfill_ugrid,
     _cf_data_assign,
     _check_data,
-    _cscale_get_map,
     _dim_titles,
     _gvals,
-    _map_title,
-    _plot_map_axes,
-    _set_map,
     _supscr,
     _timeaxis,
     _which,
