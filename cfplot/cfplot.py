@@ -29,27 +29,13 @@ from .calculate import (
     calculate_levels,
 )
 from .colour import (
-    cbar,
     _process_color_scales,
+    cbar,
 )
 from .graphic import (
     gclose,
     gopen,
     gpos,
-)
-from .internal import (
-    cf_var_name,
-    find_dim_names,
-    find_z,
-    _bfill,
-    _bfill_ugrid,
-    _cf_data_assign,
-    _check_data,
-    _dim_titles,
-    _gvals,
-    _supscr,
-    _timeaxis,
-    _which,
 )
 from .mapping import (
     _cscale_get_map,
@@ -61,12 +47,24 @@ from .mapping import (
     map_grid,
 )
 from .utils import (
+    _bfill,
+    _bfill_ugrid,
+    _cf_data_assign,
+    _check_data,
+    _dim_titles,
+    _gvals,
+    _supscr,
+    _timeaxis,
+    _which,
     add_cyclic,
+    cf_var_name,
     cf_var_name_titles,
     check_well_formed,
-    irregular_window,
-    fix_floats,
+    find_dim_names,
     find_pos_in_array,
+    find_z,
+    fix_floats,
+    irregular_window,
     max_ndecs_data,
     ndecs,
     pcon,

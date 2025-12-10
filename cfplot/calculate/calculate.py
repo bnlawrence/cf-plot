@@ -2,10 +2,8 @@ from copy import deepcopy
 
 import numpy as np
 
-from ..internal import (
-    _gvals,
-)
 from ..utils import (
+    _gvals,
     fix_floats,
 )
 from ..parameters import (
