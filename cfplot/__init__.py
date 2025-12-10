@@ -12,6 +12,10 @@ __version__ = "3.4.0"
 
 from .cfplot import *  # noqa: F403, F401
 
+# Imports to export functions: cfp.<module>.<function> -> cfp.<function>
+from .contour import con
+
+
 # Check for the minimum cf-python version
 cf_version_min = "3.17.0"
 errstr = (
