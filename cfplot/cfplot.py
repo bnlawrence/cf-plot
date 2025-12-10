@@ -50,7 +50,6 @@ from .internal import (
     _dim_titles,
     _gvals,
     _map_title,
-    _mapaxis,
     _plot_map_axes,
     _set_map,
     _supscr,
@@ -58,6 +57,7 @@ from .internal import (
     _which,
 )
 from .misc import (
+    _mapaxis,
     add_cyclic,
     cf_var_name_titles,
     check_well_formed,

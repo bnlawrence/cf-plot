@@ -11,7 +11,6 @@ from .internal import (
     _dim_titles,
     _gvals,
     _map_title,
-    _mapaxis,
     _plot_map_axes,
     _set_map,
     _supscr,

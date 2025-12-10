@@ -1,4 +1,5 @@
 from .misc import (
+    _mapaxis,
     add_cyclic,
     cf_var_name_titles,
     check_well_formed,
