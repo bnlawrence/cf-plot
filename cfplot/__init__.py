@@ -15,8 +15,7 @@ from .cfplot import *  # noqa: F403, F401
 # Check for the minimum cf-python version
 cf_version_min = "3.17.0"
 errstr = (
-    f"\n\n cf-python > {cf_version_min}"
-    "\n needs to be installed to use cf-plot \n\n"
+    f"cf-python >= {cf_version_min} needs to be installed to use cf-plot"
 )
 if StrictVersion(cf.__version__) < StrictVersion(cf_version_min):
     raise Warning(errstr)
