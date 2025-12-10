@@ -4,7 +4,7 @@ cf-plot: code-light plotting for earth science and aligned research
 Documentation is hosted and found at: https://ncas-cms.github.io/cf-plot/
 """
 
-__author__ = "Sadie Bartholomew, Andy Heaps"
+__author__ = "Andy Heaps"
 __maintainer__ ="Sadie Bartholomew"
 __date__ = "28th April 2025"
 __version__ = "3.4.0"
