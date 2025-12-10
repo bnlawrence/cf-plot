@@ -12,7 +12,6 @@ from copy import deepcopy
 from distutils.version import StrictVersion
 
 import cartopy
-
 import cartopy.feature as cfeature
 import cartopy.crs as ccrs
 import cartopy.util as cartopy_util
@@ -20,10 +19,11 @@ import matplotlib
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plot
 import numpy as np
+from scipy.interpolate import griddata
 import shapely.geometry as sgeom
 from matplotlib.collections import PolyCollection
 
-from scipy.interpolate import griddata
+import cf
 
 from .calculate import (
     calculate_levels,
@@ -93,38 +93,6 @@ from .parameters import (
     setvars_defaults,
     viridis,
 )
-
-# Check for the minimum cf-python version
-cf_version_min = "3.17.0"
-errstr = (
-    f"\n\n cf-python > {cf_version_min}"
-    "\n needs to be installed to use cf-plot \n\n"
-)
-try:
-    import cf
-
-    if StrictVersion(cf.__version__) < StrictVersion(cf_version_min):
-        raise Warning(errstr)
-except ImportError:
-    raise Warning(errstr)
-
-
-# Check for a display and use the Agg backing store if none is present
-# This is for batch mode processing
-try:
-    disp = os.environ["DISPLAY"]
-except Exception:
-    matplotlib.use("Agg")
-
-
-# Check for user setting of pre_existing_data_dir pointing to central
-# cartopy setup
-# This is used in the cfview simple setup process
-try:
-    pre_existing_data_dir = os.environ["pre_existing_data_dir"]
-    cartopy.config["pre_existing_data_dir"] = pre_existing_data_dir
-except KeyError:
-    pass
 
 
 def con(
