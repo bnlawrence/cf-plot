@@ -12,5 +12,6 @@ from .misc import (
     polar_regular_grid,
     regrid,
     rgaxes,
+    stipple_points,
     vloc,
 )

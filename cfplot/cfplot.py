@@ -27,7 +27,6 @@ from scipy.interpolate import griddata
 
 from .calculate import (
     calculate_levels,
-    stipple_points,
 )
 from .colour import (
     cbar,
@@ -72,6 +71,7 @@ from .misc import (
     polar_regular_grid,
     regrid,
     rgaxes,
+    stipple_points,
     vloc,
 )
 from .parameters import (

@@ -1,5 +1,12 @@
+from copy import deepcopy
+
+import cartopy.crs as ccrs
 import cartopy.util as cartopy_util
 import numpy as np
+
+from ..parameters import (
+    plotvars,
+)
 
 
 def add_cyclic(field, lons):
@@ -861,6 +868,77 @@ def rgaxes(
 
     # Reset yvec
     yvec = yvec_orig
+
+
+def stipple_points(
+    xmin=None, xmax=None, ymin=None, ymax=None, pts=None, stype=None
+):
+    """
+    | Calculate interpolation points.
+    |
+    | xmin=None - plot x minimum
+    | ymax=None - plot x maximum
+    | ymin=None - plot y minimum
+    | ymax=None - plot x maximum
+    | pts=None -  number of points in the x and y directions
+    |             one number gives the same in both directions
+    |
+    | stype=None - type of grid.  1=regular, 2=offset
+    |
+    :Returns:
+       stipple locations in x and y
+    |
+    """
+
+    # Work out number of points in x and y directions
+    if np.size(pts) == 1:
+        pts_x = pts
+        pts_y = pts
+    if np.size(pts) == 2:
+        pts_x = pts[0]
+        pts_y = pts[1]
+
+    # Create regularly spaced points
+    xstep = (xmax - xmin) / float(pts_x)
+    x1 = [xmin + xstep / 4]
+    while (np.nanmax(x1) + xstep) < xmax - xstep / 10:
+        x1 = np.append(x1, np.nanmax(x1) + xstep)
+
+    x2 = [xmin + xstep * 3 / 4]
+    while (np.nanmax(x2) + xstep) < xmax - xstep / 10:
+        x2 = np.append(x2, np.nanmax(x2) + xstep)
+
+    ystep = (ymax - ymin) / float(pts_y)
+    y1 = [ymin + ystep / 2]
+    while (np.nanmax(y1) + ystep) < ymax - ystep / 10:
+        y1 = np.append(y1, np.nanmax(y1) + ystep)
+
+    # Create interpolation points
+    xnew = []
+    ynew = []
+    iy = 0
+
+    for y in y1:
+        iy = iy + 1
+        if stype == 1:
+            xnew = np.append(xnew, x1)
+            y2 = np.zeros(np.size(x1))
+            y2.fill(y)
+            ynew = np.append(ynew, y2)
+
+        if stype == 2:
+            if iy % 2 == 0:
+                xnew = np.append(xnew, x1)
+                y2 = np.zeros(np.size(x1))
+                y2.fill(y)
+                ynew = np.append(ynew, y2)
+            if iy % 2 == 1:
+                xnew = np.append(xnew, x2)
+                y2 = np.zeros(np.size(x2))
+                y2.fill(y)
+                ynew = np.append(ynew, y2)
+
+    return xnew, ynew
 
 
 def vloc(xvec=None, yvec=None, lons=None, lats=None):
