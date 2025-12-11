@@ -4,13 +4,16 @@ import cartopy.crs as ccrs
 import cartopy.util as cartopy_util
 import matplotlib
 from matplotlib.collections import PolyCollection
-import matplotlib.pyplot as plot
+import matplotlib.patches as mpatches
 import numpy as np
 from scipy.interpolate import griddata
 import shapely.geometry as sgeom
 
 import cf
 
+from ..colour import (
+    _cscale_get_map,
+)
 from ..parameters import (
     gset,
     plotvars,
@@ -484,7 +487,7 @@ def _timeaxis(dtimes=None):
         # Catch tvals if not properly defined and use gvals to generate some
         # year tick marks
         if np.size(tvals) < 2:
-            tvals = gvals(dmin=yearmin, dmax=yearmax)[0]
+            tvals = _gvals(dmin=yearmin, dmax=yearmax)[0]
 
         for year in tvals:
             time_ticks.append(
