@@ -1,3 +1,6 @@
+import os
+import subprocess
+
 import matplotlib
 import matplotlib.pyplot as plot
 

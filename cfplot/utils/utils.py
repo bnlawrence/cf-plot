@@ -20,7 +20,9 @@ from ..parameters import (
 )
 from ..mapping import (
     _mapaxis,
-    map_grid,
+)
+from ..validate import (
+    check_well_formed,
 )
 
 

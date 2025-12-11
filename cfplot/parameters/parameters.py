@@ -5,6 +5,10 @@ import matplotlib
 import numpy as np
 from scipy import interpolate
 
+from .parameters import (
+    plotvars,
+)
+
 # TODO remove these and use the matploltib versions! Why on earth would
 # they be hard-coded in cf-plot???
 #
@@ -291,7 +295,6 @@ viridis = [
 ]
 
 
-
 # Read in defaults if they exist and overlay
 # for contour options of fill, blockfill and lines
 global_fill = True
@@ -331,7 +334,6 @@ if is_inline:
 if sys.platform == "darwin":
     plotvars.global_viewer = "matplotlib"
     plotvars.viewer = "matplotlib"
-
 
 
 """Global plotting variables."""
