@@ -5,9 +5,6 @@ import matplotlib
 import numpy as np
 from scipy import interpolate
 
-from .parameters import (
-    plotvars,
-)
 
 # TODO remove these and use the matploltib versions! Why on earth would
 # they be hard-coded in cf-plot???
@@ -322,19 +319,6 @@ if os.path.exists(defaults_file):
             if com == "viewer":
                 global_viewer = val.strip()
 
-# Check for iPython notebook inline
-# and set the viewer to None if found
-is_inline = "inline" in matplotlib.get_backend()
-if is_inline:
-    plotvars.viewer = None
-
-# Check for OSX and if so use matplotlib for for the viewer
-# Not all users will have ImageMagick installed / XQuartz running
-# Users can still select this with cfp.setvars(viewer='display')
-if sys.platform == "darwin":
-    plotvars.global_viewer = "matplotlib"
-    plotvars.viewer = "matplotlib"
-
 
 """Global plotting variables."""
 # These are plotting variables that 'setvars' can adjust
@@ -516,6 +500,19 @@ class pvars:
 
 allvars_defaults = {**setvars_defaults, **plotvars_defaults}
 plotvars = pvars(**allvars_defaults)
+
+# Check for iPython notebook inline
+# and set the viewer to None if found
+is_inline = "inline" in matplotlib.get_backend()
+if is_inline:
+    plotvars.viewer = None
+
+# Check for OSX and if so use matplotlib for for the viewer
+# Not all users will have ImageMagick installed / XQuartz running
+# Users can still select this with cfp.setvars(viewer='display')
+if sys.platform == "darwin":
+    plotvars.global_viewer = "matplotlib"
+    plotvars.viewer = "matplotlib"
 
 
 def setvars(**kwargs):
