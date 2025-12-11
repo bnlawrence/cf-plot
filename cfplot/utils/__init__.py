@@ -13,6 +13,7 @@ from .utils import (
     find_pos_in_array,
     find_z,
     fix_floats,
+    generate_titles,
     irregular_window,
     max_ndecs_data,
     ndecs,
