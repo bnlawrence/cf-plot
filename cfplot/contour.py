@@ -10,6 +10,7 @@ from .calculate import (
     calculate_levels,
 )
 from .colour import (
+    _cscale_get_map,
     cbar,
 )
 from .graphic import (
@@ -17,7 +18,6 @@ from .graphic import (
     gopen,
 )
 from .mapping import (
-    _cscale_get_map,
     _mapaxis,
     _map_title,
     _plot_map_axes,

@@ -4,9 +4,29 @@ import numpy as np
 from ..parameters import (
     plotvars,
 )
-from ..mapping import (
-    _cscale_get_map,
-)
+
+
+def _cscale_get_map():
+    """
+    | Return colour map for use in contour plots.
+    | This is an internal routine and is not used by the user.
+    |
+    | This depends on the colour bar extensions.
+    |
+    :Returns:
+         colour map
+    |
+    """
+    cscale_ncols = np.size(plotvars.cs)
+    if plotvars.levels_extend == "both":
+        colmap = plotvars.cs[1 : cscale_ncols - 1]
+    if plotvars.levels_extend == "min":
+        colmap = plotvars.cs[1:]
+    if plotvars.levels_extend == "max":
+        colmap = plotvars.cs[: cscale_ncols - 1]
+    if plotvars.levels_extend == "neither":
+        colmap = plotvars.cs
+    return colmap
 
 
 def _process_color_scales():

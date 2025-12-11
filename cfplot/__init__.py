@@ -31,12 +31,13 @@ from .calculate import (
     calculate_levels,
 )
 from .colour import (
-    # Internal fuctions: don't expose, but leave commented here to track
+    # Internal fuctions: don't expose, but leave commented here to track:
+    # _cscale_get_map,
     # _process_color_scales,
     cbar,
 )
 from .graphic import (
-    # Internal fuctions: don't expose, but leave commented here to track
+    # Internal fuctions: don't expose, but leave commented here to track:
     # _which,
     gclose,
     gopen,
@@ -44,7 +45,6 @@ from .graphic import (
 )
 from .mapping import (
     # Internal fuctions: don't expose, but leave commented here to track:
-    # _cscale_get_map,
     # _mapaxis,
     # _map_title,
     # _plot_map_axes,
