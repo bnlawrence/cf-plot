@@ -18,6 +18,8 @@ from .vector import vect
 from .stipple import stipple
 from .trajectory import traj
 from .line import lineplot
+from .stream import stream
+
 
 # Check for the minimum cf-python version
 cf_version_min = "3.17.0"
