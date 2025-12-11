@@ -31,21 +31,24 @@ from .calculate import (
     calculate_levels,
 )
 from .colour import (
+    # Internal fuctions: don't expose, but leave commented here to track
+    # _process_color_scales,
     cbar,
-    _process_color_scales,
 )
 from .graphic import (
-    _which,
+    # Internal fuctions: don't expose, but leave commented here to track
+    # _which,
     gclose,
     gopen,
     gpos,
 )
 from .mapping import (
-    _cscale_get_map,
-    _mapaxis,
-    _map_title,
-    _plot_map_axes,
-    _set_map,
+    # Internal fuctions: don't expose, but leave commented here to track:
+    # _cscale_get_map,
+    # _mapaxis,
+    # _map_title,
+    # _plot_map_axes,
+    # _set_map,
     axes_plot,
     map_grid,
 )
@@ -69,13 +72,14 @@ from .parameters import (
     viridis,
 )
 from .utils import (
-    _bfill,
-    _bfill_ugrid,
-    _cf_data_assign,
-    _dim_titles,
-    _gvals,
-    _supscr,
-    _timeaxis,
+    # Internal fuctions: don't expose, but leave commented here to track:
+    # _bfill,
+    # _bfill_ugrid,
+    # _cf_data_assign,
+    # _dim_titles,
+    # _gvals,
+    # _supscr,
+    # _timeaxis,
     add_cyclic,
     cf_var_name,
     cf_var_name_titles,
