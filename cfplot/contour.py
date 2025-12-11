@@ -1,28 +1,18 @@
 from copy import deepcopy
 
 import cartopy
-import cartopy.feature as cfeature
 import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import cf
 import matplotlib
 import numpy as np
 
-import cf
-
-from .calculate import (
-    calculate_levels,
-)
-from .colour import (
-    _cscale_get_map,
-    cbar,
-)
-from .graphic import (
-    gclose,
-    gopen,
-    gpos,
-)
+from .calculate import calculate_levels
+from .colour import _cscale_get_map, cbar
+from .graphic import gclose, gopen, gpos
 from .mapping import (
-    _mapaxis,
     _map_title,
+    _mapaxis,
     _plot_map_axes,
     _set_map,
     axes_plot,
@@ -53,11 +43,7 @@ from .utils import (
     ndecs,
     rgaxes,
 )
-from .validate import (
-    _check_data,
-    check_well_formed,
-    orca_check,
-)
+from .validate import _check_data, check_well_formed, orca_check
 
 
 def con(

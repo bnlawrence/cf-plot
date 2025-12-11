@@ -10,32 +10,24 @@ __date__ = "28th April 2025"
 __version__ = "3.4.0"
 
 import os
+from distutils.version import StrictVersion
 
 import cartopy
 import cf
-from distutils.version import StrictVersion
 import matplotlib
+
+from .calculate import calculate_levels
+from .colour import (
+    # Internal fuctions: don't expose, but leave commented here to track:
+    # _cscale_get_map,; _process_color_scales,
+    cbar,
+)
 
 # Import module functionality -------------------------------------------
 # Imports to export functions: cfp.<module>.<function> -> cfp.<function>
 # either as intended going forward or to preserve existing API.
 # TODO review what should be available at module level.
 from .contour import con
-from .vector import vect
-from .stipple import stipple
-from .trajectory import traj
-from .line import lineplot
-from .stream import stream
-
-from .calculate import (
-    calculate_levels,
-)
-from .colour import (
-    # Internal fuctions: don't expose, but leave commented here to track:
-    # _cscale_get_map,
-    # _process_color_scales,
-    cbar,
-)
 from .graphic import (
     # Internal fuctions: don't expose, but leave commented here to track:
     # _which,
@@ -43,12 +35,10 @@ from .graphic import (
     gopen,
     gpos,
 )
+from .line import lineplot
 from .mapping import (
     # Internal fuctions: don't expose, but leave commented here to track:
-    # _mapaxis,
-    # _map_title,
-    # _plot_map_axes,
-    # _set_map,
+    # _mapaxis,; _map_title,; _plot_map_axes,; _set_map,
     axes_plot,
     map_grid,
 )
@@ -71,14 +61,12 @@ from .parameters import (
     setvars_defaults,
     viridis,
 )
+from .stipple import stipple
+from .stream import stream
+from .trajectory import traj
 from .utils import (
-    # Internal fuctions: don't expose, but leave commented here to track:
-    # _bfill,
-    # _bfill_ugrid,
-    # _cf_data_assign,
-    # _dim_titles,
-    # _gvals,
-    # _supscr,
+    # Internal fuctions: don't expose, but leave commented here to track:;
+    # _bfill,; _bfill_ugrid,; _cf_data_assign,; _dim_titles,; _gvals,; _supscr,;
     # _timeaxis,
     add_cyclic,
     cf_var_name,
@@ -98,12 +86,8 @@ from .utils import (
     stipple_points,
     vloc,
 )
-from .validate import (
-    _check_data,
-    check_well_formed,
-    orca_check,
-)
-
+from .validate import _check_data, check_well_formed, orca_check
+from .vector import vect
 
 # Process versions and display ------------------------------------------
 

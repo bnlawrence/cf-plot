@@ -2,33 +2,14 @@ from copy import deepcopy
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import cf
 import numpy as np
 
-import cf
-
-from .colour import (
-    cbar,
-)
-from .graphic import (
-    gclose,
-    gopen,
-    gpos,
-)
-from .mapping import (
-    _set_map,
-    _map_title,
-    _plot_map_axes,
-)
-from .parameters import (
-    cscale,
-    gset,
-    plotvars,
-)
-from .utils import (
-    _gvals,
-    _supscr,
-    cf_var_name,
-)
+from .colour import cbar
+from .graphic import gclose, gopen, gpos
+from .mapping import _map_title, _plot_map_axes, _set_map
+from .parameters import cscale, gset, plotvars
+from .utils import _gvals, _supscr, cf_var_name
 
 
 def traj(

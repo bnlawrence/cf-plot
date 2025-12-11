@@ -1,3 +1,1 @@
-from .calculate import (
-    calculate_levels,
-)
+from .calculate import calculate_levels

@@ -2,13 +2,8 @@ from copy import deepcopy
 
 import numpy as np
 
-from ..utils import (
-    _gvals,
-    fix_floats,
-)
-from ..parameters import (
-    plotvars,
-)
+from ..parameters import plotvars
+from ..utils import _gvals, fix_floats
 
 
 def calculate_levels(field=None, level_spacing=None, verbose=None):

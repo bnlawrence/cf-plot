@@ -1,11 +1,8 @@
 import cartopy.crs as ccrs
+import cf
 import numpy as np
 
-import cf
-
-from .parameters import (
-    plotvars,
-)
+from .parameters import plotvars
 from .utils import (
     _cf_data_assign,
     add_cyclic,
@@ -13,9 +10,7 @@ from .utils import (
     regrid,
     stipple_points,
 )
-from .validate import (
-    _check_data,
-)
+from .validate import _check_data
 
 
 def stipple(

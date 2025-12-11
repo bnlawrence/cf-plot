@@ -2,28 +2,18 @@ from copy import deepcopy
 
 import cartopy.crs as ccrs
 import cartopy.util as cartopy_util
+import cf
 import matplotlib
-from matplotlib.collections import PolyCollection
 import matplotlib.patches as mpatches
 import numpy as np
-from scipy.interpolate import griddata
 import shapely.geometry as sgeom
+from matplotlib.collections import PolyCollection
+from scipy.interpolate import griddata
 
-import cf
-
-from ..colour import (
-    _cscale_get_map,
-)
-from ..parameters import (
-    gset,
-    plotvars,
-)
-from ..mapping import (
-    _mapaxis,
-)
-from ..validate import (
-    check_well_formed,
-)
+from ..colour import _cscale_get_map
+from ..mapping import _mapaxis
+from ..parameters import gset, plotvars
+from ..validate import check_well_formed
 
 
 def cf_var_name(field=None, dim=None):

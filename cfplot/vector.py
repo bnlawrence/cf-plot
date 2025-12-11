@@ -2,28 +2,12 @@ from copy import deepcopy
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import cf
 import numpy as np
 
-import cf
-
-from .graphic import (
-    gclose,
-    gopen,
-    gpos,
-)
-from .mapping import (
-    _mapaxis,
-    _map_title,
-    _plot_map_axes,
-    _set_map,
-    axes_plot,
-)
-from .parameters import (
-    cscale,
-    gset,
-    mapset,
-    plotvars,
-)
+from .graphic import gclose, gopen, gpos
+from .mapping import _map_title, _mapaxis, _plot_map_axes, _set_map, axes_plot
+from .parameters import cscale, gset, mapset, plotvars
 from .utils import (
     _cf_data_assign,
     _dim_titles,
@@ -35,9 +19,7 @@ from .utils import (
     rgaxes,
     stipple_points,
 )
-from .validate import (
-    _check_data,
-)
+from .validate import _check_data
 
 
 def vect(

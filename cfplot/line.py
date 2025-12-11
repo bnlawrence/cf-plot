@@ -1,18 +1,9 @@
+import cf
 import numpy as np
 
-import cf
-
-from .graphic import (
-    gclose,
-    gopen,
-    gpos,
-)
-from .mapping import (
-    _mapaxis,
-)
-from .parameters import (
-    plotvars,
-)
+from .graphic import gclose, gopen, gpos
+from .mapping import _mapaxis
+from .parameters import plotvars
 from .utils import (
     _dim_titles,
     _gvals,

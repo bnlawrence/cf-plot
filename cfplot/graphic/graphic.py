@@ -4,10 +4,7 @@ import subprocess
 import matplotlib
 import matplotlib.pyplot as plot
 
-from ..parameters import (
-    levs,
-    plotvars,
-)
+from ..parameters import levs, plotvars
 
 
 def _which(program):

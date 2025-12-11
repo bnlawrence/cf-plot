@@ -5,7 +5,6 @@ import matplotlib
 import numpy as np
 from scipy import interpolate
 
-
 # TODO remove these and use the matploltib versions! Why on earth would
 # they be hard-coded in cf-plot???
 #
