@@ -1,21 +1,19 @@
-import coverage
 import faulthandler
 import functools
 import hashlib
-from pprint import pformat
-import numpy as np
 import os
 import unittest
+from pprint import pformat
 
+import cartopy.crs as ccrs
+import cf
+import coverage
+import matplotlib.testing.compare as mpl_compare
+import numpy as np
 from netCDF4 import Dataset as ncfile
 from scipy.interpolate import griddata
 
-import matplotlib.testing.compare as mpl_compare
-
-import cartopy.crs as ccrs
-
 import cfplot as cfp
-import cf
 
 
 def compare_arrays(

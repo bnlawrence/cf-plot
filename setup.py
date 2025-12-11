@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 import os
 import fnmatch
 import sys
@@ -14,17 +14,18 @@ def find_package_data_files(directory):
                 yield filename.replace("cfplot/", "", 1)
 
 
-package_data = [f for f in find_package_data_files("cfplot/colourmaps")]
-
+package_data = [
+    f for f in find_package_data_files("cfplot/colour/colourmaps")
+]
 
 setup(
     name="cf-plot",
     version="3.4.0",
-    author="Andy Heaps and Sadie Bartholomew",
+    author="Andy Heaps",
     author_email="andy.heaps@ncas.ac.uk",
     maintainer="Sadie Bartholomew",
     maintainer_email="sadie.bartholomew@ncas.ac.uk",
-    packages=["cfplot"],
+    packages=find_packages(),
     package_dir={"cfplot": "cfplot"},
     package_data={"cfplot": package_data},
     include_package_data=True,
@@ -34,9 +35,9 @@ setup(
         # "scipy >= 1.4.0",  # already a requirement for cf-python
         "cartopy >= 0.22.0",
     ],
-    url="http://ajheaps.github.io/cf-plot",
+    url="https://ncas-cms.github.io/cf-plot/",
     license="LICENSE.txt",
-    description="Climate contour, vector and line plots in Python",
+    description="Code-light plotting for earth science and aligned research",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
 )
