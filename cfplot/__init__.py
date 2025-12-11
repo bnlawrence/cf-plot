@@ -15,6 +15,7 @@ from .cfplot import *  # noqa: F403, F401
 # Imports to export functions: cfp.<module>.<function> -> cfp.<function>
 from .contour import con
 from .vector import vect
+from .stipple import stipple
 
 # Check for the minimum cf-python version
 cf_version_min = "3.17.0"
