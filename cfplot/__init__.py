@@ -16,6 +16,7 @@ from .cfplot import *  # noqa: F403, F401
 from .contour import con
 from .vector import vect
 from .stipple import stipple
+from .trajectory import traj
 
 # Check for the minimum cf-python version
 cf_version_min = "3.17.0"
