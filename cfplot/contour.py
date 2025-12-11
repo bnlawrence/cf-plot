@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import cartopy
 import cartopy.feature as cfeature
 import cartopy.crs as ccrs
@@ -16,6 +18,7 @@ from .colour import (
 from .graphic import (
     gclose,
     gopen,
+    gpos,
 )
 from .mapping import (
     _mapaxis,
@@ -23,6 +26,7 @@ from .mapping import (
     _plot_map_axes,
     _set_map,
     axes_plot,
+    map_grid,
 )
 from .parameters import (
     cscale,
@@ -35,14 +39,24 @@ from .parameters import (
     plotvars,
 )
 from .utils import (
+    _bfill,
+    _bfill_ugrid,
     _cf_data_assign,
+    _dim_titles,
+    _gvals,
     _timeaxis,
     add_cyclic,
     find_pos_in_array,
+    find_z,
+    generate_titles,
+    irregular_window,
     ndecs,
+    rgaxes,
 )
 from .validate import (
+    _check_data,
     check_well_formed,
+    orca_check,
 )
 
 
