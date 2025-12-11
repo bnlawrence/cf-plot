@@ -9,12 +9,18 @@ __maintainer__ = "Sadie Bartholomew"
 __date__ = "28th April 2025"
 __version__ = "3.4.0"
 
+
 import os
 from distutils.version import StrictVersion
 
 import cartopy
 import cf
 import matplotlib
+
+# Import module functionality -------------------------------------------
+# Imports to export functions: cfp.<module>.<function> -> cfp.<function>
+# either as intended going forward or to preserve existing API.
+# TODO review what should be available at module level.
 
 from .calculate import calculate_levels
 from .colour import (
@@ -23,10 +29,6 @@ from .colour import (
     cbar,
 )
 
-# Import module functionality -------------------------------------------
-# Imports to export functions: cfp.<module>.<function> -> cfp.<function>
-# either as intended going forward or to preserve existing API.
-# TODO review what should be available at module level.
 from .contour import con
 from .graphic import (
     # Internal fuctions: don't expose, but leave commented here to track:
