@@ -441,9 +441,8 @@ def traj(
                     # Define the data to plot
                     if is_dsg or is_1d_data:
                         data_colours = [
-                            plotvars.cs[
-                                np.max(np.where(d > plotvars.levels))
-                            ] for d in data2[pts]
+                            plotvars.cs[np.max(np.where(d > plotvars.levels))]
+                            for d in data2[pts]
                         ]
                     else:
                         data_colours = color

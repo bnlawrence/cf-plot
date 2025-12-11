@@ -597,7 +597,8 @@ def setvars(**kwargs):
             # OK and meaningful to set on plotvars
             if set_var not in setvars_defaults:
                 raise ValueError(
-                    f"Unrecognised keyword argument for setvars: {set_var}")
+                    f"Unrecognised keyword argument for setvars: {set_var}"
+                )
 
             setattr(plotvars, set_var, set_value)
 
@@ -1017,7 +1018,8 @@ def cscale(
         package_path = os.path.dirname(__file__)
         # TODO improve path processing - eventually move to Pathlib
         file = os.path.join(
-            package_path, "../colour/colourmaps/" + scale + ".rgb")
+            package_path, "../colour/colourmaps/" + scale + ".rgb"
+        )
         if os.path.isfile(file) is False:
             if os.path.isfile(scale) is False:
                 errstr = (

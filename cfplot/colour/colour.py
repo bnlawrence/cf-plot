@@ -461,9 +461,7 @@ def cbar(
                 # move the plot up in these cases. Use height and width
                 # ratio since this represents the matplotlib object
                 # position differences, so is the best way to measure.
-                left, bottom, width, height = (
-                    this_plot.get_position().bounds
-                )
+                left, bottom, width, height = this_plot.get_position().bounds
                 # Empirical sweet spot: roughly where plot area is taller
                 # than it is wide, including when plot area is roughly square
                 if height / width >= 0.9:

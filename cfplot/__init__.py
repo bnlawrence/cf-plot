@@ -5,7 +5,7 @@ Documentation is hosted and found at: https://ncas-cms.github.io/cf-plot/
 """
 
 __author__ = "Andy Heaps"
-__maintainer__ ="Sadie Bartholomew"
+__maintainer__ = "Sadie Bartholomew"
 __date__ = "28th April 2025"
 __version__ = "3.4.0"
 
@@ -109,9 +109,7 @@ from .validate import (
 
 # Check for the minimum cf-python version
 cf_version_min = "3.17.0"
-errstr = (
-    f"cf-python >= {cf_version_min} needs to be installed to use cf-plot"
-)
+errstr = f"cf-python >= {cf_version_min} needs to be installed to use cf-plot"
 if StrictVersion(cf.__version__) < StrictVersion(cf_version_min):
     raise Warning(errstr)
 # TODO add these checks for all other dependencies too?
