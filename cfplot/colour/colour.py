@@ -1,7 +1,11 @@
+import subprocess
+
 import matplotlib
+import matplotlib.pyplot as plot
 import numpy as np
 
 from ..parameters import (
+    cscale,
     plotvars,
 )
 

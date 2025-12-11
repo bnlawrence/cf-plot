@@ -10,6 +10,7 @@ from ..parameters import (
     plotvars,
 )
 
+
 def calculate_levels(field=None, level_spacing=None, verbose=None):
     """Calculate contour levels."""
 
