@@ -539,7 +539,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.gclose()
 
     @compare_plot_results
-    def test_example_24a(self):  # TODO SLB
+    def test_example_24a(self):
         """Test Example 24a.
 
         Test example for unstructured grids: LFRic example 1, now
@@ -574,7 +574,7 @@ class ExamplesTest(unittest.TestCase):
         )
 
     @compare_plot_results
-    def test_example_24b(self):  # TODO SLB
+    def test_example_24b(self):
         """Test Example 24b.
 
         Test example for unstructured grids: LFRic example 2, now
@@ -610,7 +610,7 @@ class ExamplesTest(unittest.TestCase):
         )
 
     @compare_plot_results
-    def test_example_24c(self):  # TODO SLB
+    def test_example_24c(self):
         """Test Example 24c.
 
         Test example for unstructured grids: LFRic example 3, now
@@ -623,7 +623,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.con(g, lines=False)
 
     @compare_plot_results
-    def test_example_25(self):  # TODO SLB
+    def test_example_25(self):
         """Test Example 25.
 
         Test example for unstructured grids: ORCA grid example 1.
@@ -823,7 +823,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.gclose()
 
     @compare_plot_results
-    def test_example_31(self):  # TODO SLB
+    def test_example_31(self):
         """Test Example 31: UKCP projection.
 
         NOTE: for docs, remove the '**self.setvars_dict' which relates
@@ -838,7 +838,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.con(f, lines=False)
 
     @compare_plot_results
-    def test_example_32(self):  # TODO SLB
+    def test_example_32(self):
         """Test Example 32: UKCP projection with blockfill.
 
         NOTE, TODO: the code mostly works with a mostly correct
@@ -868,7 +868,7 @@ class ExamplesTest(unittest.TestCase):
         )
 
     @compare_plot_results
-    def test_example_33(self):  # TODO SLB
+    def test_example_33(self):
         """Test Example 33: OSGB and EuroPP projections."""
         f = cf.read(f"{self.data_dir}/ukcp_rcm_test.nc")[0]
 
@@ -928,14 +928,14 @@ class ExamplesTest(unittest.TestCase):
         cfp.con(f.subspace(time=15))
 
     @compare_plot_results
-    def test_example_39(self):  # TODO SLB
+    def test_example_39(self):
         """Test Example 39: basic track plotting trajectory."""
         f = cf.read(f"{self.data_dir}/ff_trs_pos.nc")[0]
 
         cfp.traj(f)
 
     @compare_plot_results
-    def test_example_39b(self):  # TODO SLB
+    def test_example_39b(self):
         """Test Example 39: single DSG with no trajectory dimension (1D).
 
         TODO convert 39 to 39a now this is the 'b' example, to keep
@@ -954,7 +954,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.traj(f)
 
     @compare_plot_results
-    def test_example_40(self):  # TODO SLB
+    def test_example_40(self):
         """Test Example 40: tracks in the polar stereographic projection."""
         f = cf.read(f"{self.data_dir}/ff_trs_pos.nc")[0]
 
@@ -963,7 +963,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.traj(f)
 
     @compare_plot_results
-    def test_example_41(self):  # TODO SLB
+    def test_example_41(self):
         """Test Example 41: feature propagation over Europe."""
         f = cf.read(f"{self.data_dir}/ff_trs_pos.nc")[0]
 
@@ -972,7 +972,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.traj(f, vector=True, markersize=0.0, fc="b", ec="b")
 
     @compare_plot_results
-    def test_example_42a(self):  # TODO SLB
+    def test_example_42a(self):
         """Test Example 42a: intensity legend."""
         f = cf.read(f"{self.data_dir}/ff_trs_pos.nc")[0]
 
@@ -990,7 +990,7 @@ class ExamplesTest(unittest.TestCase):
         )
 
     @compare_plot_results
-    def test_example_42b(self):  # TODO SLB
+    def test_example_42b(self):
         """Test Example 42b: intensity legend with lines."""
         f = cf.read(f"{self.data_dir}/ff_trs_pos.nc")[0]
 
