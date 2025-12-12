@@ -479,17 +479,16 @@ class ExamplesTest(unittest.TestCase):
         )
 
     @compare_plot_results
-    def test_example_21b(self):  # TODO SLB
+    def test_example_21b(self):
         """Test Example 21b"""
-        f = cf.read(f"{self.data_dir}/rgp.nc")  ###[0]
-        print("FieldLIST is", f)
+        f = cf.read(f"{self.data_dir}/rgp.nc")[0]
 
         cfp.cscale("plasma")
 
         cfp.con(f)
 
     @compare_plot_results
-    def test_example_22(self):  # TODO SLB
+    def test_example_22(self):
         """Test Example 22."""
         f = cf.read(f"{self.data_dir}/rgp.nc")[0]
 
@@ -499,7 +498,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.con(f)
 
     @compare_plot_results
-    def test_example_23a(self):  # TODO SLB
+    def test_example_23a(self):
         """Test Example 23a."""
         f = cf.read(f"{self.data_dir}/rgp.nc")[0]
 
@@ -522,17 +521,21 @@ class ExamplesTest(unittest.TestCase):
         cfp.gclose()
 
     @compare_plot_results
-    def test_example_23b(self):  # TODO SLB
+    def test_example_23b(self):
         """Test Example 23b."""
-        f = cf.read(
+        fl = cf.read(
             f"{self.data_dir}/20160601-05T0000Z_INCOMPASS_km4p4_uv_RH_500.nc"
         )
+        r = fl.select_by_identity("long_name=Relative humidity")[0]
+        u = fl.select_by_identity("eastward_wind")[0]
+        v = fl.select_by_identity("northward_wind")[0]
+
         cfp.mapset(50, 100, 5, 35)
         cfp.levs(0, 90, 15, extend="neither")
 
         cfp.gopen()
-        cfp.con(f[0], lines=False)
-        cfp.vect(u=f[1], v=f[2], stride=40, key_length=10)
+        cfp.con(r, lines=False)
+        cfp.vect(u=u, v=v, stride=40, key_length=10)
         cfp.gclose()
 
     @compare_plot_results
