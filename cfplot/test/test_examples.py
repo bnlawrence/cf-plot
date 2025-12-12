@@ -381,7 +381,7 @@ class ExamplesTest(unittest.TestCase):
     def test_example_19a(self):
         """Test Example 19a: multiple plots as subplots."""
         fl = cf.read(f"{self.data_dir}/ggap.nc")
-        f = f.select_by_identity("eastward_wind")[0]
+        f = fl.select_by_identity("eastward_wind")[0]
 
         cfp.gopen(rows=2, columns=2, bottom=0.2)
         cfp.gpos(1)
@@ -459,13 +459,15 @@ class ExamplesTest(unittest.TestCase):
     @compare_plot_results
     def test_example_20(self):
         """Test Example 20: user labelling of axes."""
-        f = cf.read(f"{self.data_dir}/Geostropic_Adjustment.nc")[0]
+        fl = cf.read(f"{self.data_dir}/Geostropic_Adjustment.nc")
+        f = fl.select_by_identity("ncvar%v")[0]
 
         cfp.con(f.subspace[9])
 
     def test_example_21a(self):
         """Test Example 21a: rotated pole data plot."""
-        f = cf.read(f"{self.data_dir}/Geostropic_Adjustment.nc")[0]
+        fl = cf.read(f"{self.data_dir}/Geostropic_Adjustment.nc")
+        f = fl.select_by_identity("ncvar%v")[0]
 
         cfp.con(
             f.subspace[9],
@@ -477,16 +479,17 @@ class ExamplesTest(unittest.TestCase):
         )
 
     @compare_plot_results
-    def test_example_21b(self):
+    def test_example_21b(self):  # TODO SLB
         """Test Example 21b"""
-        f = cf.read(f"{self.data_dir}/rgp.nc")[0]
+        f = cf.read(f"{self.data_dir}/rgp.nc")  ###[0]
+        print("FieldLIST is", f)
 
         cfp.cscale("plasma")
 
         cfp.con(f)
 
     @compare_plot_results
-    def test_example_22(self):
+    def test_example_22(self):  # TODO SLB
         """Test Example 22."""
         f = cf.read(f"{self.data_dir}/rgp.nc")[0]
 
@@ -496,7 +499,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.con(f)
 
     @compare_plot_results
-    def test_example_23a(self):
+    def test_example_23a(self):  # TODO SLB
         """Test Example 23a."""
         f = cf.read(f"{self.data_dir}/rgp.nc")[0]
 
@@ -519,7 +522,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.gclose()
 
     @compare_plot_results
-    def test_example_23b(self):
+    def test_example_23b(self):  # TODO SLB
         """Test Example 23b."""
         f = cf.read(
             f"{self.data_dir}/20160601-05T0000Z_INCOMPASS_km4p4_uv_RH_500.nc"
@@ -533,7 +536,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.gclose()
 
     @compare_plot_results
-    def test_example_24a(self):
+    def test_example_24a(self):  # TODO SLB
         """Test Example 24a.
 
         Test example for unstructured grids: LFRic example 1, now
@@ -568,7 +571,7 @@ class ExamplesTest(unittest.TestCase):
         )
 
     @compare_plot_results
-    def test_example_24b(self):
+    def test_example_24b(self):  # TODO SLB
         """Test Example 24b.
 
         Test example for unstructured grids: LFRic example 2, now
@@ -604,7 +607,7 @@ class ExamplesTest(unittest.TestCase):
         )
 
     @compare_plot_results
-    def test_example_24c(self):
+    def test_example_24c(self):  # TODO SLB
         """Test Example 24c.
 
         Test example for unstructured grids: LFRic example 3, now
@@ -617,7 +620,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.con(g, lines=False)
 
     @compare_plot_results
-    def test_example_25(self):
+    def test_example_25(self):  # TODO SLB
         """Test Example 25.
 
         Test example for unstructured grids: ORCA grid example 1.
@@ -817,7 +820,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.gclose()
 
     @compare_plot_results
-    def test_example_31(self):
+    def test_example_31(self):  # TODO SLB
         """Test Example 31: UKCP projection.
 
         NOTE: for docs, remove the '**self.setvars_dict' which relates
@@ -832,7 +835,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.con(f, lines=False)
 
     @compare_plot_results
-    def test_example_32(self):
+    def test_example_32(self):  # TODO SLB
         """Test Example 32: UKCP projection with blockfill.
 
         NOTE, TODO: the code mostly works with a mostly correct
@@ -862,7 +865,7 @@ class ExamplesTest(unittest.TestCase):
         )
 
     @compare_plot_results
-    def test_example_33(self):
+    def test_example_33(self):  # TODO SLB
         """Test Example 33: OSGB and EuroPP projections."""
         f = cf.read(f"{self.data_dir}/ukcp_rcm_test.nc")[0]
 
@@ -922,14 +925,14 @@ class ExamplesTest(unittest.TestCase):
         cfp.con(f.subspace(time=15))
 
     @compare_plot_results
-    def test_example_39(self):
+    def test_example_39(self):  # TODO SLB
         """Test Example 39: basic track plotting trajectory."""
         f = cf.read(f"{self.data_dir}/ff_trs_pos.nc")[0]
 
         cfp.traj(f)
 
     @compare_plot_results
-    def test_example_39b(self):
+    def test_example_39b(self):  # TODO SLB
         """Test Example 39: single DSG with no trajectory dimension (1D).
 
         TODO convert 39 to 39a now this is the 'b' example, to keep
@@ -948,7 +951,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.traj(f)
 
     @compare_plot_results
-    def test_example_40(self):
+    def test_example_40(self):  # TODO SLB
         """Test Example 40: tracks in the polar stereographic projection."""
         f = cf.read(f"{self.data_dir}/ff_trs_pos.nc")[0]
 
@@ -957,7 +960,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.traj(f)
 
     @compare_plot_results
-    def test_example_41(self):
+    def test_example_41(self):  # TODO SLB
         """Test Example 41: feature propagation over Europe."""
         f = cf.read(f"{self.data_dir}/ff_trs_pos.nc")[0]
 
@@ -966,7 +969,7 @@ class ExamplesTest(unittest.TestCase):
         cfp.traj(f, vector=True, markersize=0.0, fc="b", ec="b")
 
     @compare_plot_results
-    def test_example_42a(self):
+    def test_example_42a(self):  # TODO SLB
         """Test Example 42a: intensity legend."""
         f = cf.read(f"{self.data_dir}/ff_trs_pos.nc")[0]
 
@@ -984,7 +987,7 @@ class ExamplesTest(unittest.TestCase):
         )
 
     @compare_plot_results
-    def test_example_42b(self):
+    def test_example_42b(self):  # TODO SLB
         """Test Example 42b: intensity legend with lines."""
         f = cf.read(f"{self.data_dir}/ff_trs_pos.nc")[0]
 
