@@ -127,7 +127,8 @@ class ExamplesTest(unittest.TestCase):
     @compare_plot_results
     def test_example_4(self):
         """Test Example 4: north pole polar stereographic projection."""
-        f = cf.read(f"{self.data_dir}/ggap.nc")[1]
+        fl = cf.read(f"{self.data_dir}/ggap.nc")
+        f = fl.select_by_identity("eastward_wind")[0]
 
         cfp.mapset(proj="npstere")
 
@@ -140,7 +141,8 @@ class ExamplesTest(unittest.TestCase):
         South pole polar stereographic projection with 30 degrees
         south being the latitude plot limit.
         """
-        f = cf.read(f"{self.data_dir}/ggap.nc")[1]
+        fl = cf.read(f"{self.data_dir}/ggap.nc")
+        f = fl.select_by_identity("eastward_wind")[0]
 
         cfp.mapset(proj="spstere", boundinglat=-30, lon_0=180)
 
@@ -149,28 +151,32 @@ class ExamplesTest(unittest.TestCase):
     @compare_plot_results
     def test_example_6(self):
         """Test Example 6: latitude-pressure plot."""
-        f = cf.read(f"{self.data_dir}/ggap.nc")[3]
+        fl = cf.read(f"{self.data_dir}/ggap.nc")
+        f = fl.select_by_identity("geopotential")[0]
 
         cfp.con(f.subspace(longitude=0))
 
     @compare_plot_results
     def test_example_7(self):
         """Test Example 7: latitude-pressure plot of a zonal mean."""
-        f = cf.read(f"{self.data_dir}/ggap.nc")[1]
+        fl = cf.read(f"{self.data_dir}/ggap.nc")
+        f = fl.select_by_identity("eastward_wind")[0]
 
         cfp.con(f.collapse("mean", "longitude"))
 
     @compare_plot_results
     def test_example_8(self):
         """Test Example 8: plot showing latitude against log-scale pressure."""
-        f = cf.read(f"{self.data_dir}/ggap.nc")[1]
+        fl = cf.read(f"{self.data_dir}/ggap.nc")
+        f = fl.select_by_identity("eastward_wind")[0]
 
         cfp.con(f.collapse("mean", "longitude"), ylog=1)
 
     @compare_plot_results
     def test_example_9(self):
         """Test Example 9: longitude-pressure plot."""
-        f = cf.read(f"{self.data_dir}/ggap.nc")[0]
+        fl = cf.read(f"{self.data_dir}/ggap.nc")
+        f = fl.select_by_identity("air_temperature")[0]
 
         cfp.con(f.collapse("mean", "latitude"))
 
@@ -242,8 +248,9 @@ class ExamplesTest(unittest.TestCase):
     def test_example_15(self):
         """Test Example 15: polar vector plot."""
         f = cf.read(f"{self.data_dir}/ggap.nc")
-        u = f[1]
-        v = f[2]
+
+        u = f.select_by_identity("eastward_wind")[0]
+        v = f.select_by_identity("northward_wind")[0]
         u = u.subspace(Z=500)
         v = v.subspace(Z=500)
 
@@ -300,8 +307,12 @@ class ExamplesTest(unittest.TestCase):
     def test_example_16b(self):
         """Test Example 16b: basic stream plot."""
         f = cf.read(f"{self.data_dir}/ggap.nc")
-        u = f[1].subspace(pressure=500)
-        v = f[2].subspace(pressure=500)
+
+        u = f.select_by_identity("eastward_wind")[0]
+        v = f.select_by_identity("northward_wind")[0]
+
+        u = u.subspace(pressure=500)
+        v = v.subspace(pressure=500)
 
         u = u.anchor("X", -180)
         v = v.anchor("X", -180)
@@ -313,8 +324,12 @@ class ExamplesTest(unittest.TestCase):
         """Test Example 16c: enhanced stream plot."""
         f = cf.read(f"{self.data_dir}/ggap.nc")
 
-        u = f[1].subspace(pressure=500)
-        v = f[2].subspace(pressure=500)
+        u = f.select_by_identity("eastward_wind")[0]
+        v = f.select_by_identity("northward_wind")[0]
+
+        u = u.subspace(pressure=500)
+        v = v.subspace(pressure=500)
+
         u = u.anchor("X", -180)
         v = v.anchor("X", -180)
 
@@ -365,7 +380,9 @@ class ExamplesTest(unittest.TestCase):
     @compare_plot_results
     def test_example_19a(self):
         """Test Example 19a: multiple plots as subplots."""
-        f = cf.read(f"{self.data_dir}/ggap.nc")[1]
+        fl = cf.read(f"{self.data_dir}/ggap.nc")
+        f = f.select_by_identity("eastward_wind")[0]
+
         cfp.gopen(rows=2, columns=2, bottom=0.2)
         cfp.gpos(1)
         cfp.con(f.subspace(pressure=500), colorbar=None)
@@ -387,7 +404,8 @@ class ExamplesTest(unittest.TestCase):
     @compare_plot_results
     def test_example_19b(self):
         """Test Example 19b: multiple plots with user specified positions."""
-        f = cf.read(f"{self.data_dir}/ggap.nc")[1]
+        fl = cf.read(f"{self.data_dir}/ggap.nc")
+        f = fl.select_by_identity("eastward_wind")[0]
 
         cfp.gopen(user_position=True)
 
@@ -408,7 +426,9 @@ class ExamplesTest(unittest.TestCase):
 
         User specified plot position to accomodate more than one color bar.
         """
-        f = cf.read(f"{self.data_dir}/ggap.nc")[1]
+        fl = cf.read(f"{self.data_dir}/ggap.nc")
+        f = fl.select_by_identity("eastward_wind")[0]
+
         g = f.collapse("X: mean")
 
         cfp.gopen(user_position=True)
@@ -688,7 +708,8 @@ class ExamplesTest(unittest.TestCase):
     @compare_plot_results
     def test_example_27(self):
         """Test Example 27: basic graph plot."""
-        f = cf.read(f"{self.data_dir}/ggap.nc")[1]
+        fl = cf.read(f"{self.data_dir}/ggap.nc")
+        f = fl.select_by_identity("eastward_wind")[0]
 
         g = f.collapse("X: mean")
 
@@ -704,7 +725,8 @@ class ExamplesTest(unittest.TestCase):
     @compare_plot_results
     def test_example_28(self):
         """Test Example 28: line and legend plot."""
-        f = cf.read(f"{self.data_dir}/ggap.nc")[1]
+        fl = cf.read(f"{self.data_dir}/ggap.nc")
+        f = fl.select_by_identity("eastward_wind")[0]
 
         g = f.collapse("X: mean")
 
@@ -774,13 +796,13 @@ class ExamplesTest(unittest.TestCase):
         tol = cf.RTOL(1e-5)
 
         fl = cf.read(f"{self.data_dir}/ggap.nc")
-        f = fl[1]
+        f = fl.select_by_identity("eastward_wind")[0]
 
         u = f.collapse("X: mean")
         u1 = u.subspace(Y=cf.isclose(-61.12099075))
         u2 = u.subspace(Y=cf.isclose(0.56074494))
 
-        g = fl[0]
+        g = fl.select_by_identity("air_temperature")[0]
         t = g.collapse("X: mean")
         t1 = t.subspace(Y=cf.isclose(-61.12099075))
         t2 = t.subspace(Y=cf.isclose(0.56074494))
