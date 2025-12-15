@@ -1,7 +1,20 @@
-.. _cf_fieldlist: https://ncas-cms.github.io/cf-python/class/cf.FieldList.html
-.. _cf_field: https://ncas-cms.github.io/cf-python/introduction.html#term-field-construct
-.. _cf_select_methods: https://ncas-cms.github.io/cf-python/class/cf.FieldList.html#selecting
-.. _cf_select_by_identity: https://ncas-cms.github.io/cf-python/method/cf.FieldList.select_by_identity.html#cf.FieldList.select_by_identity
+.. _FieldList: https://ncas-cms.github.io/cf-python/class/cf.FieldList.html
+.. _Field: https://ncas-cms.github.io/cf-python/introduction.html#term-field-construct
+.. _select_methods: https://ncas-cms.github.io/cf-python/class/cf.FieldList.html#selecting
+.. _select_by_identity: https://ncas-cms.github.io/cf-python/method/cf.FieldList.select_by_identity.html#cf.FieldList.select_by_identity
+
+.. Sadly with Sphinx hyperlinking liteal (monospace) text can't be done in
+   a nice way - this replacement methods is as good as it gets :(, see e.g:
+   stackoverflow.com/questions/4743845/format-text-in-a-link-in-restructuredtext/4836544#4836544
+   
+.. |FieldList| replace:: ``FieldList``
+.. |Field| replace:: ``Field``
+.. |select_by_identity| replace:: ``select_by_identity``
+
+.. Use the same principle to include an asterisk which can't be escaped simply
+.. |select_by_star| replace:: :code:`select_by_*`
+.. _select_by_star: https://ncas-cms.github.io/cf-python/class/cf.FieldList.html#selecting
+
 
 .. _examples:
 
@@ -122,19 +135,17 @@ Listing of all examples
 
 .. tip::
    Most of the examples use cf-python to read in a dataset to a
-   :literal:`FieldList <cf_fieldlist_>`_
-   and then extract one or more :literal:`Field <cf_field_>`_ objects
+   |FieldList|_ and then extract one or more |Field|_ objects
    from the resulting ``FieldList`` to use (for plotting), which
    can be done either by *indexing* or through use of the cf-python
-   *selection methods*,
-   :literal:`select_by_* <cf_select_methods_>`_.
+   *selection methods*, |select_by_star|_.
 
-   For consistency aAcross the examples we use the
-   :literal:`select_by_identity`_ method to extract field(s)
+   For consistency across the examples we use the
+   |select_by_identity|_ method to extract field(s)
    because it is more explicit about the nature of the ``Field``
    choice than indexing, *except* where the ``FieldList`` contains
    only one field where we use the first (0th) index to take the
-   only field. But note the alternative ways one can use.
+   only field. But note the alternative approaches:
 
    .. code-block:: python
       :caption: Some alternative ways to extract a ``Field`` from a
@@ -161,12 +172,12 @@ Listing of all examples
       >>> g.equals(f)
       True
 
-      >>> # Extract the same field through select_by_units
+      >>> # Extract the same field through select_by_units (and indexing)
       >>> fl.select_by_units("kg kg**-1")
       [<CF Field: long_name=Ozone mass mixing ratio(time(1), pressure(23), latitude(160), longitude(320)) kg kg**-1>,
        <CF Field: specific_humidity(time(1), pressure(23), latitude(160), longitude(320)) kg kg**-1>]
       >>> h = fl.select_by_units("kg kg**-1")[1]
-      >>> # Check this is the same as the f field above (and hence g)
+      >>> # Check this is the same as the f field above (and hence g too)
       >>> h.equals(f)
 
 .. toctree::
