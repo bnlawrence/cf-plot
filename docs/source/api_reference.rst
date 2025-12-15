@@ -77,21 +77,17 @@ routines, and wish to have this in future, please
 :ref:`get in touch <ways-to-contact-us>` to let
 us know and we may be able to support them again.
 
-
-.. toctree::
-   :maxdepth: 2
-
-   api/_bfill
-   api/_bfill_ugrid
-   api/_cf_data_assign
-   api/_check_data
-   api/_cscale_get_map
-   api/_dim_titles
-   api/_gvals
-   api/_map_title
-   api/_mapaxis
-   api/_plot_map_axes
-   api/_process_color_scales
-   api/_set_map
-   api/_supscr
-   api/_timeaxis
+* ``_bfill``
+* ``_bfill_ugrid``
+* ``_cf_data_assign``
+* ``_check_data``
+* ``_cscale_get_map``
+* ``_dim_titles``
+* ``_gvals``
+* ``_map_title``
+* ``_mapaxis``
+* ``_plot_map_axes``
+* ``_process_color_scales``
+* ``_set_map``
+* ``_supscr``
+* ``_timeaxis``
