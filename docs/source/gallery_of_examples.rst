@@ -1,3 +1,8 @@
+.. _cf_fieldlist: https://ncas-cms.github.io/cf-python/class/cf.FieldList.html
+.. _cf_field: https://ncas-cms.github.io/cf-python/introduction.html#term-field-construct
+.. _cf_select_methods: https://ncas-cms.github.io/cf-python/class/cf.FieldList.html#selecting
+.. _cf_select_by_identity: https://ncas-cms.github.io/cf-python/method/cf.FieldList.select_by_identity.html#cf.FieldList.select_by_identity
+
 .. _examples:
 
 Examples
@@ -115,6 +120,54 @@ Listing of all examples
       import cf
       import numpy as np  # only required for some examples
 
+.. tip::
+   Most of the examples use cf-python to read in a dataset to a
+   :literal:`FieldList <cf_fieldlist_>`_
+   and then extract one or more :literal:`Field <cf_field_>`_ objects
+   from the resulting ``FieldList`` to use (for plotting), which
+   can be done either by *indexing* or through use of the cf-python
+   *selection methods*,
+   :literal:`select_by_* <cf_select_methods_>`_.
+
+   For consistency aAcross the examples we use the
+   :literal:`select_by_identity`_ method to extract field(s)
+   because it is more explicit about the nature of the ``Field``
+   choice than indexing, *except* where the ``FieldList`` contains
+   only one field where we use the first (0th) index to take the
+   only field. But note the alternative ways one can use.
+
+   .. code-block:: python
+      :caption: Some alternative ways to extract a ``Field`` from a
+                ``FieldList`` using cf-python
+
+      >>> # Get the FieldList (call it 'fl')
+      >>> fl = cf.read(f"cfplot_data/ggap.nc")
+      >>> print(fl)
+      [<CF Field: divergence_of_wind(time(1), pressure(23), latitude(160), longitude(320)) s**-1>,
+       <CF Field: long_name=Ozone mass mixing ratio(time(1), pressure(23), latitude(160), longitude(320)) kg kg**-1>,
+       <CF Field: long_name=Potential vorticity(time(1), pressure(23), latitude(160), longitude(320)) K m**2 kg**-1 s**-1>,
+       <CF Field: specific_humidity(time(1), pressure(23), latitude(160), longitude(320)) kg kg**-1>,
+       ...
+      ]
+
+      >>> # Extract the fourth field by indexing
+      >>> f = fl[3]
+      >>> f
+      <CF Field: specific_humidity(time(1), pressure(23), latitude(160), longitude(320)) kg kg**-1>
+
+      >>> # Extract the same field through select_by_identity
+      >>> g = fl.select_by_identity("specific_humidity")[0]
+      >>> # Check this is the same as the f field above
+      >>> g.equals(f)
+      True
+
+      >>> # Extract the same field through select_by_units
+      >>> fl.select_by_units("kg kg**-1")
+      [<CF Field: long_name=Ozone mass mixing ratio(time(1), pressure(23), latitude(160), longitude(320)) kg kg**-1>,
+       <CF Field: specific_humidity(time(1), pressure(23), latitude(160), longitude(320)) kg kg**-1>]
+      >>> h = fl.select_by_units("kg kg**-1")[1]
+      >>> # Check this is the same as the f field above (and hence g)
+      >>> h.equals(f)
 
 .. toctree::
    :maxdepth: 2
