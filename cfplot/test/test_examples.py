@@ -802,8 +802,8 @@ class ExamplesTest(unittest.TestCase):
         tol = cf.RTOL(1e-5)
 
         fl = cf.read(f"{self.data_dir}/ggap.nc")
-        f = fl.select_by_identity("eastward_wind")[0]
 
+        f = fl.select_by_identity("eastward_wind")[0]
         u = f.collapse("X: mean")
         u1 = u.subspace(Y=cf.isclose(-61.12099075))
         u2 = u.subspace(Y=cf.isclose(0.56074494))

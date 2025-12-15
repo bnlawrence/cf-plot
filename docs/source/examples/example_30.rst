@@ -10,13 +10,13 @@ Example 30: Line plot with two x axes
    tol = cf.RTOL(1e-5)
 
    fl = cf.read(f"cfplot_data/ggap.nc")
-   f = fl[1]
 
+   f = fl.select_by_identity("eastward_wind")[0]
    u = f.collapse("X: mean")
    u1 = u.subspace(Y=cf.isclose(-61.12099075))
    u2 = u.subspace(Y=cf.isclose(0.56074494))
 
-   g = fl[0]
+   g = fl.select_by_identity("air_temperature")[0]
    t = g.collapse("X: mean")
    t1 = t.subspace(Y=cf.isclose(-61.12099075))
    t2 = t.subspace(Y=cf.isclose(0.56074494))

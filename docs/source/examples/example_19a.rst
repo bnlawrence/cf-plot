@@ -7,7 +7,9 @@ Example 19a: Multiple plots
 .. code-block:: python
    :caption: Making a single figure with multiple plots on it
 
-   f = cf.read(f"cfplot_data/ggap.nc")[1]
+   fl = cf.read(f"{self.data_dir}/ggap.nc")
+   f = fl.select_by_identity("eastward_wind")[0]
+
    cfp.gopen(rows=2, columns=2, bottom=0.2)
    cfp.gpos(1)
    cfp.con(f.subspace(pressure=500), colorbar=None)
