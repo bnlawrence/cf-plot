@@ -3,6 +3,8 @@
 Support and contributing
 ************************
 
+.. _ways-to-contact-us:
+
 Ways to contact us
 ------------------
 

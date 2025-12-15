@@ -2,11 +2,8 @@ API reference
 *************
 
 
-User-facing API
----------------
-
-These functions *are* intended for user use.
-
+API
+---
 
 .. toctree::
    :maxdepth: 2
@@ -50,11 +47,36 @@ These functions *are* intended for user use.
    api/vect
    api/vloc
 
-   
-Internal API
+
+Deprecations
 ------------
 
-These functions *are not* intended for user use.
+These functions *are not* intended for user use and will be removed in the next
+version. In most cases these have no use in the codebase as of v3.3.0.
+
+.. toctree::
+   :maxdepth: 2
+
+   regrid
+
+Note the functions ``compare_arrays`` and ``regression_tests`` (version 3.3.0
+and earlier) related to testing only so have been moved out of the
+functional codebase.
+
+   
+Obsolete Internal API
+---------------------
+
+These routines were exposed in the user-facing API at versions 3.3.0 and
+below but were marked as not being intended for user use. They have
+therefore been removed except for under-the-hood processing at version 3.5.0.
+They are listed here for completeness and .
+
+If you made use of any of the functionality provided by these internal-use
+routines, and wish to have this in future, please
+:ref:`get in touch <ways-to-contact-us>` to let
+us know and we may be able to support them again.
+
 
 .. toctree::
    :maxdepth: 2
@@ -73,19 +95,3 @@ These functions *are not* intended for user use.
    api/_set_map
    api/_supscr
    api/_timeaxis
-
-
-Deprecations
-------------
-
-These functions *are not* intended for user use and will be removed in the next
-version. In most cases these have no use in the codebase as of v3.3.0.
-
-.. toctree::
-   :maxdepth: 2
-
-   regrid
-
-Note the functions ``compare_arrays`` and ``regression_tests`` (version 3.3.0
-and earlier) related to testing only so have been moved out of the
-functional codebase.
