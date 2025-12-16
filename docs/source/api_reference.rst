@@ -6,117 +6,111 @@ API
 ===
 
 
-.. toctree::
-   :maxdepth: 2
-
-
-
-
 Plotting routines
 -----------------
 
-.. toctree::
-   :maxdepth: 2
+.. autosummary::
+   :nosignatures:
 
-   api/con
-   api/lineplot
-   api/stipple
-   api/stream
-   api/traj
-   api/vect
+   cfplot.con
+   cfplot.lineplot
+   cfplot.stipple
+   cfplot.stream
+   cfplot.traj
+   cfplot.vect
 
 
 Graphics related
 ----------------
 
-.. toctree::
-   :maxdepth: 2
+.. autosummary::
+   :nosignatures:
 
-   api/gopen
-   api/gclose
-   api/gpos
+   cfplot.gopen
+   cfplot.gclose
+   cfplot.gpos
 
 
 Parameter related
 -----------------
 
-.. toctree::
-   :maxdepth: 2
+.. autosummary::
+   :nosignatures:
 
-   api/axes
-   api/cscale
-   api/gset
-   api/levs
-   api/mapset
-   api/plotvars
-   api/reset
-   api/setvars
+   cfplot.axes
+   cfplot.cscale
+   cfplot.gset
+   cfplot.levs
+   cfplot.mapset
+   cfplot.plotvars
+   cfplot.reset
+   cfplot.setvars
 
 
 Mapping related
 ---------------
 
-.. toctree::
-   :maxdepth: 2
+.. autosummary::
+   :nosignatures:
 
-   api/axes_plot
-   api/map_grid
+   cfplot.axes_plot
+   cfplot.map_grid
 
 
 Colour related
 --------------
 
-.. toctree::
-   :maxdepth: 2
+.. autosummary::
+   :nosignatures:
 
-   api/cbar
+   cfplot.cbar
 
 
 Calculations
 ------------
 
-.. toctree::
-   :maxdepth: 2
+.. autosummary::
+   :nosignatures:
 
-   api/calculate_levels
+   cfplot.calculate_levels
 
 
 Utility Routines
 ----------------
 
-.. toctree::
-   :maxdepth: 2
+.. autosummary::
+   :nosignatures:
 
-   api/add_cyclic
-   api/cf_var_name
-   api/cf_var_name_titles
-   api/find_dim_names
-   api/find_pos_in_array
-   api/find_z
-   api/fix_floats
-   api/generate_titles
-   api/irregular_window
-   api/max_ndecs_data
-   api/ndecs
-   api/pcon
-   api/polar_regular_grid
-   api/rgaxes
-   api/stipple_points
-   api/vloc
+   cfplot.add_cyclic
+   cfplot.cf_var_name
+   cfplot.cf_var_name_titles
+   cfplot.find_dim_names
+   cfplot.find_pos_in_array
+   cfplot.find_z
+   cfplot.fix_floats
+   cfplot.generate_titles
+   cfplot.irregular_window
+   cfplot.max_ndecs_data
+   cfplot.ndecs
+   cfplot.pcon
+   cfplot.polar_regular_grid
+   cfplot.rgaxes
+   cfplot.stipple_points
+   cfplot.vloc
 
 
 Validation
 ----------
 
-.. toctree::
-   :maxdepth: 2
+.. autosummary::
+   :nosignatures:
 
-   api/check_well_formed
-   api/orca_check
+   cfplot.check_well_formed
+   cfplot.orca_check
 
 
-Deprecated and Obsolete API
-===========================
+Deprecated/Obsolete APIs
+========================
 
 Deprecations
 ------------
@@ -124,8 +118,8 @@ Deprecations
 These functions *are not* intended for user use and will be removed in the next
 version. In most cases these have no use in the codebase as of v3.3.0.
 
-.. toctree::
-   :maxdepth: 2
+.. autosummary::
+   :nosignatures:
 
    regrid
 
