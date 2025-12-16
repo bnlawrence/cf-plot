@@ -6,6 +6,7 @@ Example 13: Basic vector plot
 
 .. code-block:: python
    :caption: Making a basic vector plot
+
    f = cf.read(f"cfplot_data/ggap.nc")
 
    u = f.select_by_identity("eastward_wind")[0]

@@ -88,7 +88,7 @@ from .utils import (
     stipple_points,
     vloc,
 )
-from .validate import _check_data, check_well_formed, orca_check
+from .validate import check_well_formed, orca_check  # _check_data internal
 from .vector import vect
 
 # Process versions and display ------------------------------------------

@@ -38,6 +38,14 @@ extensions = [
     "sphinx_design",
 ]
 
+autosummary_generate = True
+# Autodoc options: esp. to prevent pages being generated for internal API
+# objects
+autodoc_default_options = {
+    "members": True,
+    "private-members": False,
+}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 

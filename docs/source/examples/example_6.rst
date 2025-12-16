@@ -8,7 +8,8 @@ Example 6: Latitude-pressure plot at set longitude
    :caption: Making a plot for a given longitude value with latitude and
              pressure as the axes
 
-   f = cf.read(f"cfplot_data/ggap.nc")[3]
+   fl = cf.read(f"{self.data_dir}/ggap.nc")
+   f = fl.select_by_identity("geopotential")[0]
  
    cfp.con(f.subspace(longitude=0))
 

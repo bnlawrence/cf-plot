@@ -8,7 +8,8 @@ Example 21a: User-defined axes
    :caption: Adjusting the default axes labelling to prevent overlapping
              labels
 
-   f = cf.read(f"cfplot_data/Geostropic_Adjustment.nc")[0]
+   fl = cf.read(f"{self.data_dir}/Geostropic_Adjustment.nc")
+   f = fl.select_by_identity("ncvar%v")[0]
 
    cfp.con(
        f.subspace[9],

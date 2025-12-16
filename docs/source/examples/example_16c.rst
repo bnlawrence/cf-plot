@@ -11,8 +11,12 @@ Example 16c: Stream plot in a colour scale
 
    f = cf.read(f"cfplot_data/ggap.nc")
 
-   u = f[1].subspace(pressure=500)
-   v = f[2].subspace(pressure=500)
+   u = f.select_by_identity("eastward_wind")[0]
+   v = f.select_by_identity("northward_wind")[0]
+
+   u = u.subspace(pressure=500)
+   v = v.subspace(pressure=500)
+
    u = u.anchor("X", -180)
    v = v.anchor("X", -180)
 

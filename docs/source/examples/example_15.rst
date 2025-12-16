@@ -8,8 +8,9 @@ Example 15: Polar projection vector plot
    :caption: Making a vector plot on a North Pole polar projection
 
    f = cf.read(f"cfplot_data/ggap.nc")
-   u = f[1]
-   v = f[2]
+
+   u = f.select_by_identity("eastward_wind")[0]
+   v = f.select_by_identity("northward_wind")[0]
    u = u.subspace(Z=500)
    v = v.subspace(Z=500)
 
