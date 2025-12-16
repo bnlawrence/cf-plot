@@ -38,6 +38,7 @@ extensions = [
     "sphinx_design",
 ]
 
+autosummary_generate = True
 # Autodoc options: esp. to prevent pages being generated for internal API
 # objects
 autodoc_default_options = {
