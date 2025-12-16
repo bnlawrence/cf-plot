@@ -3,50 +3,120 @@ API reference
 
 
 API
----
+===
+
+
+.. toctree::
+   :maxdepth: 2
+
+
+
+
+Plotting routines
+-----------------
+
+.. toctree::
+   :maxdepth: 2
+
+   api/con
+   api/lineplot
+   api/stipple
+   api/stream
+   api/traj
+   api/vect
+
+
+Graphics related
+----------------
+
+.. toctree::
+   :maxdepth: 2
+
+   api/gopen
+   api/gclose
+   api/gpos
+
+
+Parameter related
+-----------------
+
+.. toctree::
+   :maxdepth: 2
+
+   api/axes
+   api/cscale
+   api/gset
+   api/levs
+   api/mapset
+   api/plotvars
+   api/reset
+   api/setvars
+
+
+Mapping related
+---------------
+
+.. toctree::
+   :maxdepth: 2
+
+   api/axes_plot
+   api/map_grid
+
+
+Colour related
+--------------
+
+.. toctree::
+   :maxdepth: 2
+
+   api/cbar
+
+
+Calculations
+------------
+
+.. toctree::
+   :maxdepth: 2
+
+   api/calculate_levels
+
+
+Utility Routines
+----------------
 
 .. toctree::
    :maxdepth: 2
 
    api/add_cyclic
-   api/axes
-   api/axes_plot
-   api/calculate_levels
-   api/cbar
    api/cf_var_name
    api/cf_var_name_titles
-   api/check_well_formed
-   api/con
-   api/cscale
    api/find_dim_names
    api/find_pos_in_array
    api/find_z
    api/fix_floats
-   api/gclose
    api/generate_titles
-   api/gopen
-   api/gpos
-   api/gset
    api/irregular_window
-   api/levs
-   api/lineplot
-   api/map_grid
-   api/mapset
    api/max_ndecs_data
    api/ndecs
-   api/orca_check
    api/pcon
    api/polar_regular_grid
-   api/reset
    api/rgaxes
-   api/setvars
-   api/stipple
    api/stipple_points
-   api/stream
-   api/traj
-   api/vect
    api/vloc
 
+
+Validation
+----------
+
+.. toctree::
+   :maxdepth: 2
+
+   api/check_well_formed
+   api/orca_check
+
+
+Deprecated and Obsolete API
+===========================
 
 Deprecations
 ------------
@@ -63,14 +133,14 @@ Note the functions ``compare_arrays`` and ``regression_tests`` (version 3.3.0
 and earlier) related to testing only so have been moved out of the
 functional codebase.
 
-   
+
 Obsolete Internal API
 ---------------------
 
 These routines were exposed in the user-facing API at versions 3.3.0 and
 below but were marked as not being intended for user use. They have
 therefore been removed except for under-the-hood processing at version 3.5.0.
-They are listed here for completeness and .
+They are listed here for completeness and posterity.
 
 If you made use of any of the functionality provided by these internal-use
 routines, and wish to have this in future, please
