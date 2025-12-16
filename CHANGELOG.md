@@ -18,8 +18,20 @@ of being developed elsewhere.
 
 #### Version `3.5.0`, release TBC
 
+* Modularise the codebase, which has no user-facing implications except
+  that functionality is available via sub-modules as well as at the top-level
+  e.g. `cfp.con` is available also as `cfp.contour.con`, `cfp.gopen` is also
+  `cfp.graphic.graphic.gopen` etc.
+  (https://github.com/NCAS-CMS/cf-plot/issues/11)
+* Make the internal API obsolete - it is no longer exposed to the user
+   (but similar functionality can be added upon request).
+* Update the API reference to group and categorise all routines.
 * Add missing space between variable name and units in
   colour bar titles (https://github.com/NCAS-CMS/cf-plot/issues/115)
+* Update any (documentation) examples which extract a ``Field`` from
+  a ``Fieldlist`` of length greater than one to use ``select_by_identity ``
+  instead of indexing, for clarity
+  (https://github.com/NCAS-CMS/cf-plot/issues/119)
 
 ### Version `3.4.X`, first released (`3.4.0`) `2025-04-28`
 
