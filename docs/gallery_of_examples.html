@@ -688,6 +688,54 @@ cfplot is always aliased to <code class="docutils literal notranslate"><span cla
 </div>
 </div>
 </div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Most of the examples use cf-python to read in a dataset to a
+<a class="reference external" href="https://ncas-cms.github.io/cf-python/class/cf.FieldList.html"><code class="docutils literal notranslate"><span class="pre">FieldList</span></code></a> and then extract one or more <a class="reference external" href="https://ncas-cms.github.io/cf-python/introduction.html#term-field-construct"><code class="docutils literal notranslate"><span class="pre">Field</span></code></a> objects
+from the resulting <code class="docutils literal notranslate"><span class="pre">FieldList</span></code> to use (for plotting), which
+can be done either by <em>indexing</em> or through use of the cf-python
+<em>selection methods</em>, <a class="reference external" href="https://ncas-cms.github.io/cf-python/class/cf.FieldList.html#selecting"><code class="code docutils literal notranslate"><span class="pre">select_by_*</span></code></a>.</p>
+<p>For consistency across the examples we use the
+<a class="reference external" href="https://ncas-cms.github.io/cf-python/method/cf.FieldList.select_by_identity.html#cf.FieldList.select_by_identity"><code class="docutils literal notranslate"><span class="pre">select_by_identity</span></code></a> method to extract field(s)
+because it is more explicit about the nature of the <code class="docutils literal notranslate"><span class="pre">Field</span></code>
+choice than indexing, <em>except</em> where the <code class="docutils literal notranslate"><span class="pre">FieldList</span></code> contains
+only one field where we use the first (0th) index to take the
+only field. But note the alternative approaches:</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">Some alternative ways to extract a <code class="docutils literal notranslate"><span class="pre">Field</span></code> from a
+<code class="docutils literal notranslate"><span class="pre">FieldList</span></code> using cf-python</span><a class="headerlink" href="#id3" title="Link to this code">#</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get the FieldList (call it &#39;fl&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fl</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cfplot_data/ggap.nc&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">fl</span><span class="p">)</span>
+<span class="go">[&lt;CF Field: divergence_of_wind(time(1), pressure(23), latitude(160), longitude(320)) s**-1&gt;,</span>
+<span class="go"> &lt;CF Field: long_name=Ozone mass mixing ratio(time(1), pressure(23), latitude(160), longitude(320)) kg kg**-1&gt;,</span>
+<span class="go"> &lt;CF Field: long_name=Potential vorticity(time(1), pressure(23), latitude(160), longitude(320)) K m**2 kg**-1 s**-1&gt;,</span>
+<span class="go"> &lt;CF Field: specific_humidity(time(1), pressure(23), latitude(160), longitude(320)) kg kg**-1&gt;,</span>
+<span class="go"> ...</span>
+<span class="go">]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Extract the fourth field by indexing</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">fl</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span>
+<span class="go">&lt;CF Field: specific_humidity(time(1), pressure(23), latitude(160), longitude(320)) kg kg**-1&gt;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Extract the same field through select_by_identity</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">fl</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;specific_humidity&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Check this is the same as the f field above</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">True</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Extract the same field through select_by_units (and indexing)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fl</span><span class="o">.</span><span class="n">select_by_units</span><span class="p">(</span><span class="s2">&quot;kg kg**-1&quot;</span><span class="p">)</span>
+<span class="go">[&lt;CF Field: long_name=Ozone mass mixing ratio(time(1), pressure(23), latitude(160), longitude(320)) kg kg**-1&gt;,</span>
+<span class="go"> &lt;CF Field: specific_humidity(time(1), pressure(23), latitude(160), longitude(320)) kg kg**-1&gt;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span> <span class="o">=</span> <span class="n">fl</span><span class="o">.</span><span class="n">select_by_units</span><span class="p">(</span><span class="s2">&quot;kg kg**-1&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Check this is the same as the f field above (and hence g too)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="examples/example_1.html">Example 1: Basic contour plot in default projection</a></li>
@@ -756,8 +804,8 @@ total size ~125 MB) available from
 <a class="reference download external" download="" href="https://github.com/NCAS-CMS/cf-plot/raw/main/docs/source/_downloads/example-datasets.z01"><code class="xref download docutils literal notranslate"><span class="pre">here</span> <span class="pre">(part</span> <span class="pre">1</span> <span class="pre">of</span> <span class="pre">2)</span></code></a> and
 <a class="reference download external" download="" href="https://github.com/NCAS-CMS/cf-plot/raw/main/docs/source/_downloads/example-datasets.zip"><code class="xref download docutils literal notranslate"><span class="pre">here</span> <span class="pre">(part</span> <span class="pre">2</span> <span class="pre">of</span> <span class="pre">2)</span></code></a> which can be
 unzipped together to the full dataset directory as follows:</p>
-<div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text"><em>Accessing all of the datasets for the cf-plot examples</em></span><a class="headerlink" href="#id3" title="Link to this code">#</a></div>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-text"><em>Accessing all of the datasets for the cf-plot examples</em></span><a class="headerlink" href="#id4" title="Link to this code">#</a></div>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Download the split zip parts: either use &#39;wget&#39; as below or</span>
 <span class="c1"># download both files from the links above</span>
 wget<span class="w"> </span>https://github.com/NCAS-CMS/cf-plot/tree/main/docs/source/_downloads/example-datasets.z01
