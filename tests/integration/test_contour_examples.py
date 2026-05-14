@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import cf
+import matplotlib.pyplot as plt
 import pytest
 
 import cfplot as cfp
@@ -11,6 +12,16 @@ import cfplot as cfp
 # Path to test data
 DATA_DIR = Path(__file__).parent.parent.parent / "docs" / "source" / "data"
 REF_IMAGE_DIR = Path(__file__).parent.parent.parent / "cfplot" / "test" / "reference-example-images"
+
+
+@pytest.fixture(autouse=True)
+def setup_cfplot():
+    """Reset cfplot and close figures around each integration test."""
+    plt.close("all")
+    cfp.reset()
+    yield
+    cfp.reset()
+    plt.close("all")
 
 
 @pytest.mark.integration

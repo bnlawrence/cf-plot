@@ -7,7 +7,6 @@ import os
 import subprocess
 import sys
 from copy import deepcopy
-from distutils.version import StrictVersion
 
 import cartopy
 import cartopy.crs as ccrs
@@ -17,6 +16,7 @@ import matplotlib
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plot
 import numpy as np
+from packaging.version import Version
 import shapely.geometry as sgeom
 from matplotlib.collections import PolyCollection
 from scipy import interpolate
@@ -31,7 +31,7 @@ errstr = (
 try:
     import cf
 
-    if StrictVersion(cf.__version__) < StrictVersion(cf_version_min):
+    if Version(cf.__version__) < Version(cf_version_min):
         raise Warning(errstr)
 except ImportError:
     raise Warning(errstr)
