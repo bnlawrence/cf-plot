@@ -10681,37 +10681,30 @@ def find_dim_names(field):
         if field.coord(dcoords[i]).T:
             nt += 1
 
-    # New test
-    remove_aux = False
+    # Map one coordinate to each data axis. Prefer dimension coordinates when
+    # available, but gracefully fall back to auxiliary coordinates.
+    coords = []
+    for axis in daxes:
+        chosen = None
+        for coord in dcoords:
+            try:
+                caxes = field.get_data_axes(coord)
+            except Exception:
+                continue
 
-    # Strip out any auxiliary coordinates if the field is not a
-    # trajectory field
-    if remove_aux:
-        for i in np.arange(len(dcoords)):
-            if dcoords[i][:-1] == "auxiliarycoordinate":
-                dcoords[i] = "aux"
-        dcoords = list(filter(("aux").__ne__, dcoords))
+            if not caxes or caxes[0] != axis:
+                continue
 
-    # Convert these into corresponding dimension coordinates
-    if remove_aux:
-        coords = []
-        for i in np.arange(len(daxes)):
-            val = daxes[i]
-            coord = None
-            for j in np.arange(len(dcoords)):
-                if val == field.get_data_axes(dcoords[j])[0]:
-                    coord = dcoords[j]
+            # Prefer non-auxiliary coordinates if present.
+            if not str(coord).startswith("auxiliarycoordinate"):
+                chosen = coord
+                break
 
-            if coord is not None:
-                coords.append(coord)
-            else:
-                errstr = (
-                    "find_data_names error  - cannot find a coordinate for "
-                    f"{val}\nin the data\n"
-                )
-                raise Warning(errstr)
-    else:
-        coords = dcoords
+            if chosen is None:
+                chosen = coord
+
+        if chosen is not None:
+            coords.append(chosen)
 
     # Make a copy of coords in mycoords
     mycoords = deepcopy(coords)
@@ -10720,7 +10713,7 @@ def find_dim_names(field):
     # If the number of coordinates of this type is greater than 1 then don't
     # do this as f.coord('Z') gives an
     # error as there are more that one coordinates to return
-    for i in np.arange(len(daxes)):
+    for i in np.arange(len(coords)):
         if field.coord(coords[i]).X:
             if nx == 1:
                 mycoords[i] = "X"

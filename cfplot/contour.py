@@ -727,7 +727,7 @@ def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
             return False
 
     ptype = kwargs.get("ptype", 0)
-    if not isinstance(f, cf.Field) and ptype not in (0, None):
+    if not isinstance(f, cf.Field) and ptype not in (0, 1, None):
         return False
 
     return True
@@ -962,7 +962,17 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         plotvars,
     )
 
-    if isinstance(f, cf.Field):
+    if isinstance(f, cf.Field) and (x is not None or y is not None):
+        field_arr = np.asarray(f.array)
+        x_arr = np.asarray(x.array) if isinstance(x, cf.Field) else x
+        y_arr = np.asarray(y.array) if isinstance(y, cf.Field) else y
+        data = ContourData.from_arrays(
+            field=field_arr,
+            x=None if x_arr is None else np.asarray(x_arr),
+            y=None if y_arr is None else np.asarray(y_arr),
+        )
+        data = replace(data, ptype=kwargs.get("ptype", 0) or 0)
+    elif isinstance(f, cf.Field):
         data = ContourData.from_cf_field(
             f=f,
             colorbar_title=kwargs.get("colorbar_title", None),
@@ -974,9 +984,10 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             return False
     else:
         data = ContourData.from_arrays(field=np.asarray(f), x=x, y=y)
+        data = replace(data, ptype=kwargs.get("ptype", 0) or 0)
 
     # Keep legacy behavior for axis-routing logic by setting active plot type.
-    plotvars.plot_type = data.ptype if isinstance(f, cf.Field) else kwargs.get("ptype", 0)
+    plotvars.plot_type = data.ptype
 
     fill = kwargs.get("fill", global_fill)
     lines = kwargs.get("lines", global_lines)
@@ -1125,7 +1136,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     default_xlabel = data.xlabel or ""
     default_ylabel = data.ylabel or ""
 
-    if isinstance(f, cf.Field) and data.ptype == 1:
+    if data.ptype == 1:
         from .cfplot import _set_map, mapset
 
         animation = bool(kwargs.get("animation", False))
