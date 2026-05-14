@@ -15,6 +15,16 @@ import numpy as np
 from matplotlib.axes import Axes
 
 
+def _to_float_or_none(value: Any) -> float | None:
+    """Convert numeric-like metadata values to float, else return None."""
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 @dataclass(frozen=True)
 class ContourData:
     """Read-only contour inputs after extraction and validation.
@@ -80,8 +90,8 @@ class ContourData:
             colorbar_title=cbar_title or "",
             xlabel=xlabel or "",
             ylabel=ylabel or "",
-            xpole=xpole,
-            ypole=ypole,
+            xpole=_to_float_or_none(xpole),
+            ypole=_to_float_or_none(ypole),
         )
 
     @classmethod
@@ -736,6 +746,207 @@ def _clear_animation_artists(plotvars: Any) -> None:
     plotvars._contour_animation_artists = []
 
 
+def _render_ptype6_rotated_pole(
+    *,
+    f: Any,
+    data: ContourData,
+    kwargs: dict[str, Any],
+    clevs: np.ndarray,
+    cs: ColourScale,
+    cbar_labels: list[str] | Any,
+    colorbar_title: str,
+    fill: bool,
+    lines: bool,
+    blockfill: bool,
+    line_labels: bool,
+    zero_thick: bool | int,
+    colors: Any,
+    linewidths: Any,
+    linestyles: Any,
+    alpha: float,
+    zorder: int,
+) -> bool:
+    """Render ptype 6 (rotated pole) for cylindrical transformed-map mode."""
+    from .cfplot import (
+        _map_title,
+        _plot_map_axes,
+        _set_map,
+        _bfill,
+        cbar,
+        ccrs,
+        mapset,
+        ndecs,
+        plotvars,
+    )
+
+    if data.x is None or data.y is None or data.levels is None:
+        return False
+
+    # Initial slice: support cylindrical transformed-map path.
+    if plotvars.proj != "cyl":
+        return False
+
+    if plotvars.user_plot == 0:
+        from .cfplot import gopen
+
+        gopen(user_plot=0)
+
+    xpts = data.x
+    ypts = data.y
+
+    rotated_pole = f.ref("grid_mapping_name:rotated_latitude_longitude", default=None)
+    if not rotated_pole:
+        return False
+    xpole = _to_float_or_none(rotated_pole.get("grid_north_pole_longitude"))
+    ypole = _to_float_or_none(rotated_pole.get("grid_north_pole_latitude"))
+    if xpole is None or ypole is None:
+        return False
+
+    transform = ccrs.RotatedPole(pole_latitude=ypole, pole_longitude=xpole)
+
+    if plotvars.user_mapset == 1:
+        _set_map()
+    else:
+        if np.ndim(xpts) == 1:
+            lonpts, latpts = np.meshgrid(xpts, ypts)
+        else:
+            lonpts = xpts
+            latpts = ypts
+        points = ccrs.PlateCarree().transform_points(
+            transform, lonpts.flatten(), latpts.flatten()
+        )
+        lons = np.array(points)[:, 0]
+        lats = np.array(points)[:, 1]
+
+        mapset(
+            lonmin=float(np.min(lons)),
+            lonmax=float(np.max(lons)),
+            latmin=float(np.min(lats)),
+            latmax=float(np.max(lats)),
+            user_mapset=0,
+            resolution=plotvars.resolution,
+        )
+        _set_map()
+
+    plotargs = {"transform": transform}
+    plot = plotvars.mymap
+
+    frame_artists: list[Any] = []
+
+    if fill:
+        cmap = cs.get_cmap()
+        cset = plot.contourf(
+            xpts,
+            ypts,
+            data.field * data.fmult,
+            clevs,
+            extend=plotvars.levels_extend,
+            cmap=cmap,
+            norm=plotvars.norm,
+            alpha=alpha,
+            zorder=zorder,
+            **plotargs,
+        )
+        if hasattr(cset, "collections"):
+            frame_artists.extend(list(cset.collections))
+
+    if blockfill:
+        _bfill(
+            f=data.field * data.fmult,
+            x=xpts,
+            y=ypts,
+            clevs=clevs,
+            lonlat=False,
+            bound=0,
+            alpha=alpha,
+            fast=kwargs.get("blockfill_fast", None),
+            zorder=zorder,
+            transform=transform,
+        )
+
+    if lines:
+        cs_lines = plot.contour(
+            xpts,
+            ypts,
+            data.field * data.fmult,
+            clevs,
+            colors=colors,
+            linewidths=linewidths,
+            linestyles=linestyles,
+            zorder=zorder,
+            **plotargs,
+        )
+        if hasattr(cs_lines, "collections"):
+            frame_artists.extend(list(cs_lines.collections))
+        if line_labels and not isinstance(clevs, int):
+            nd = ndecs(clevs)
+            fmt = "%d"
+            if nd != 0:
+                fmt = "%1." + str(nd) + "f"
+            plot.clabel(
+                cs_lines,
+                fmt=fmt,
+                colors=colors,
+                zorder=zorder,
+                fontsize=plotvars.text_fontsize,
+            )
+        if zero_thick:
+            cs0 = plot.contour(
+                xpts,
+                ypts,
+                data.field * data.fmult,
+                [-1e-32, 0],
+                colors=colors,
+                linewidths=zero_thick,
+                linestyles=linestyles,
+                alpha=alpha,
+                zorder=zorder,
+                **plotargs,
+            )
+            if hasattr(cs0, "collections"):
+                frame_artists.extend(list(cs0.collections))
+
+    if kwargs.get("axes", True):
+        _plot_map_axes(
+            axes=kwargs.get("axes", True),
+            xaxis=kwargs.get("xaxis", True),
+            yaxis=kwargs.get("yaxis", True),
+            xticks=kwargs.get("xticks", None),
+            xticklabels=kwargs.get("xticklabels", None),
+            yticks=kwargs.get("yticks", None),
+            yticklabels=kwargs.get("yticklabels", None),
+            user_xlabel=kwargs.get("xlabel", None),
+            user_ylabel=kwargs.get("ylabel", None),
+            verbose=kwargs.get("verbose", None),
+        )
+
+    if kwargs.get("colorbar", True) and (fill or blockfill):
+        cbar(
+            labels=cbar_labels,
+            orientation=kwargs.get("colorbar_orientation", None) or "horizontal",
+            position=kwargs.get("colorbar_position", None),
+            shrink=kwargs.get("colorbar_shrink", None),
+            title=colorbar_title,
+            fontsize=kwargs.get("colorbar_fontsize", None),
+            fontweight=kwargs.get("colorbar_fontweight", None),
+            text_up_down=kwargs.get("colorbar_text_up_down", False),
+            text_down_up=kwargs.get("colorbar_text_down_up", False),
+            drawedges=kwargs.get("colorbar_drawedges", True),
+            fraction=kwargs.get("colorbar_fraction", None),
+            thick=kwargs.get("colorbar_thick", None),
+            levs=clevs,
+            anchor=kwargs.get("colorbar_anchor", None),
+            verbose=kwargs.get("verbose", None),
+        )
+
+    title = kwargs.get("title", "") or ""
+    if title != "":
+        _map_title(title)
+
+    plotvars._contour_animation_artists = frame_artists
+    return True
+
+
 def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     """Attempt rendering via new XY renderer and return True on success."""
     from .cfplot import (
@@ -759,7 +970,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             verbose=kwargs.get("verbose", None),
         )
         # Implemented CF extraction targets: map and selected non-map ptypes.
-        if data.ptype not in (1, 2, 3, 4, 5):
+        if data.ptype not in (1, 2, 3, 4, 5, 6):
             return False
     else:
         data = ContourData.from_arrays(field=np.asarray(f), x=x, y=y)
@@ -815,6 +1026,42 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             n_columns=plotvars.columns,
             label_skip=colorbar_label_skip,
             custom_labels=None,
+        )
+
+    colorbar_title = kwargs.get("colorbar_title", "")
+    if mult != 0:
+        colorbar_title = f"{colorbar_title} *10^{{{mult}}}"
+
+    # ptype 6 has its own rendering/axes flow and must bypass generic XY
+    # layout to avoid non-map axes state assumptions.
+    if data.ptype == 6:
+        data = replace(
+            data,
+            levels=np.asarray(clevs),
+            mult=mult,
+            fmult=fmult,
+            fill=fill,
+            lines=lines,
+            blockfill=blockfill,
+        )
+        return _render_ptype6_rotated_pole(
+            f=f,
+            data=data,
+            kwargs=kwargs,
+            clevs=np.asarray(clevs),
+            cs=cs,
+            cbar_labels=cbar_labels,
+            colorbar_title=colorbar_title,
+            fill=fill,
+            lines=lines,
+            blockfill=blockfill,
+            line_labels=line_labels,
+            zero_thick=zero_thick,
+            colors=colors,
+            linewidths=linewidths,
+            linestyles=linestyles,
+            alpha=alpha,
+            zorder=zorder,
         )
 
     if plotvars.user_plot == 0:
@@ -1056,10 +1303,6 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
 
         # Persist only dynamic contour artists for animation updates.
         plotvars._contour_animation_artists = list(renderer.frame_artists)
-
-    colorbar_title = kwargs.get("colorbar_title", "")
-    if mult != 0:
-        colorbar_title = f"{colorbar_title} *10^{{{mult}}}"
 
     if colorbar:
         renderer.render_colorbar(

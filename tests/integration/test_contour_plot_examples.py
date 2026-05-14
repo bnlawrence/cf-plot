@@ -7,6 +7,7 @@ These tests verify that con() plotting functions work with real data.
 from pathlib import Path
 
 import cf
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -22,9 +23,11 @@ TEST_GEN_DIR.mkdir(parents=True, exist_ok=True)
 @pytest.fixture(autouse=True)
 def setup_cfplot():
     """Set up cfplot for each test."""
+    plt.close("all")
     cfp.reset()
     yield
     cfp.reset()
+    plt.close("all")
 
 
 @pytest.mark.integration
