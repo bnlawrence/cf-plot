@@ -32,6 +32,7 @@ import numpy as np
 from matplotlib.axes import Axes
 
 from . import utility
+from .state import plotvars
 
 
 
@@ -149,7 +150,7 @@ class ContourLayout:
         
         Coordinates with plotvars for multi-plot grids.
         """
-        from .cfplot import gopen, gpos, plotvars
+        from .cfplot import gopen, gpos
 
         # Set colorbar orientation  
         self.colorbar_orientation = colorbar_orientation or "horizontal"
@@ -179,7 +180,7 @@ class ContourLayout:
         This intentionally keeps map setup in a dedicated flow where projection
         creation (mapset/_set_map) happens after base viewport selection.
         """
-        from .cfplot import gopen, gpos, plotvars
+        from .cfplot import gopen, gpos
 
         self.colorbar_orientation = colorbar_orientation or "horizontal"
         self.colorbar_position = colorbar_position
@@ -496,7 +497,7 @@ class MapContourRenderer(ContourRenderer):
         self, alpha: float, zorder: int, transform_first: bool | None
     ) -> None:
         """Render filled contours on a map with Cartopy."""
-        from .cfplot import ccrs, plotvars
+        from .cfplot import ccrs
 
         if self.data.x is None or self.data.y is None or self.data.levels is None:
             return
@@ -559,7 +560,7 @@ class MapContourRenderer(ContourRenderer):
     ) -> None:
         """Render contour lines on a map with Cartopy transform."""
         # Local import to keep module dependency minimal
-        from .cfplot import ccrs, plotvars
+        from .cfplot import ccrs
 
         if self.data.x is None or self.data.y is None or self.data.levels is None:
             return
@@ -617,8 +618,6 @@ class XYContourRenderer(ContourRenderer):
         self, alpha: float, zorder: int, transform_first: bool | None
     ) -> None:
         """Render filled contours in Cartesian space."""
-        from .cfplot import plotvars
-
         _ = transform_first
         if self.data.x is None or self.data.y is None or self.data.levels is None:
             return
@@ -666,8 +665,6 @@ class XYContourRenderer(ContourRenderer):
         zero_thick: bool | int,
     ) -> None:
         """Render contour lines in Cartesian space."""
-        from .cfplot import plotvars
-
         if self.data.x is None or self.data.y is None or self.data.levels is None:
             return
 

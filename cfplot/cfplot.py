@@ -542,7 +542,7 @@ plotvars_defaults = {
     "aspect": "equal",
 }
 allvars_defaults = {**setvars_defaults, **plotvars_defaults}
-plotvars = pvars(**allvars_defaults)
+from .state import plotvars
 
 # Check for iPython notebook inline
 # and set the viewer to None if found
