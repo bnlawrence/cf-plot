@@ -1,27 +1,14 @@
 import numpy as np
+import pytest
 
 from cfplot import contour
 
 
 def test_con_delegates_to_legacy(monkeypatch):
-    called = {}
+    monkeypatch.setattr("cfplot.contour._can_use_new_xy_path", lambda f, kwargs: False)
 
-    def fake_legacy_con(*, f=None, x=None, y=None, **kwargs):
-        called["f"] = f
-        called["x"] = x
-        called["y"] = y
-        called["kwargs"] = kwargs
-        return "ok"
-
-    monkeypatch.setattr("cfplot.cfplot._legacy_con", fake_legacy_con)
-
-    out = contour.con(f="field", x="xvals", y="yvals", lines=False)
-
-    assert out == "ok"
-    assert called["f"] == "field"
-    assert called["x"] == "xvals"
-    assert called["y"] == "yvals"
-    assert called["kwargs"]["lines"] is False
+    with pytest.raises(NotImplementedError, match="not implemented"):
+        contour.con(f=np.array([[1.0, 2.0], [3.0, 4.0]]), lines=False)
 
 
 def test_colour_scale_label_skip():
@@ -55,21 +42,11 @@ def test_con_uses_new_path_when_available(monkeypatch):
 
 
 def test_con_falls_back_when_new_path_declines(monkeypatch):
-    called = {}
-
-    def fake_legacy_con(*, f=None, x=None, y=None, **kwargs):
-        called["f"] = f
-        called["kwargs"] = kwargs
-        return "legacy"
-
-    monkeypatch.setattr("cfplot.cfplot._legacy_con", fake_legacy_con)
     monkeypatch.setattr("cfplot.contour._can_use_new_xy_path", lambda f, kwargs: True)
     monkeypatch.setattr(
         "cfplot.contour._render_with_new_xy",
         lambda f, x, y, kwargs: False,
     )
 
-    out = contour.con(f=np.array([[1.0, 2.0], [3.0, 4.0]]), lines=False)
-
-    assert out == "legacy"
-    assert called["kwargs"]["lines"] is False
+    with pytest.raises(NotImplementedError, match="not implemented"):
+        contour.con(f=np.array([[1.0, 2.0], [3.0, 4.0]]), lines=False)

@@ -186,6 +186,8 @@ class ContourLayout:
         ylabel: str | None,
         xticks: Any,
         yticks: Any,
+        xticklabels: Any | None = None,
+        yticklabels: Any | None = None,
     ) -> None:
         """Apply axis labels and ticks to plot."""
         from .cfplot import axes_plot, _plot_map_axes
@@ -208,10 +210,10 @@ class ContourLayout:
         else:
             # For non-map plots, use standard axes_plot
             axes_plot(
-                xticks=xticks or [],
-                xticklabels=xticks,
-                yticks=yticks or [],
-                yticklabels=yticks,
+                xticks=xticks if xticks is not None else [],
+                xticklabels=xticklabels if xticklabels is not None else xticks,
+                yticks=yticks if yticks is not None else [],
+                yticklabels=yticklabels if yticklabels is not None else yticks,
                 xlabel=xlabel or "",
                 ylabel=ylabel or "",
             )
@@ -584,7 +586,6 @@ def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
         "orca",
         "swap_axes",
         "xlog",
-        "ylog",
         "transform_first",
     )
     for key in unsupported:
@@ -602,6 +603,8 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     """Attempt rendering via new XY renderer and return True on success."""
     from .cfplot import (
         _gvals,
+        _mapaxis,
+        _timeaxis,
         calculate_levels,
         global_blockfill,
         global_fill,
@@ -618,11 +621,14 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             plotvars=plotvars,
             verbose=kwargs.get("verbose", None),
         )
-        # Initial non-map CF extraction target: lat-height and lon-height.
-        if data.ptype not in (2, 3):
+        # Initial non-map CF extraction target: lat-height, lon-height, hovmuller.
+        if data.ptype not in (2, 3, 4, 5):
             return False
     else:
         data = ContourData.from_arrays(field=np.asarray(f), x=x, y=y)
+
+    # Keep legacy behavior for axis-routing logic by setting active plot type.
+    plotvars.plot_type = data.ptype if isinstance(f, cf.Field) else kwargs.get("ptype", 0)
 
     fill = kwargs.get("fill", global_fill)
     lines = kwargs.get("lines", global_lines)
@@ -681,24 +687,94 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     xmax = kwargs.get("xmax", float(np.nanmax(data.x)))
     ymin = kwargs.get("ymin", float(np.nanmin(data.y)))
     ymax = kwargs.get("ymax", float(np.nanmax(data.y)))
-    gset(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, user_gset=kwargs.get("user_gset", 0))
+
+    # Respect user gset for Hovmuller plots with date-string y limits.
+    tmin = None
+    tmax = None
+    if isinstance(f, cf.Field) and data.ptype in (4, 5):
+        if all(
+            val is not None
+            for val in [plotvars.xmin, plotvars.xmax, plotvars.ymin, plotvars.ymax]
+        ):
+            tmin = plotvars.ymin
+            tmax = plotvars.ymax
+            xmin = plotvars.xmin
+            xmax = plotvars.xmax
+
+            ref_time = f.construct("T").units
+            ref_calendar = f.construct("T").calendar
+            time_units = cf.Units(ref_time, ref_calendar)
+            t = cf.Data(cf.dt(plotvars.ymin), units=time_units)
+            ymin = t.array
+            t = cf.Data(cf.dt(plotvars.ymax), units=time_units)
+            ymax = t.array
+
+    if kwargs.get("ylog", False):
+        if ymax == 0:
+            ymax = 1
+        gset(
+            xmin=xmin,
+            xmax=xmax,
+            ymin=ymin,
+            ymax=ymax,
+            ylog=True,
+            user_gset=kwargs.get("user_gset", plotvars.user_gset),
+        )
+    else:
+        gset(
+            xmin=xmin,
+            xmax=xmax,
+            ymin=ymin,
+            ymax=ymax,
+            user_gset=kwargs.get("user_gset", plotvars.user_gset),
+        )
+
+    if tmin is not None and tmax is not None:
+        plotvars.ymin = tmin
+        plotvars.ymax = tmax
 
     xticks = kwargs.get("xticks", None)
     yticks = kwargs.get("yticks", None)
-    if xticks is None:
-        xticks = _gvals(dmin=xmin, dmax=xmax, mod=False)[0]
-    if yticks is None:
-        yticks = _gvals(dmin=ymax, dmax=ymin, mod=False)[0]
+    xticklabels = kwargs.get("xticklabels", None)
+    yticklabels = kwargs.get("yticklabels", None)
+
+    default_xlabel = data.xlabel or ""
+    default_ylabel = data.ylabel or ""
+
+    if isinstance(f, cf.Field) and data.ptype in (4, 5):
+        time_ticks, time_labels, time_label = _timeaxis(f.construct("T"))
+        if data.ptype == 4:
+            lonlat_ticks, lonlat_labels = _mapaxis(min=xmin, max=xmax, type=1)
+            default_xlabel = default_xlabel or "Longitude"
+        else:
+            lonlat_ticks, lonlat_labels = _mapaxis(min=xmin, max=xmax, type=2)
+            default_xlabel = default_xlabel or "Latitude"
+
+        default_ylabel = time_label or default_ylabel or "time"
+
+        if xticks is None:
+            xticks = lonlat_ticks
+            xticklabels = lonlat_labels
+        if yticks is None:
+            yticks = time_ticks
+            yticklabels = time_labels
+    else:
+        if xticks is None:
+            xticks = _gvals(dmin=xmin, dmax=xmax, mod=False)[0]
+        if yticks is None:
+            yticks = _gvals(dmin=ymax, dmax=ymin, mod=False)[0]
 
     layout = ContourLayout(plotvars).allocate(
         colorbar_orientation=colorbar_orientation,
         colorbar_position=kwargs.get("colorbar_position", None),
     )
     layout.apply_axis_labels(
-        xlabel=kwargs.get("xlabel", data.xlabel or ""),
-        ylabel=kwargs.get("ylabel", data.ylabel or ""),
+        xlabel=kwargs.get("xlabel", default_xlabel),
+        ylabel=kwargs.get("ylabel", default_ylabel),
         xticks=xticks,
         yticks=yticks,
+        xticklabels=xticklabels,
+        yticklabels=yticklabels,
     )
 
     data = replace(
@@ -768,18 +844,17 @@ def con(f=None, x=None, y=None, **kwargs):
     For now, orchestration uses the new classes for data and styling,
     then delegates to legacy renderer.
     """
-    from .cfplot import _legacy_con
+    # Refactor mode: unsupported cases should fail explicitly rather than
+    # silently routing through legacy code.
+    if not _can_use_new_xy_path(f=f, kwargs=kwargs):
+        raise NotImplementedError(
+            "Contour case not implemented in refactored renderer yet"
+        )
 
-    # First extraction step: run the new XY renderer for basic 2D array plots.
-    # Any unsupported or advanced usage safely falls back to legacy.
-    try:
-        if _can_use_new_xy_path(f=f, kwargs=kwargs):
-            if _render_with_new_xy(f=f, x=x, y=y, kwargs=kwargs):
-                return None
-    except Exception:
-        # Fallback preserves behavior for edge cases not yet extracted.
-        pass
+    if _render_with_new_xy(f=f, x=x, y=y, kwargs=kwargs):
+        return None
 
-    # Delegate remaining rendering to legacy implementation
-    return _legacy_con(f=f, x=x, y=y, **kwargs)
+    raise NotImplementedError(
+        "Contour case not implemented in refactored renderer yet"
+    )
 
