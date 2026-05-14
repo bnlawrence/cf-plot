@@ -12,6 +12,16 @@ from typing import Any
 import numpy as np
 
 
+def to_float_or_none(value: Any) -> float | None:
+    """Convert numeric-like metadata values to float, else return None."""
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def ndecs(data: np.ndarray | list) -> int:
     """Find the maximum number of decimal places in an array.
     

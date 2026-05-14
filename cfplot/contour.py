@@ -34,15 +34,6 @@ from matplotlib.axes import Axes
 from . import utility
 
 
-def _to_float_or_none(value: Any) -> float | None:
-    """Convert numeric-like metadata values to float, else return None."""
-    if value is None:
-        return None
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
-
 
 @dataclass(frozen=True)
 class ContourData:
@@ -77,16 +68,9 @@ class ContourData:
         f: cf.Field,
         colorbar_title: str | None,
         verbose: bool | None = None,
+        proj: str = "cyl",
     ) -> "ContourData":
-        """Extract and prepare CF field for contouring.
-        
-        Note: This currently delegates to legacy cfplot._cf_data_assign.
-        In a future refactor, CF field extraction will be moved here.
-        """
-        # TODO: Extract CF field handling out of cfplot module
-        # For now, we import locally to avoid circular dependencies
-        from .cfplot import _cf_data_assign
-
+        """Extract and prepare CF field for contouring."""
         (
             field,
             x,
@@ -97,7 +81,7 @@ class ContourData:
             ylabel,
             xpole,
             ypole,
-        ) = _cf_data_assign(f, colorbar_title, verbose=verbose)
+        ) = utility.cf_data_assign(f, colorbar_title, verbose=verbose, proj=proj)
 
         if colorbar_title is not None:
             cbar_title = colorbar_title
@@ -110,8 +94,8 @@ class ContourData:
             colorbar_title=cbar_title or "",
             xlabel=xlabel or "",
             ylabel=ylabel or "",
-            xpole=_to_float_or_none(xpole),
-            ypole=_to_float_or_none(ypole),
+            xpole=utility.to_float_or_none(xpole),
+            ypole=utility.to_float_or_none(ypole),
         )
 
     @classmethod
@@ -998,8 +982,8 @@ def _render_ptype6_rotated_pole(
     rotated_pole = f.ref("grid_mapping_name:rotated_latitude_longitude", default=None)
     if not rotated_pole:
         return False
-    xpole = _to_float_or_none(rotated_pole.get("grid_north_pole_longitude"))
-    ypole = _to_float_or_none(rotated_pole.get("grid_north_pole_latitude"))
+    xpole = utility.to_float_or_none(rotated_pole.get("grid_north_pole_longitude"))
+    ypole = utility.to_float_or_none(rotated_pole.get("grid_north_pole_latitude"))
     if xpole is None or ypole is None:
         return False
 
@@ -1190,6 +1174,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             f=f,
             colorbar_title=kwargs.get("colorbar_title", None),
             verbose=kwargs.get("verbose", None),
+            proj=getattr(plotvars, "proj", "cyl"),
         )
         # Implemented CF extraction targets: map and selected non-map ptypes.
         if data.ptype not in (1, 2, 3, 4, 5, 6):
