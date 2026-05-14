@@ -3042,7 +3042,7 @@ def _plot_map_axes(
 # ===================================
 
 
-def con(
+def _legacy_con(
     f=None,
     x=None,
     y=None,
@@ -11132,3 +11132,11 @@ def _process_color_scales():
         print(div)
         print("")
         print("")
+
+
+def con(*args, **kwargs):
+    """Public contour entrypoint routed through the refactor boundary."""
+
+    from .contour import con as contour_con
+
+    return contour_con(*args, **kwargs)
