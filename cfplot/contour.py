@@ -551,7 +551,7 @@ class MapContourRenderer(ContourRenderer):
     ) -> None:
         """Render contour lines on a map with Cartopy transform."""
         # Local import to keep module dependency minimal
-        from .cfplot import ccrs, ndecs, plotvars
+        from .cfplot import ccrs, plotvars
 
         if self.data.x is None or self.data.y is None or self.data.levels is None:
             return
@@ -658,7 +658,7 @@ class XYContourRenderer(ContourRenderer):
         zero_thick: bool | int,
     ) -> None:
         """Render contour lines in Cartesian space."""
-        from .cfplot import ndecs, plotvars
+        from .cfplot import plotvars
 
         if self.data.x is None or self.data.y is None or self.data.levels is None:
             return
@@ -673,7 +673,7 @@ class XYContourRenderer(ContourRenderer):
             linestyles=linestyles,
         )
         if line_labels and not isinstance(self.data.levels, int):
-            nd = ndecs(self.data.levels)
+            nd = utility.ndecs(self.data.levels)
             fmt = "%d"
             if nd != 0:
                 fmt = "%1." + str(nd) + "f"
@@ -796,7 +796,6 @@ def _render_ptype6_rotated_pole(
         cbar,
         ccrs,
         mapset,
-        ndecs,
         plotvars,
     )
 
@@ -900,7 +899,7 @@ def _render_ptype6_rotated_pole(
         if hasattr(cs_lines, "collections"):
             frame_artists.extend(list(cs_lines.collections))
         if line_labels and not isinstance(clevs, int):
-            nd = ndecs(clevs)
+            nd = utility.ndecs(clevs)
             fmt = "%d"
             if nd != 0:
                 fmt = "%1." + str(nd) + "f"
@@ -975,10 +974,6 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     module-level independence while preserving current functionality.
     """
     from .cfplot import (
-        _gvals,
-        _mapaxis,
-        _timeaxis,
-        calculate_levels,
         global_blockfill,
         global_fill,
         global_lines,
@@ -1032,9 +1027,10 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         colorbar = False
 
     if plotvars.levels is None:
-        clevs, mult, fmult = calculate_levels(
+        clevs, mult, fmult = utility.calculate_levels(
             field=data.field,
             level_spacing=kwargs.get("level_spacing", "linear"),
+            levels_step=plotvars.levels_step,
             verbose=kwargs.get("verbose", None),
         )
     else:
@@ -1203,7 +1199,17 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         yticklabels = kwargs.get("yticklabels", None)
 
     if isinstance(f, cf.Field) and data.ptype in (4, 5):
-        time_ticks, time_labels, time_label = _timeaxis(f.construct("T"))
+        time_ticks, time_labels, time_label = utility.timeaxis(
+            dtimes=f.construct("T"),
+            user_gset=plotvars.user_gset,
+            xmin=plotvars.xmin,
+            xmax=plotvars.xmax,
+            ymin=plotvars.ymin,
+            ymax=plotvars.ymax,
+            tspace_year=getattr(plotvars, "tspace_year", None),
+            tspace_hour=getattr(plotvars, "tspace_hour", None),
+            tspace_day=getattr(plotvars, "tspace_day", None),
+        )
         if data.ptype == 4:
             lonlat_ticks, lonlat_labels = utility.mapaxis(
                 min_val=xmin, max_val=xmax, axis_type=1, degsym=plotvars.degsym
