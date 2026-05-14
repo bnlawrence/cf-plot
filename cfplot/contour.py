@@ -1,7 +1,24 @@
-"""Contour refactor boundary.
+"""Contour plotting module.
 
-This module introduces the object model used to refactor contour plotting out
-of cfplot.py while preserving the current behavior during migration.
+Provides the refactored contour plotting interface.
+
+Architecture:
+- ContourData: Immutable container for arrays and metadata
+- ContourLayout: Manages viewport allocation
+- ColourScale: Encapsulates colormap/level logic
+- ContourRenderer: Base class for rendering strategy
+- MapContourRenderer: Renders to map (Cartopy)
+- XYContourRenderer: Renders to Cartesian axes
+
+Module Independence:
+This module is currently independent at the module level (no module-level
+imports from cfplot.py), though functions do import locally from cfplot
+for essential utilities like calculate_levels and axis helpers. This keeps
+module boundaries clear while preserving functionality during gradual refactoring.
+
+Future work will move more utilities (calculate_levels, _stimeaxis, etc.)
+into standalone modules (see utility.py, state.py) and eliminate even the
+function-level cfplot imports.
 """
 
 from __future__ import annotations
@@ -13,6 +30,8 @@ import cf
 import matplotlib.colors
 import numpy as np
 from matplotlib.axes import Axes
+
+from . import utility
 
 
 def _to_float_or_none(value: Any) -> float | None:
@@ -57,16 +76,17 @@ class ContourData:
         cls,
         f: cf.Field,
         colorbar_title: str | None,
-        plotvars: Any,
-        verbose: bool | None,
+        verbose: bool | None = None,
     ) -> "ContourData":
         """Extract and prepare CF field for contouring.
         
-        Delegates to legacy _cf_data_assign for now, wrapping result as immutable.
+        Note: This currently delegates to legacy cfplot._cf_data_assign.
+        In a future refactor, CF field extraction will be moved here.
         """
+        # TODO: Extract CF field handling out of cfplot module
+        # For now, we import locally to avoid circular dependencies
         from .cfplot import _cf_data_assign
 
-        # Extract data using legacy path
         (
             field,
             x,
@@ -102,13 +122,13 @@ class ContourData:
         y: np.ndarray | None = None,
     ) -> "ContourData":
         """Create from raw numpy arrays with validation."""
-        from .cfplot import _check_data
-
         field = np.asarray(field)
         x = np.asarray(x) if x is not None else np.arange(field.shape[1])
         y = np.asarray(y) if y is not None else np.arange(field.shape[0])
 
-        _check_data(field, x, y)
+        # Validate array dimensions - support both 1D coordinates and 2D (e.g., ORCA grids)
+        if field.ndim not in (1, 2, 3):
+            raise ValueError(f"Field must be 1D, 2D, or 3D, got shape {field.shape}")
 
         return cls(
             field=field,
@@ -530,6 +550,7 @@ class MapContourRenderer(ContourRenderer):
         zero_thick: bool | int,
     ) -> None:
         """Render contour lines on a map with Cartopy transform."""
+        # Local import to keep module dependency minimal
         from .cfplot import ccrs, ndecs, plotvars
 
         if self.data.x is None or self.data.y is None or self.data.levels is None:
@@ -550,7 +571,7 @@ class MapContourRenderer(ContourRenderer):
             self.frame_artists.extend(list(cs.collections))
 
         if line_labels and not isinstance(self.data.levels, int):
-            nd = ndecs(self.data.levels)
+            nd = utility.ndecs(self.data.levels)
             fmt = "%d"
             if nd != 0:
                 fmt = "%1." + str(nd) + "f"
@@ -948,7 +969,11 @@ def _render_ptype6_rotated_pole(
 
 
 def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
-    """Attempt rendering via new XY renderer and return True on success."""
+    """Attempt rendering via new XY renderer and return True on success.
+    
+    Note: Imports from cfplot are local (inside function) to maintain
+    module-level independence while preserving current functionality.
+    """
     from .cfplot import (
         _gvals,
         _mapaxis,
@@ -976,7 +1001,6 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         data = ContourData.from_cf_field(
             f=f,
             colorbar_title=kwargs.get("colorbar_title", None),
-            plotvars=plotvars,
             verbose=kwargs.get("verbose", None),
         )
         # Implemented CF extraction targets: map and selected non-map ptypes.
@@ -1181,10 +1205,14 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     if isinstance(f, cf.Field) and data.ptype in (4, 5):
         time_ticks, time_labels, time_label = _timeaxis(f.construct("T"))
         if data.ptype == 4:
-            lonlat_ticks, lonlat_labels = _mapaxis(min=xmin, max=xmax, type=1)
+            lonlat_ticks, lonlat_labels = utility.mapaxis(
+                min_val=xmin, max_val=xmax, axis_type=1, degsym=plotvars.degsym
+            )
             default_xlabel = default_xlabel or "Longitude"
         else:
-            lonlat_ticks, lonlat_labels = _mapaxis(min=xmin, max=xmax, type=2)
+            lonlat_ticks, lonlat_labels = utility.mapaxis(
+                min_val=xmin, max_val=xmax, axis_type=2, degsym=plotvars.degsym
+            )
             default_xlabel = default_xlabel or "Latitude"
 
         default_ylabel = time_label or default_ylabel or "time"
@@ -1197,9 +1225,9 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             yticklabels = time_labels
     else:
         if xticks is None:
-            xticks = _gvals(dmin=xmin, dmax=xmax, mod=False)[0]
+            xticks = utility.gvals(dmin=xmin, dmax=xmax, mod=False)[0]
         if yticks is None:
-            yticks = _gvals(dmin=ymax, dmax=ymin, mod=False)[0]
+            yticks = utility.gvals(dmin=ymax, dmax=ymin, mod=False)[0]
 
     if data.ptype == 1:
         layout = ContourLayout(plotvars).allocate_map_viewport(
