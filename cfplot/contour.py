@@ -126,12 +126,12 @@ class ContourLayout:
         self.colorbar_orientation: str = "horizontal"
         self.colorbar_position: list[float] | None = None
 
-    def allocate(
+    def allocate_xy_viewport(
         self,
         colorbar_orientation: str | None,
         colorbar_position: list[float] | None,
     ) -> "ContourLayout":
-        """Reserve space for annotations and set viewport.
+        """Reserve viewport for Cartesian/non-map rendering.
         
         Coordinates with plotvars for multi-plot grids.
         """
@@ -154,6 +154,42 @@ class ContourLayout:
         self.viewport = plotvars.plot
 
         return self
+
+    def allocate_map_viewport(
+        self,
+        colorbar_orientation: str | None,
+        colorbar_position: list[float] | None,
+    ) -> "ContourLayout":
+        """Reserve viewport for map rendering without map-axis operations.
+
+        This intentionally keeps map setup in a dedicated flow where projection
+        creation (mapset/_set_map) happens after base viewport selection.
+        """
+        from .cfplot import gopen, gpos, plotvars
+
+        self.colorbar_orientation = colorbar_orientation or "horizontal"
+        self.colorbar_position = colorbar_position
+
+        # If map axes already exists, do not reopen/reset the viewport.
+        if plotvars.mymap is None:
+            if plotvars.rows > 1 or plotvars.columns > 1:
+                if plotvars.gpos_called is False:
+                    gpos(1)
+
+            if plotvars.user_plot == 0:
+                gopen(user_plot=0)
+
+        self.viewport = plotvars.plot
+
+        return self
+
+    def allocate(
+        self,
+        colorbar_orientation: str | None,
+        colorbar_position: list[float] | None,
+    ) -> "ContourLayout":
+        """Backward-compatible alias for Cartesian viewport allocation."""
+        return self.allocate_xy_viewport(colorbar_orientation, colorbar_position)
 
     def apply_title(
         self,
@@ -353,6 +389,7 @@ class ContourRenderer:
         self.layout = layout
         self.data = data
         self.cs = colour_scale
+        self.frame_artists: list[Any] = []
 
     def render_filled(
         self, alpha: float, zorder: int, transform_first: bool | None
@@ -421,15 +458,58 @@ class MapContourRenderer(ContourRenderer):
         self, alpha: float, zorder: int, transform_first: bool | None
     ) -> None:
         """Render filled contours on a map with Cartopy."""
-        # Placeholder: actual implementation will use mymap.contourf with ccrs.PlateCarree()
-        _ = (alpha, zorder, transform_first)
+        from .cfplot import ccrs, plotvars
+
+        if self.data.x is None or self.data.y is None or self.data.levels is None:
+            return
+
+        lons = self.data.x
+        lats = self.data.y
+
+        if transform_first is None and np.ndim(lons) == 1 and np.ndim(lats) == 1:
+            if np.size(lons) >= 400:
+                transform_first = True
+
+        if transform_first and np.ndim(lons) == 1 and np.ndim(lats) == 1:
+            lons, lats = np.meshgrid(lons, lats)
+
+        cmap = self.cs.get_cmap()
+        plotvars.image = plotvars.mymap.contourf(
+            lons,
+            lats,
+            self.data.field * self.data.fmult,
+            self.data.levels,
+            extend=plotvars.levels_extend,
+            cmap=cmap,
+            norm=plotvars.norm,
+            alpha=alpha,
+            transform=ccrs.PlateCarree(),
+            zorder=zorder,
+            transform_first=transform_first,
+        )
+        if hasattr(plotvars.image, "collections"):
+            self.frame_artists.extend(list(plotvars.image.collections))
 
     def render_blockfill(
         self, fast: bool | None, alpha: float, zorder: int
     ) -> None:
         """Render block-filled contours on a map."""
-        # Placeholder: actual implementation will call _bfill with map-specific args
-        _ = (fast, alpha, zorder)
+        from .cfplot import _bfill
+
+        if self.data.x is None or self.data.y is None or self.data.levels is None:
+            return
+
+        _bfill(
+            f=self.data.field * self.data.fmult,
+            x=self.data.x,
+            y=self.data.y,
+            clevs=self.data.levels,
+            lonlat=True,
+            bound=0,
+            alpha=alpha,
+            fast=fast,
+            zorder=zorder,
+        )
 
     def render_lines(
         self,
@@ -440,8 +520,52 @@ class MapContourRenderer(ContourRenderer):
         zero_thick: bool | int,
     ) -> None:
         """Render contour lines on a map with Cartopy transform."""
-        # Placeholder: actual implementation will use mymap.contour with ccrs.PlateCarree()
-        _ = (colors, linewidths, linestyles, line_labels, zero_thick)
+        from .cfplot import ccrs, ndecs, plotvars
+
+        if self.data.x is None or self.data.y is None or self.data.levels is None:
+            return
+
+        cs = plotvars.mymap.contour(
+            self.data.x,
+            self.data.y,
+            self.data.field * self.data.fmult,
+            self.data.levels,
+            colors=colors,
+            linewidths=linewidths,
+            linestyles=linestyles,
+            alpha=1.0,
+            transform=ccrs.PlateCarree(),
+        )
+        if hasattr(cs, "collections"):
+            self.frame_artists.extend(list(cs.collections))
+
+        if line_labels and not isinstance(self.data.levels, int):
+            nd = ndecs(self.data.levels)
+            fmt = "%d"
+            if nd != 0:
+                fmt = "%1." + str(nd) + "f"
+            plotvars.plot.clabel(
+                cs,
+                levels=self.data.levels,
+                fmt=fmt,
+                colors=colors,
+                fontsize=plotvars.text_fontsize,
+            )
+
+        if zero_thick:
+            cs0 = plotvars.mymap.contour(
+                self.data.x,
+                self.data.y,
+                self.data.field * self.data.fmult,
+                [-1e-32, 0],
+                colors=colors,
+                linewidths=zero_thick,
+                linestyles=linestyles,
+                alpha=1.0,
+                transform=ccrs.PlateCarree(),
+            )
+            if hasattr(cs0, "collections"):
+                self.frame_artists.extend(list(cs0.collections))
 
 
 class XYContourRenderer(ContourRenderer):
@@ -599,6 +723,19 @@ def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
     return True
 
 
+def _clear_animation_artists(plotvars: Any) -> None:
+    """Remove artists from previous animation frame if present."""
+    artists = getattr(plotvars, "_contour_animation_artists", None)
+    if not artists:
+        return
+    for artist in artists:
+        try:
+            artist.remove()
+        except Exception:
+            continue
+    plotvars._contour_animation_artists = []
+
+
 def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     """Attempt rendering via new XY renderer and return True on success."""
     from .cfplot import (
@@ -621,8 +758,8 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             plotvars=plotvars,
             verbose=kwargs.get("verbose", None),
         )
-        # Initial non-map CF extraction target: lat-height, lon-height, hovmuller.
-        if data.ptype not in (2, 3, 4, 5):
+        # Implemented CF extraction targets: map and selected non-map ptypes.
+        if data.ptype not in (1, 2, 3, 4, 5):
             return False
     else:
         data = ContourData.from_arrays(field=np.asarray(f), x=x, y=y)
@@ -741,6 +878,48 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     default_xlabel = data.xlabel or ""
     default_ylabel = data.ylabel or ""
 
+    if isinstance(f, cf.Field) and data.ptype == 1:
+        from .cfplot import _set_map, mapset
+
+        animation = bool(kwargs.get("animation", False))
+        reuse_map_background = bool(kwargs.get("reuse_map_background", False))
+        clear_previous_frame = bool(kwargs.get("clear_previous_frame", False))
+        draw_static_map = not (animation and reuse_map_background)
+
+        if clear_previous_frame:
+            _clear_animation_artists(plotvars)
+
+        mylonmin = float(np.nanmin(data.x))
+        mylonmax = float(np.nanmax(data.x))
+        mylatmin = float(np.nanmin(data.y))
+        mylatmax = float(np.nanmax(data.y))
+        lonrange = mylonmax - mylonmin
+        latrange = mylatmax - mylatmin
+        if lonrange > 360.0:
+            mylonmax = mylonmin + 360.0
+
+        if draw_static_map:
+            if (lonrange > 350 and latrange > 160) or plotvars.user_mapset == 1:
+                _set_map()
+            else:
+                mapset(
+                    lonmin=mylonmin,
+                    lonmax=mylonmax,
+                    latmin=mylatmin,
+                    latmax=mylatmax,
+                    user_mapset=0,
+                    resolution=plotvars.resolution,
+                )
+                _set_map()
+
+        if np.ndim(data.y) == 1 and data.y[0] > data.y[-1]:
+            data = replace(data, y=data.y[::-1], field=np.flipud(data.field))
+
+        xticks = kwargs.get("xticks", None)
+        yticks = kwargs.get("yticks", None)
+        xticklabels = kwargs.get("xticklabels", None)
+        yticklabels = kwargs.get("yticklabels", None)
+
     if isinstance(f, cf.Field) and data.ptype in (4, 5):
         time_ticks, time_labels, time_label = _timeaxis(f.construct("T"))
         if data.ptype == 4:
@@ -764,18 +943,24 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         if yticks is None:
             yticks = _gvals(dmin=ymax, dmax=ymin, mod=False)[0]
 
-    layout = ContourLayout(plotvars).allocate(
-        colorbar_orientation=colorbar_orientation,
-        colorbar_position=kwargs.get("colorbar_position", None),
-    )
-    layout.apply_axis_labels(
-        xlabel=kwargs.get("xlabel", default_xlabel),
-        ylabel=kwargs.get("ylabel", default_ylabel),
-        xticks=xticks,
-        yticks=yticks,
-        xticklabels=xticklabels,
-        yticklabels=yticklabels,
-    )
+    if data.ptype == 1:
+        layout = ContourLayout(plotvars).allocate_map_viewport(
+            colorbar_orientation=colorbar_orientation,
+            colorbar_position=kwargs.get("colorbar_position", None),
+        )
+    else:
+        layout = ContourLayout(plotvars).allocate_xy_viewport(
+            colorbar_orientation=colorbar_orientation,
+            colorbar_position=kwargs.get("colorbar_position", None),
+        )
+        layout.apply_axis_labels(
+            xlabel=kwargs.get("xlabel", default_xlabel),
+            ylabel=kwargs.get("ylabel", default_ylabel),
+            xticks=xticks,
+            yticks=yticks,
+            xticklabels=xticklabels,
+            yticklabels=yticklabels,
+        )
 
     data = replace(
         data,
@@ -786,7 +971,10 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         lines=lines,
         blockfill=blockfill,
     )
-    renderer = XYContourRenderer(layout=layout, data=data, colour_scale=cs)
+    if data.ptype == 1:
+        renderer = MapContourRenderer(layout=layout, data=data, colour_scale=cs)
+    else:
+        renderer = XYContourRenderer(layout=layout, data=data, colour_scale=cs)
 
     if fill:
         renderer.render_filled(alpha=alpha, zorder=zorder, transform_first=None)
@@ -802,6 +990,72 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             line_labels=line_labels,
             zero_thick=zero_thick,
         )
+
+    if data.ptype == 1:
+        from .cfplot import (
+            _plot_map_axes,
+            cfeature,
+            map_grid,
+            plotvars,
+        )
+
+        animation = bool(kwargs.get("animation", False))
+        reuse_map_background = bool(kwargs.get("reuse_map_background", False))
+        draw_static_map = not (animation and reuse_map_background)
+
+        if draw_static_map:
+            _plot_map_axes(
+                axes=kwargs.get("axes", True),
+                xaxis=kwargs.get("xaxis", True),
+                yaxis=kwargs.get("yaxis", True),
+                xticks=kwargs.get("xticks", None),
+                xticklabels=kwargs.get("xticklabels", None),
+                yticks=kwargs.get("yticks", None),
+                yticklabels=kwargs.get("yticklabels", None),
+                user_xlabel=kwargs.get("xlabel", None),
+                user_ylabel=kwargs.get("ylabel", None),
+                verbose=kwargs.get("verbose", None),
+            )
+
+            feature = cfeature.NaturalEarthFeature(
+                name="land",
+                category="physical",
+                scale=plotvars.resolution,
+                facecolor="none",
+            )
+            plotvars.mymap.add_feature(
+                feature,
+                edgecolor=plotvars.continent_color or "k",
+                linewidth=plotvars.continent_thickness or 1.5,
+                linestyle=plotvars.continent_linestyle or "solid",
+                zorder=kwargs.get("zorder", 1),
+            )
+            if plotvars.ocean_color is not None:
+                plotvars.mymap.add_feature(
+                    cfeature.OCEAN,
+                    edgecolor="face",
+                    facecolor=plotvars.ocean_color,
+                    zorder=plotvars.feature_zorder,
+                )
+            if plotvars.land_color is not None:
+                plotvars.mymap.add_feature(
+                    cfeature.LAND,
+                    edgecolor="face",
+                    facecolor=plotvars.land_color,
+                    zorder=plotvars.feature_zorder,
+                )
+            if plotvars.lake_color is not None:
+                plotvars.mymap.add_feature(
+                    cfeature.LAKES,
+                    edgecolor="face",
+                    facecolor=plotvars.lake_color,
+                    zorder=plotvars.feature_zorder,
+                )
+            if kwargs.get("grid", False):
+                map_grid()
+
+        # Persist only dynamic contour artists for animation updates.
+        plotvars._contour_animation_artists = list(renderer.frame_artists)
 
     colorbar_title = kwargs.get("colorbar_title", "")
     if mult != 0:
@@ -824,12 +1078,21 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             title=colorbar_title,
         )
 
-    layout.apply_title(
-        title=kwargs.get("title", "") or "",
-        dims_title=bool(kwargs.get("titles", False)),
-        fontsize=plotvars.title_fontsize,
-        fontweight=plotvars.title_fontweight,
-    )
+    if data.ptype == 1:
+        title = kwargs.get("title", "") or ""
+        animation = bool(kwargs.get("animation", False))
+        reuse_map_background = bool(kwargs.get("reuse_map_background", False))
+        if title != "" and not (animation and reuse_map_background):
+            from .cfplot import _map_title
+
+            _map_title(title)
+    else:
+        layout.apply_title(
+            title=kwargs.get("title", "") or "",
+            dims_title=bool(kwargs.get("titles", False)),
+            fontsize=plotvars.title_fontsize,
+            fontweight=plotvars.title_fontweight,
+        )
 
     return True
 
