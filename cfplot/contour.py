@@ -6,7 +6,7 @@ of cfplot.py while preserving the current behavior during migration.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 import cf
@@ -54,7 +54,7 @@ class ContourData:
         
         Delegates to legacy _cf_data_assign for now, wrapping result as immutable.
         """
-        from .cfplot import _cf_data_assign, _check_data
+        from .cfplot import _cf_data_assign
 
         # Extract data using legacy path
         (
@@ -188,7 +188,7 @@ class ContourLayout:
         yticks: Any,
     ) -> None:
         """Apply axis labels and ticks to plot."""
-        from .cfplot import axes_plot, _plot_map_axes, plotvars
+        from .cfplot import axes_plot, _plot_map_axes
 
         if self.viewport is None:
             return
@@ -241,7 +241,7 @@ class ColourScale:
         self._levels_extend = levels_extend
 
         # Delegate to legacy cscale system for now
-        from .cfplot import cscale1, viridis, cscale
+        from .cfplot import cscale
 
         # Replicate cscale_flag == 0 logic (revert to default)
         if self._plotvars.cscale_flag == 0:
@@ -388,6 +388,8 @@ class ContourRenderer:
         text_up_down: bool,
         text_down_up: bool,
         drawedges: bool,
+        labels: list[str] | None = None,
+        title: str | None = None,
     ) -> None:
         """Render colorbar for filled contours."""
         _ = (
@@ -402,6 +404,8 @@ class ContourRenderer:
             text_up_down,
             text_down_up,
             drawedges,
+            labels,
+            title,
         )
 
 
@@ -448,15 +452,45 @@ class XYContourRenderer(ContourRenderer):
         self, alpha: float, zorder: int, transform_first: bool | None
     ) -> None:
         """Render filled contours in Cartesian space."""
-        # Placeholder: actual implementation will use plotvars.plot.contourf()
-        _ = (alpha, zorder, transform_first)
+        from .cfplot import plotvars
+
+        _ = transform_first
+        if self.data.x is None or self.data.y is None or self.data.levels is None:
+            return
+
+        cmap = self.cs.get_cmap()
+        plotvars.image = plotvars.plot.contourf(
+            self.data.x,
+            self.data.y,
+            self.data.field * self.data.fmult,
+            self.data.levels,
+            extend=plotvars.levels_extend,
+            cmap=cmap,
+            norm=plotvars.norm,
+            alpha=alpha,
+            zorder=zorder,
+        )
 
     def render_blockfill(
         self, fast: bool | None, alpha: float, zorder: int
     ) -> None:
         """Render block-filled contours in Cartesian space."""
-        # Placeholder: actual implementation will call _bfill with xy-specific args
-        _ = (fast, alpha, zorder)
+        from .cfplot import _bfill
+
+        if self.data.x is None or self.data.y is None or self.data.levels is None:
+            return
+
+        _bfill(
+            f=self.data.field * self.data.fmult,
+            x=self.data.x,
+            y=self.data.y,
+            clevs=self.data.levels,
+            lonlat=False,
+            bound=0,
+            alpha=alpha,
+            fast=fast,
+            zorder=zorder,
+        )
 
     def render_lines(
         self,
@@ -467,8 +501,261 @@ class XYContourRenderer(ContourRenderer):
         zero_thick: bool | int,
     ) -> None:
         """Render contour lines in Cartesian space."""
-        # Placeholder: actual implementation will use plotvars.plot.contour()
-        _ = (colors, linewidths, linestyles, line_labels, zero_thick)
+        from .cfplot import ndecs, plotvars
+
+        if self.data.x is None or self.data.y is None or self.data.levels is None:
+            return
+
+        cs = plotvars.plot.contour(
+            self.data.x,
+            self.data.y,
+            self.data.field * self.data.fmult,
+            self.data.levels,
+            colors=colors,
+            linewidths=linewidths,
+            linestyles=linestyles,
+        )
+        if line_labels and not isinstance(self.data.levels, int):
+            nd = ndecs(self.data.levels)
+            fmt = "%d"
+            if nd != 0:
+                fmt = "%1." + str(nd) + "f"
+            plotvars.plot.clabel(cs, fmt=fmt, colors=colors, fontsize=plotvars.text_fontsize)
+
+        if zero_thick:
+            plotvars.plot.contour(
+                self.data.x,
+                self.data.y,
+                self.data.field * self.data.fmult,
+                [-1e-32, 0],
+                colors=colors,
+                linewidths=zero_thick,
+                linestyles=linestyles,
+                alpha=1.0,
+            )
+
+    def render_colorbar(
+        self,
+        orientation: str | None,
+        shrink: float | None,
+        position: list[float] | None,
+        fraction: float | None,
+        thick: float | None,
+        anchor: float | None,
+        fontsize: int | None,
+        fontweight: str | None,
+        text_up_down: bool,
+        text_down_up: bool,
+        drawedges: bool,
+        labels: list[str] | None = None,
+        title: str | None = None,
+    ) -> None:
+        """Render colorbar for Cartesian contour plots."""
+        from .cfplot import cbar
+
+        if self.data.levels is None:
+            return
+
+        cbar(
+            labels=labels,
+            orientation=orientation,
+            position=position,
+            shrink=shrink,
+            title=title or self.data.colorbar_title,
+            fontsize=fontsize,
+            fontweight=fontweight,
+            text_up_down=text_up_down,
+            text_down_up=text_down_up,
+            drawedges=drawedges,
+            fraction=fraction,
+            thick=thick,
+            levs=self.data.levels,
+            anchor=anchor,
+        )
+
+
+def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
+    """Return True when the new XY renderer can safely handle this call."""
+    unsupported = (
+        "irregular",
+        "face_lons",
+        "face_lats",
+        "face_connectivity",
+        "orca",
+        "swap_axes",
+        "xlog",
+        "ylog",
+        "transform_first",
+    )
+    for key in unsupported:
+        if kwargs.get(key):
+            return False
+
+    ptype = kwargs.get("ptype", 0)
+    if not isinstance(f, cf.Field) and ptype not in (0, None):
+        return False
+
+    return True
+
+
+def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
+    """Attempt rendering via new XY renderer and return True on success."""
+    from .cfplot import (
+        _gvals,
+        calculate_levels,
+        global_blockfill,
+        global_fill,
+        global_lines,
+        gopen,
+        gset,
+        plotvars,
+    )
+
+    if isinstance(f, cf.Field):
+        data = ContourData.from_cf_field(
+            f=f,
+            colorbar_title=kwargs.get("colorbar_title", None),
+            plotvars=plotvars,
+            verbose=kwargs.get("verbose", None),
+        )
+        # Initial non-map CF extraction target: lat-height and lon-height.
+        if data.ptype not in (2, 3):
+            return False
+    else:
+        data = ContourData.from_arrays(field=np.asarray(f), x=x, y=y)
+
+    fill = kwargs.get("fill", global_fill)
+    lines = kwargs.get("lines", global_lines)
+    blockfill = kwargs.get("blockfill", global_blockfill)
+    line_labels = kwargs.get("line_labels", True)
+    zero_thick = kwargs.get("zero_thick", False)
+    colors = kwargs.get("colors", "k")
+    linewidths = kwargs.get("linewidths", None)
+    linestyles = kwargs.get("linestyles", None)
+    alpha = kwargs.get("alpha", 1.0)
+    zorder = kwargs.get("zorder", 1)
+
+    if blockfill:
+        fill = False
+
+    colorbar = kwargs.get("colorbar", True)
+    if not fill and not blockfill:
+        colorbar = False
+
+    if plotvars.levels is None:
+        clevs, mult, fmult = calculate_levels(
+            field=data.field,
+            level_spacing=kwargs.get("level_spacing", "linear"),
+            verbose=kwargs.get("verbose", None),
+        )
+    else:
+        clevs = np.asarray(plotvars.levels)
+        mult = 0
+        fmult = 1
+
+    cs = ColourScale(plotvars).fit_to_levels(
+        levels=np.asarray(clevs),
+        includes_zero=bool(np.any(np.asarray(clevs) == 0)),
+        levels_extend=plotvars.levels_extend,
+    )
+
+    colorbar_orientation = kwargs.get("colorbar_orientation", None) or "horizontal"
+    colorbar_label_skip = kwargs.get("colorbar_label_skip", 1)
+    if colorbar_label_skip is None:
+        colorbar_label_skip = 1
+
+    cbar_labels = kwargs.get("colorbar_labels")
+    if cbar_labels is None:
+        cbar_labels = cs.colorbar_labels(
+            levels=np.asarray(clevs),
+            orientation=colorbar_orientation,
+            n_columns=plotvars.columns,
+            label_skip=colorbar_label_skip,
+            custom_labels=None,
+        )
+
+    if plotvars.user_plot == 0:
+        gopen(user_plot=0)
+
+    xmin = kwargs.get("xmin", float(np.nanmin(data.x)))
+    xmax = kwargs.get("xmax", float(np.nanmax(data.x)))
+    ymin = kwargs.get("ymin", float(np.nanmin(data.y)))
+    ymax = kwargs.get("ymax", float(np.nanmax(data.y)))
+    gset(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, user_gset=kwargs.get("user_gset", 0))
+
+    xticks = kwargs.get("xticks", None)
+    yticks = kwargs.get("yticks", None)
+    if xticks is None:
+        xticks = _gvals(dmin=xmin, dmax=xmax, mod=False)[0]
+    if yticks is None:
+        yticks = _gvals(dmin=ymax, dmax=ymin, mod=False)[0]
+
+    layout = ContourLayout(plotvars).allocate(
+        colorbar_orientation=colorbar_orientation,
+        colorbar_position=kwargs.get("colorbar_position", None),
+    )
+    layout.apply_axis_labels(
+        xlabel=kwargs.get("xlabel", data.xlabel or ""),
+        ylabel=kwargs.get("ylabel", data.ylabel or ""),
+        xticks=xticks,
+        yticks=yticks,
+    )
+
+    data = replace(
+        data,
+        levels=np.asarray(clevs),
+        mult=mult,
+        fmult=fmult,
+        fill=fill,
+        lines=lines,
+        blockfill=blockfill,
+    )
+    renderer = XYContourRenderer(layout=layout, data=data, colour_scale=cs)
+
+    if fill:
+        renderer.render_filled(alpha=alpha, zorder=zorder, transform_first=None)
+    if blockfill:
+        renderer.render_blockfill(
+            fast=kwargs.get("blockfill_fast", None), alpha=alpha, zorder=zorder
+        )
+    if lines:
+        renderer.render_lines(
+            colors=colors,
+            linewidths=linewidths,
+            linestyles=linestyles,
+            line_labels=line_labels,
+            zero_thick=zero_thick,
+        )
+
+    colorbar_title = kwargs.get("colorbar_title", "")
+    if mult != 0:
+        colorbar_title = f"{colorbar_title} *10^{{{mult}}}"
+
+    if colorbar:
+        renderer.render_colorbar(
+            orientation=colorbar_orientation,
+            shrink=kwargs.get("colorbar_shrink", None),
+            position=kwargs.get("colorbar_position", None),
+            fraction=kwargs.get("colorbar_fraction", None),
+            thick=kwargs.get("colorbar_thick", None),
+            anchor=kwargs.get("colorbar_anchor", None),
+            fontsize=kwargs.get("colorbar_fontsize", None),
+            fontweight=kwargs.get("colorbar_fontweight", None),
+            text_up_down=kwargs.get("colorbar_text_up_down", False),
+            text_down_up=kwargs.get("colorbar_text_down_up", False),
+            drawedges=kwargs.get("colorbar_drawedges", True),
+            labels=list(cbar_labels),
+            title=colorbar_title,
+        )
+
+    layout.apply_title(
+        title=kwargs.get("title", "") or "",
+        dims_title=bool(kwargs.get("titles", False)),
+        fontsize=plotvars.title_fontsize,
+        fontweight=plotvars.title_fontweight,
+    )
+
+    return True
 
 
 def con(f=None, x=None, y=None, **kwargs):
@@ -481,12 +768,18 @@ def con(f=None, x=None, y=None, **kwargs):
     For now, orchestration uses the new classes for data and styling,
     then delegates to legacy renderer.
     """
-    from .cfplot import _legacy_con, plotvars
+    from .cfplot import _legacy_con
 
-    # For now, we still delegate to legacy for rendering, but we prepare
-    # the architecture. This allows incremental migration.
-    # Eventually, specific plot types will use MapContourRenderer or XYContourRenderer.
+    # First extraction step: run the new XY renderer for basic 2D array plots.
+    # Any unsupported or advanced usage safely falls back to legacy.
+    try:
+        if _can_use_new_xy_path(f=f, kwargs=kwargs):
+            if _render_with_new_xy(f=f, x=x, y=y, kwargs=kwargs):
+                return None
+    except Exception:
+        # Fallback preserves behavior for edge cases not yet extracted.
+        pass
 
-    # Delegate rendering to legacy implementation
+    # Delegate remaining rendering to legacy implementation
     return _legacy_con(f=f, x=x, y=y, **kwargs)
 
