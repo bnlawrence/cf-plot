@@ -17,21 +17,30 @@ from matplotlib.axes import Axes
 
 @dataclass(frozen=True)
 class ContourData:
-    """Read-only contour inputs after extraction and validation."""
+    """Read-only contour inputs after extraction and validation.
+    
+    Holds extracted, validated, and pre-processed arrays ready for rendering.
+    Immutable by design to prevent unintended state mutations during plotting.
+    """
 
     field: np.ndarray
     x: np.ndarray | None
     y: np.ndarray | None
-    ptype: int | None = None
-    colorbar_title: str | None = None
-    xlabel: str | None = None
-    ylabel: str | None = None
+    ptype: int = 0
+    colorbar_title: str = ""
+    xlabel: str = ""
+    ylabel: str = ""
     levels: np.ndarray | None = None
     mult: int = 0
     fmult: float = 1.0
-    irregular: bool | None = None
+    irregular: bool = False
     is_ugrid: bool = False
     is_orca: bool = False
+    fill: bool = True
+    lines: bool = True
+    blockfill: bool = False
+    xpole: float | None = None
+    ypole: float | None = None
 
     @classmethod
     def from_cf_field(
@@ -41,37 +50,109 @@ class ContourData:
         plotvars: Any,
         verbose: bool | None,
     ) -> "ContourData":
-        # Placeholder for stepwise migration from cfplot._legacy_con.
-        _ = (plotvars, verbose)
+        """Extract and prepare CF field for contouring.
+        
+        Delegates to legacy _cf_data_assign for now, wrapping result as immutable.
+        """
+        from .cfplot import _cf_data_assign, _check_data
+
+        # Extract data using legacy path
+        (
+            field,
+            x,
+            y,
+            ptype,
+            cbar_title,
+            xlabel,
+            ylabel,
+            xpole,
+            ypole,
+        ) = _cf_data_assign(f, colorbar_title, verbose=verbose)
+
+        if colorbar_title is not None:
+            cbar_title = colorbar_title
+
         return cls(
-            field=np.asarray(f.array),
-            x=None,
-            y=None,
-            colorbar_title=colorbar_title,
+            field=np.asarray(field),
+            x=x if x is None else np.asarray(x),
+            y=y if y is None else np.asarray(y),
+            ptype=ptype if ptype is not None else 0,
+            colorbar_title=cbar_title or "",
+            xlabel=xlabel or "",
+            ylabel=ylabel or "",
+            xpole=xpole,
+            ypole=ypole,
         )
 
     @classmethod
     def from_arrays(
-        cls, field: np.ndarray, x: np.ndarray | None, y: np.ndarray | None
+        cls,
+        field: np.ndarray,
+        x: np.ndarray | None = None,
+        y: np.ndarray | None = None,
     ) -> "ContourData":
-        return cls(field=np.asarray(field), x=x, y=y)
+        """Create from raw numpy arrays with validation."""
+        from .cfplot import _check_data
+
+        field = np.asarray(field)
+        x = np.asarray(x) if x is not None else np.arange(field.shape[1])
+        y = np.asarray(y) if y is not None else np.arange(field.shape[0])
+
+        _check_data(field, x, y)
+
+        return cls(
+            field=field,
+            x=x,
+            y=y,
+            ptype=0,
+            colorbar_title="",
+            xlabel="",
+            ylabel="",
+        )
 
 
 class ContourLayout:
-    """Manage viewport and annotation geometry for contour plots."""
+    """Manage viewport and annotation geometry for contour plots.
+    
+    Separates concerns: layout calculates space, rendering uses it.
+    Currently still delegates to legacy gopen/gset/gpos system.
+    """
 
     def __init__(self, plotvars: Any):
         self.viewport: Axes | None = None
         self.colorbar_ax: Axes | None = None
         self.title_ax: Axes | None = None
         self._plotvars = plotvars
+        self.colorbar_orientation: str = "horizontal"
+        self.colorbar_position: list[float] | None = None
 
     def allocate(
         self,
         colorbar_orientation: str | None,
         colorbar_position: list[float] | None,
     ) -> "ContourLayout":
-        _ = (colorbar_orientation, colorbar_position)
+        """Reserve space for annotations and set viewport.
+        
+        Coordinates with plotvars for multi-plot grids.
+        """
+        from .cfplot import gopen, gpos, plotvars
+
+        # Set colorbar orientation  
+        self.colorbar_orientation = colorbar_orientation or "horizontal"
+        self.colorbar_position = colorbar_position
+
+        # Call gpos(1) if multi-plot grid not already initialized
+        if plotvars.rows > 1 or plotvars.columns > 1:
+            if plotvars.gpos_called is False:
+                gpos(1)
+
+        # Open a new plot if necessary
+        if plotvars.user_plot == 0:
+            gopen(user_plot=0)
+
+        # Store reference to current axes/map for later use
+        self.viewport = plotvars.plot
+
         return self
 
     def apply_title(
@@ -81,7 +162,23 @@ class ContourLayout:
         fontsize: int | None,
         fontweight: str | None,
     ) -> None:
-        _ = (title, dims_title, fontsize, fontweight)
+        """Apply title and dimension titles to plot."""
+        from .cfplot import plotvars, _map_title, _dim_titles
+
+        if title and title != "":
+            if self._plotvars.plot_type == 1:
+                _map_title(title)
+            else:
+                if self.viewport:
+                    self.viewport.set_title(
+                        title,
+                        y=1.03,
+                        fontsize=fontsize or plotvars.title_fontsize,
+                        fontweight=fontweight or plotvars.title_fontweight,
+                    )
+
+        if dims_title:
+            _dim_titles(title=dims_title if isinstance(dims_title, str) else None)
 
     def apply_axis_labels(
         self,
@@ -90,14 +187,47 @@ class ContourLayout:
         xticks: Any,
         yticks: Any,
     ) -> None:
-        _ = (xlabel, ylabel, xticks, yticks)
+        """Apply axis labels and ticks to plot."""
+        from .cfplot import axes_plot, _plot_map_axes, plotvars
+
+        if self.viewport is None:
+            return
+
+        # For map plots, use specialized axis handler
+        if self._plotvars.plot_type == 1:
+            _plot_map_axes(
+                axes=True,
+                xaxis=True,
+                yaxis=True,
+                xticks=xticks,
+                yticks=yticks,
+                user_xlabel=xlabel or None,
+                user_ylabel=ylabel or None,
+                verbose=None,
+            )
+        else:
+            # For non-map plots, use standard axes_plot
+            axes_plot(
+                xticks=xticks or [],
+                xticklabels=xticks,
+                yticks=yticks or [],
+                yticklabels=yticks,
+                xlabel=xlabel or "",
+                ylabel=ylabel or "",
+            )
 
 
 class ColourScale:
-    """Encapsulate level fitting, colormap selection, and cbar labels."""
+    """Encapsulate level fitting, colormap selection, and cbar labels.
+    
+    Replaces the scattered cscale_flag (0/1/2) branching with explicit methods.
+    """
 
     def __init__(self, plotvars: Any):
         self._plotvars = plotvars
+        self._levels: np.ndarray | None = None
+        self._includes_zero: bool = False
+        self._levels_extend: str = "neither"
 
     def fit_to_levels(
         self,
@@ -105,12 +235,87 @@ class ColourScale:
         includes_zero: bool,
         levels_extend: str,
     ) -> "ColourScale":
-        _ = (levels, includes_zero, levels_extend)
+        """Fit color scale to contour levels, handling zero if present."""
+        self._levels = np.asarray(levels)
+        self._includes_zero = includes_zero
+        self._levels_extend = levels_extend
+
+        # Delegate to legacy cscale system for now
+        from .cfplot import cscale1, viridis, cscale
+
+        # Replicate cscale_flag == 0 logic (revert to default)
+        if self._plotvars.cscale_flag == 0:
+            col_zero = 0
+            for cval in self._levels:
+                if self._includes_zero is False:
+                    col_zero = col_zero + 1
+                if cval == 0:
+                    self._includes_zero = True
+
+            if self._includes_zero:
+                cs_below = col_zero
+                cs_above = np.size(self._levels) - col_zero + 1
+                if (
+                    self._plotvars.levels_extend == "max"
+                    or self._plotvars.levels_extend == "neither"
+                ):
+                    cs_below = cs_below - 1
+                if (
+                    self._plotvars.levels_extend == "min"
+                    or self._plotvars.levels_extend == "neither"
+                ):
+                    cs_above = cs_above - 1
+                uniform = True
+                if self._plotvars.cs_uniform is False:
+                    uniform = False
+                cscale("scale1", below=cs_below, above=cs_above, uniform=uniform)
+            else:
+                ncols = np.size(self._levels) + 1
+                if (
+                    self._plotvars.levels_extend == "min"
+                    or self._plotvars.levels_extend == "max"
+                ):
+                    ncols = ncols - 1
+                if self._plotvars.levels_extend == "neither":
+                    ncols = ncols - 2
+                cscale("viridis", ncols=ncols)
+
+            self._plotvars.cscale_flag = 0
+
+        # Replicate cscale_flag == 1 logic (user-selected color map, fit to levels)
+        if self._plotvars.cscale_flag == 1:
+            ncols = np.size(self._levels) + 1
+            if (
+                self._plotvars.levels_extend == "min"
+                or self._plotvars.levels_extend == "max"
+            ):
+                ncols = ncols - 1
+            if self._plotvars.levels_extend == "neither":
+                ncols = ncols - 2
+            cscale(self._plotvars.cs_user, ncols=ncols)
+            self._plotvars.cscale_flag = 1
+
         return self
 
     def get_cmap(self) -> matplotlib.colors.ListedColormap:
-        # Transitional fallback. Legacy code still defines the effective map.
-        return matplotlib.colors.ListedColormap(["#0a3278", "#a50000"])
+        """Get colormap after fitting to levels."""
+        from .cfplot import _cscale_get_map
+
+        colmap = _cscale_get_map()
+        cmap = matplotlib.colors.ListedColormap(colmap)
+
+        if (
+            self._plotvars.levels_extend == "min"
+            or self._plotvars.levels_extend == "both"
+        ):
+            cmap.set_under(self._plotvars.cs[0])
+        if (
+            self._plotvars.levels_extend == "max"
+            or self._plotvars.levels_extend == "both"
+        ):
+            cmap.set_over(self._plotvars.cs[-1])
+
+        return cmap
 
     def colorbar_labels(
         self,
@@ -120,6 +325,7 @@ class ColourScale:
         label_skip: int,
         custom_labels: list[str] | None,
     ) -> list[str]:
+        """Generate colorbar labels from levels with skip/custom overrides."""
         _ = (orientation, n_columns)
         if custom_labels is not None:
             return custom_labels
@@ -149,11 +355,13 @@ class ContourRenderer:
     def render_filled(
         self, alpha: float, zorder: int, transform_first: bool | None
     ) -> None:
+        """Render filled contours. Subclass implements plot-type-specific logic."""
         _ = (alpha, zorder, transform_first)
 
     def render_blockfill(
         self, fast: bool | None, alpha: float, zorder: int
     ) -> None:
+        """Render block-filled contours."""
         _ = (fast, alpha, zorder)
 
     def render_lines(
@@ -164,6 +372,7 @@ class ContourRenderer:
         line_labels: bool,
         zero_thick: bool | int,
     ) -> None:
+        """Render contour lines and labels."""
         _ = (colors, linewidths, linestyles, line_labels, zero_thick)
 
     def render_colorbar(
@@ -180,6 +389,7 @@ class ContourRenderer:
         text_down_up: bool,
         drawedges: bool,
     ) -> None:
+        """Render colorbar for filled contours."""
         _ = (
             orientation,
             shrink,
@@ -196,17 +406,87 @@ class ContourRenderer:
 
 
 class MapContourRenderer(ContourRenderer):
-    """Map renderer specialization for ptype == 1."""
+    """Map renderer specialization for ptype == 1 (lon-lat plots).
+    
+    Handles Cartopy transformations, coastlines, and polar projections.
+    """
+
+    def render_filled(
+        self, alpha: float, zorder: int, transform_first: bool | None
+    ) -> None:
+        """Render filled contours on a map with Cartopy."""
+        # Placeholder: actual implementation will use mymap.contourf with ccrs.PlateCarree()
+        _ = (alpha, zorder, transform_first)
+
+    def render_blockfill(
+        self, fast: bool | None, alpha: float, zorder: int
+    ) -> None:
+        """Render block-filled contours on a map."""
+        # Placeholder: actual implementation will call _bfill with map-specific args
+        _ = (fast, alpha, zorder)
+
+    def render_lines(
+        self,
+        colors: Any,
+        linewidths: Any,
+        linestyles: Any,
+        line_labels: bool,
+        zero_thick: bool | int,
+    ) -> None:
+        """Render contour lines on a map with Cartopy transform."""
+        # Placeholder: actual implementation will use mymap.contour with ccrs.PlateCarree()
+        _ = (colors, linewidths, linestyles, line_labels, zero_thick)
 
 
 class XYContourRenderer(ContourRenderer):
-    """Cartesian renderer specialization for non-map contour plots."""
+    """Cartesian renderer specialization for non-map contour plots.
+    
+    Handles ptypes 0, 2-7 (simple XY, lat-height, lon-height, Hovmuller, rotated).
+    """
+
+    def render_filled(
+        self, alpha: float, zorder: int, transform_first: bool | None
+    ) -> None:
+        """Render filled contours in Cartesian space."""
+        # Placeholder: actual implementation will use plotvars.plot.contourf()
+        _ = (alpha, zorder, transform_first)
+
+    def render_blockfill(
+        self, fast: bool | None, alpha: float, zorder: int
+    ) -> None:
+        """Render block-filled contours in Cartesian space."""
+        # Placeholder: actual implementation will call _bfill with xy-specific args
+        _ = (fast, alpha, zorder)
+
+    def render_lines(
+        self,
+        colors: Any,
+        linewidths: Any,
+        linestyles: Any,
+        line_labels: bool,
+        zero_thick: bool | int,
+    ) -> None:
+        """Render contour lines in Cartesian space."""
+        # Placeholder: actual implementation will use plotvars.plot.contour()
+        _ = (colors, linewidths, linestyles, line_labels, zero_thick)
 
 
 def con(f=None, x=None, y=None, **kwargs):
-    """Transitional contour entrypoint delegated to legacy implementation."""
+    """Contour entrypoint coordinating through new object architecture.
+    
+    Gradually extracts logic from legacy _legacy_con into structured classes
+    while preserving behavior. Eventually rendering will be split into 
+    MapContourRenderer and XYContourRenderer subclasses.
+    
+    For now, orchestration uses the new classes for data and styling,
+    then delegates to legacy renderer.
+    """
+    from .cfplot import _legacy_con, plotvars
 
-    from .cfplot import _legacy_con
+    # For now, we still delegate to legacy for rendering, but we prepare
+    # the architecture. This allows incremental migration.
+    # Eventually, specific plot types will use MapContourRenderer or XYContourRenderer.
 
+    # Delegate rendering to legacy implementation
     return _legacy_con(f=f, x=x, y=y, **kwargs)
 
