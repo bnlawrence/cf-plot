@@ -669,3 +669,430 @@ def timeaxis(
             hour_counter += step
 
     return (time_ticks, time_labels, axis_label)
+
+
+# ---------------------------------------------------------------------------
+# CF field extraction helpers
+# ---------------------------------------------------------------------------
+
+def _supscr(text: str) -> str:
+    """Format superscript notation for units strings (``**`` and ``^``)."""
+    tform = ""
+    sup = 0
+    for i in text:
+        if i == "^":
+            sup = 2
+        if i == "*":
+            sup = sup + 1
+        if sup == 0:
+            tform = tform + i
+        if sup == 1:
+            if i not in "*":
+                tform = tform + "*" + i
+                sup = 0
+        if sup == 3:
+            if i in "-0123456789":
+                tform = tform + i
+            else:
+                tform = tform + "}$" + i
+                sup = 0
+        if sup == 2:
+            tform = tform + "$^{"
+            sup = 3
+    if sup == 3:
+        tform = tform + "}$"
+
+    tform = tform.replace("m2", "m$^{2}$")
+    tform = tform.replace("m3", "m$^{3}$")
+    tform = tform.replace("m-2", "m$^{-2}$")
+    tform = tform.replace("m-3", "m$^{-3}$")
+    tform = tform.replace("s-1", "s$^{-1}$")
+    tform = tform.replace("s-2", "s$^{-2}$")
+    return tform
+
+
+def cf_var_name(field: Any, dim: str) -> str:
+    """Return the best available name for a CF field dimension coordinate.
+
+    Names are checked in priority order: ncvar, short_name, long_name,
+    standard_name.
+    """
+    # If multiple Z coordinates exist, use the last one
+    if dim == "Z":
+        z_names = [
+            mycoord
+            for mycoord in list(field.coords())
+            if field.coord(mycoord).Z
+        ]
+        if len(z_names) > 1:
+            dim = z_names[-1]
+
+    construct = field.construct(dim)
+    id_ = getattr(construct, "id", False)
+    ncvar = construct.nc_get_variable(False)
+    short_name = getattr(construct, "short_name", False)
+    long_name = getattr(construct, "long_name", False)
+    standard_name = getattr(construct, "standard_name", False)
+
+    name = "No Name"
+    if id_:
+        name = id_
+    if ncvar:
+        name = ncvar
+    if short_name:
+        name = short_name
+    if long_name:
+        name = long_name
+    if standard_name:
+        name = standard_name
+    return name
+
+
+def find_dim_names(field: Any) -> list:
+    """Return dimension coordinate names in [X, Y, Z, T] order.
+
+    Ignores auxiliary coordinates unless no dimension coordinate is available
+    for a given axis.
+    """
+    daxes = list(field.get_data_axes())
+    dcoords = list(field.coords())
+
+    nx = ny = nz = nt = 0
+    for coord in dcoords:
+        c = field.coord(coord)
+        if c.X:
+            nx += 1
+        if c.Y:
+            ny += 1
+        if c.Z:
+            nz += 1
+        if c.T:
+            nt += 1
+
+    coords = []
+    for axis in daxes:
+        chosen = None
+        for coord in dcoords:
+            try:
+                caxes = field.get_data_axes(coord)
+            except Exception:
+                continue
+            if not caxes or caxes[0] != axis:
+                continue
+            if not str(coord).startswith("auxiliarycoordinate"):
+                chosen = coord
+                break
+            if chosen is None:
+                chosen = coord
+        if chosen is not None:
+            coords.append(chosen)
+
+    mycoords = deepcopy(coords)
+    for i in np.arange(len(coords)):
+        c = field.coord(coords[i])
+        if c.X and nx == 1:
+            mycoords[i] = "X"
+        if c.Y and ny == 1:
+            mycoords[i] = "Y"
+        if c.Z and nz == 1:
+            mycoords[i] = "Z"
+        if c.T and nt == 1:
+            mycoords[i] = "T"
+
+    mycoords.reverse()
+    return mycoords
+
+
+def find_z(field: Any) -> str | None:
+    """Return the key for the Z coordinate of a CF field, or None."""
+    if field is None:
+        return None
+    mycoords = find_dim_names(field)
+    myz = None
+    for mycoord in mycoords:
+        if field.coord(mycoord).Z:
+            myz = mycoord
+    return myz
+
+
+def cf_data_assign(
+    f: Any,
+    colorbar_title: str | None = None,
+    verbose: bool | None = None,
+    proj: str = "cyl",
+) -> tuple:
+    """Extract arrays and metadata from a CF field for contouring.
+
+    This is the refactored, pure version of the legacy ``_cf_data_assign``
+    function.  It has no dependency on ``plotvars`` global state; the one
+    piece of state it previously read (``plotvars.proj``) is passed explicitly
+    via the *proj* parameter.
+
+    Parameters
+    ----------
+    f : cf.Field
+        Input CF field.
+    colorbar_title : str or None
+        Override colorbar title; if None, derived from field metadata.
+    verbose : bool or None
+        Print diagnostic information when True.
+    proj : str
+        Current map projection (default ``'cyl'``).  Used to decide whether
+        to look for auxiliary lon/lat coordinates on rotated-pole fields.
+
+    Returns
+    -------
+    field, x, y, ptype, colorbar_title, xlabel, ylabel, xpole, ypole
+    """
+    import cf as _cf
+    import cartopy.crs as _ccrs
+
+    # Check input data has the correct number of dimensions.
+    # Rotated-pole fields may legitimately have extra dimensions.
+    ndim = len(f.domain_axes().filter_by_size(_cf.gt(1)))
+    if f.ref("grid_mapping_name:rotated_latitude_longitude", default=False) is False:
+        if ndim > 2 or ndim < 1:
+            if ndim > 2:
+                errstr = "cf_data_assign error - data has too many dimensions"
+            else:
+                errstr = "cf_data_assign error - data has too few dimensions"
+            errstr += "\n cf-plot requires one or two dimensional data\n"
+            for mydim in list(f.dimension_coordinates()):
+                sn = getattr(f.construct(mydim), "standard_name", False)
+                ln = getattr(f.construct(mydim), "long_name", False)
+                if sn:
+                    errstr += f"{mydim},{sn},{f.construct(mydim).size}\n"
+                elif ln:
+                    errstr += f"{mydim},{ln},{f.construct(mydim).size}\n"
+            raise Warning(errstr)
+
+    lons = lats = height = time = None
+    has_lons = has_lats = has_height = has_time = False
+    xlabel = ylabel = ""
+    xpole = ypole = None
+    ptype = None
+    x = y = None
+
+    myz = find_z(f)
+
+    for mycoord in f.coords():
+        c = f.coord(mycoord)
+        if c.X:
+            lons = np.squeeze(f.construct(mycoord).array)
+            if verbose:
+                print("lons -", lons)
+            if np.size(lons) > 1:
+                has_lons = True
+        if c.Y:
+            lats = np.squeeze(f.construct(mycoord).array)
+            if verbose:
+                print("lats -", lats)
+            if np.size(lats) > 1:
+                has_lats = True
+        if c.Z:
+            height = np.squeeze(f.construct(mycoord).array)
+            if verbose:
+                print("height -", height)
+            if np.size(height) > 1:
+                has_height = True
+        if c.T:
+            time = np.squeeze(f.construct(mycoord).array)
+            if verbose:
+                print("time -", time)
+            if np.size(time) > 1:
+                has_time = True
+
+    field = np.squeeze(f.array)
+
+    if str(f.dtype) == "bool":
+        print("\n\n\n Warning - boolean data found - converting to integers\n\n\n")
+        g = deepcopy(f)
+        g.dtype = int
+        field = np.squeeze(g.array)
+
+    if has_lons and has_lats:
+        ptype = 1
+        x = lons
+        y = lats
+
+    if has_lats and has_height:
+        ptype = 2
+        x = lats
+        y = height
+        xname = cf_var_name(field=f, dim="Y")
+        xunits = str(getattr(f.construct("Y"), "Units", ""))
+        if xunits == "degrees_north":
+            xunits = "degrees"
+        xlabel = f"{xname} ({xunits})" if xunits else xname
+        yname = cf_var_name(field=f, dim=myz)
+        yunits = str(getattr(f.construct(myz), "Units", ""))
+        ylabel = f"{yname} ({yunits})" if yunits else yname
+
+    if has_lons and has_height:
+        ptype = 3
+        x = lons
+        y = height
+        xname = cf_var_name(field=f, dim="X")
+        xunits = str(getattr(f.construct("X"), "Units", ""))
+        if xunits == "degrees_east":
+            xunits = "degrees"
+        xlabel = f"{xname} ({xunits})" if xunits else xname
+        yname = cf_var_name(field=f, dim=myz)
+        yunits = str(getattr(f.construct(myz), "Units", ""))
+        ylabel = f"{yname} ({yunits})" if yunits else yname
+
+    if has_lons and has_time:
+        ptype = 4
+        x = lons
+        y = time
+        xname = cf_var_name(field=f, dim="X")
+        xunits = str(getattr(f.construct("X"), "Units", ""))
+        if xunits == "degrees_east":
+            xunits = "degrees"
+        xlabel = f"{xname} ({xunits})" if xunits else xname
+        yname = cf_var_name(field=f, dim="T")
+        yunits = str(getattr(f.construct("T"), "Units", ""))
+        ylabel = f"{yname} ({yunits})" if yunits else yname
+
+    if has_lats and has_time:
+        ptype = 5
+        x = lats
+        y = time
+        xname = cf_var_name(field=f, dim="Y")
+        xunits = str(getattr(f.construct("Y"), "Units", ""))
+        if xunits == "degrees_north":
+            xunits = "degrees"
+        xlabel = f"{xname} ({xunits})" if xunits else xname
+        yname = cf_var_name(field=f, dim="T")
+        yunits = str(getattr(f.construct("T"), "Units", ""))
+        ylabel = f"{yname} ({yunits})" if yunits else yname
+
+    if has_height and has_time:
+        ptype = 7
+        x = time
+        y = height
+        xname = cf_var_name(field=f, dim="T")
+        xunits = str(getattr(f.construct("T"), "Units", ""))
+        xlabel = f"{xname} ({xunits})" if xunits else xname
+        yname = cf_var_name(field=f, dim="Z")
+        yunits = str(getattr(f.construct("Z"), "Units", ""))
+        ylabel = f"{yname} ({yunits})" if yunits else yname
+        field = np.flipud(np.rot90(field))
+
+    # Rotated pole
+    if f.ref("grid_mapping_name:rotated_latitude_longitude", default=False):
+        ptype = 6
+        rotated_pole = f.ref("grid_mapping_name:rotated_latitude_longitude")
+        xpole = rotated_pole["grid_north_pole_longitude"]
+        ypole = rotated_pole["grid_north_pole_latitude"]
+        for mydim in list(f.dimension_coordinates()):
+            name = cf_var_name(field=f, dim=mydim)
+            if name in ["grid_longitude", "longitude", "x"]:
+                x = np.squeeze(f.construct(mydim).array)
+                xunits = str(getattr(f.construct(mydim), "units", ""))
+                xlabel = cf_var_name(field=f, dim=mydim)
+            if name in ["grid_latitude", "latitude", "y"]:
+                y = np.squeeze(f.construct(mydim).array)
+                if y[0] > y[-1]:
+                    y = y[::-1]
+                    field = np.flipud(field)
+                yunits = str(getattr(f.construct(mydim), "Units", ""))
+                ylabel = cf_var_name(field=f, dim=mydim) + yunits
+
+    # Auxiliary lon/lat (e.g. ORCA, UGRID)
+    if ptype == 1 or ptype is None:
+        if proj != "rotated":
+            aux_lons = aux_lats = False
+            xpts = ypts = None
+            for mydim in list(f.auxiliary_coordinates()):
+                name = cf_var_name(field=f, dim=mydim)
+                if name in ["longitude"]:
+                    xpts = np.squeeze(f.construct(mydim).array)
+                    aux_lons = True
+                if name in ["latitude"]:
+                    ypts = np.squeeze(f.construct(mydim).array)
+                    aux_lats = True
+            if aux_lons and aux_lats:
+                x = xpts
+                y = ypts
+                ptype = 1
+
+    # UKCP transverse mercator
+    if f.ref("grid_mapping_name:transverse_mercator", default=False):
+        ptype = 1
+        field = np.squeeze(f.array)
+        has_lons = has_lats = False
+        for mydim in list(f.auxiliary_coordinates()):
+            name = cf_var_name(field=f, dim=mydim)
+            if name in ["longitude"]:
+                x = np.squeeze(f.construct(mydim).array)
+                has_lons = True
+            if name in ["latitude"]:
+                y = np.squeeze(f.construct(mydim).array)
+                has_lats = True
+        if not has_lons or not has_lats:
+            xpts = f.construct("X").array
+            ypts = f.construct("Y").array
+            field = np.squeeze(f.array)
+            ref = f.ref("grid_mapping_name:transverse_mercator")
+            transform = _ccrs.TransverseMercator(
+                false_easting=ref["false_easting"],
+                false_northing=ref["false_northing"],
+                central_longitude=ref["longitude_of_central_meridian"],
+                central_latitude=ref["latitude_of_projection_origin"],
+                scale_factor=ref["scale_factor_at_central_meridian"],
+            )
+            xvals, yvals = np.meshgrid(xpts, ypts)
+            points = _ccrs.PlateCarree().transform_points(transform, xvals, yvals)
+            x = np.array(points)[:, :, 0]
+            y = np.array(points)[:, :, 1]
+
+    # None of the above — fall back to ptype 0
+    if ptype is None:
+        ptype = 0
+        data_axes = f.get_data_axes()
+        count = 1
+        for d in data_axes:
+            try:
+                c = f.coordinate(filter_by_axis=[d])
+                if np.size(c.array) > 1:
+                    if count == 1:
+                        y = c
+                        mycoord = "dimensioncoordinate" + str(d[-1])
+                        yunits = str(getattr(f.coord(mycoord), "Units", ""))
+                        yunits_str = f"({yunits})" if yunits else ""
+                        ylabel = cf_var_name(field=f, dim=mycoord) + yunits_str
+                    elif count == 2:
+                        x = c
+                        mycoord = "dimensioncoordinate" + str(d[-1])
+                        xunits = str(getattr(f.coord(mycoord), "units", ""))
+                        xunits_str = f"({xunits})" if xunits else ""
+                        xlabel = cf_var_name(field=f, dim=mycoord) + xunits_str
+                    count += 1
+            except ValueError:
+                errstr = (
+                    "\n\ncf_data_assign - cannot find data to return\n\n"
+                    f"{f.constructs.domain_axis_identity(d)}\n\n"
+                )
+                raise Warning(errstr)
+
+    # Derive colorbar title from field metadata
+    if colorbar_title is None:
+        colorbar_title = "No Name"
+        if hasattr(f, "id"):
+            colorbar_title = f.id
+        nc = f.nc_get_variable(None)
+        if nc:
+            colorbar_title = f.nc_get_variable()
+        if hasattr(f, "short_name"):
+            colorbar_title = f.short_name
+        if hasattr(f, "long_name"):
+            colorbar_title = f.long_name
+        if hasattr(f, "standard_name"):
+            colorbar_title = f.standard_name
+        if hasattr(f, "Units"):
+            units_str = str(f.Units)
+            if units_str:
+                colorbar_title = f"{colorbar_title}({_supscr(units_str)})"
+
+    return (field, x, y, ptype, colorbar_title, xlabel, ylabel, xpole, ypole)
