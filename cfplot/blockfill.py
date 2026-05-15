@@ -91,19 +91,49 @@ def _bfill(
     if single_fill_color is None:
         colmap = get_colour_scale_map()
         cmap = matplotlib.colors.ListedColormap(colmap)
+        fill_colors = list(colmap)
         if plotvars.levels_extend in ["min", "both"]:
             cmap.set_under(plotvars.cs[0])
         if plotvars.levels_extend in ["max", "both"]:
             cmap.set_over(plotvars.cs[-1])
+
+        under_index = None
+        over_index = None
+        if plotvars.levels_extend in ["min", "both"]:
+            under_index = len(fill_colors)
+            fill_colors.append(plotvars.cs[0])
+        if plotvars.levels_extend in ["max", "both"]:
+            over_index = len(fill_colors)
+            fill_colors.append(plotvars.cs[-1])
     else:
         cols = single_fill_color
         cmap = matplotlib.colors.ListedColormap(cols)
+        fill_colors = None
+        under_index = None
+        over_index = None
 
     colarr = np.zeros([np.shape(field)[0], np.shape(field)[1]]) - 1
     for i in np.arange(np.size(levels) - 1):
         lev = levels[i]
         pts = np.where(np.logical_and(field >= lev, field < levels[i + 1]))
         colarr[pts] = int(i)
+
+    # Keep out-of-range values away from "white" so it is reserved for
+    # actual missing/masked values only.
+    if np.size(levels) >= 2:
+        pts = np.where(field < levels[0])
+        if np.size(pts) > 0:
+            if under_index is not None:
+                colarr[pts] = under_index
+            else:
+                colarr[pts] = 0
+
+        pts = np.where(field >= levels[-1])
+        if np.size(pts) > 0:
+            if over_index is not None:
+                colarr[pts] = over_index
+            else:
+                colarr[pts] = np.size(levels) - 2
 
     if isinstance(field, np.ma.MaskedArray):
         pts = np.ma.where(field.mask)
@@ -220,7 +250,7 @@ def _bfill(
                                     [xpts[3], ypts[3]],
                                     [xpts[4], ypts[4]],
                                 ],
-                                facecolor=plotvars.cs[int(colarr[iy, ix])],
+                                facecolor=fill_colors[int(colarr[iy, ix])],
                                 zorder=zorder,
                                 transform=ccrs.PlateCarree(),
                             )
@@ -292,7 +322,7 @@ def _bfill(
 
     else:
         if plotvars.plot_type == 1 and plotvars.proj != "cyl":
-            for i in np.arange(np.size(levels) - 1):
+            for i in np.unique(colarr[colarr >= 0]).astype(int):
                 allverts = []
                 xy_stack = np.column_stack(np.where(colarr == i))
 
@@ -313,7 +343,7 @@ def _bfill(
                     allverts.append(verts)
 
                 if single_fill_color is None:
-                    color = plotvars.cs[i]
+                    color = fill_colors[i]
                 else:
                     color = single_fill_color
                 coll = PolyCollection(
@@ -330,7 +360,7 @@ def _bfill(
                 else:
                     plotvars.plot.add_collection(coll)
         else:
-            for i in np.arange(np.size(levels) - 1):
+            for i in np.unique(colarr[colarr >= 0]).astype(int):
                 allverts = []
                 xy_stack = np.column_stack(np.where(colarr == i))
                 for pt in np.arange(np.shape(xy_stack)[0]):
@@ -347,7 +377,7 @@ def _bfill(
                     allverts.append(verts)
 
                 if single_fill_color is None:
-                    color = plotvars.cs[i]
+                    color = fill_colors[i]
                 else:
                     color = single_fill_color
 

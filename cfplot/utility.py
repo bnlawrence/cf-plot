@@ -1157,6 +1157,6 @@ def cf_data_assign(
         if hasattr(f, "Units"):
             units_str = str(f.Units)
             if units_str:
-                colorbar_title = f"{colorbar_title}({_supscr(units_str)})"
+                colorbar_title = f"{colorbar_title} ({_supscr(units_str)})"
 
     return (field, x, y, ptype, colorbar_title, xlabel, ylabel, xpole, ypole)

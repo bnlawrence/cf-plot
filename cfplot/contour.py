@@ -31,6 +31,7 @@ import os
 import cf
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import cartopy.util as cartopy_util
 import matplotlib.colors
 import matplotlib.pyplot as plot
 import numpy as np
@@ -431,9 +432,10 @@ class ContourRenderer:
         linestyles: Any,
         line_labels: bool,
         zero_thick: bool | int,
+        zorder: int = 1,
     ) -> None:
         """Render contour lines and labels."""
-        _ = (colors, linewidths, linestyles, line_labels, zero_thick)
+        _ = (colors, linewidths, linestyles, line_labels, zero_thick, zorder)
 
     def render_colorbar(
         self,
@@ -535,6 +537,7 @@ class MapContourRenderer(ContourRenderer):
         linestyles: Any,
         line_labels: bool,
         zero_thick: bool | int,
+        zorder: int = 1,
     ) -> None:
         """Render contour lines on a map with Cartopy transform."""
         if self.data.x is None or self.data.y is None or self.data.levels is None:
@@ -550,6 +553,7 @@ class MapContourRenderer(ContourRenderer):
             linestyles=linestyles,
             alpha=1.0,
             transform=ccrs.PlateCarree(),
+            zorder=zorder,
         )
         if hasattr(cs, "collections"):
             self.frame_artists.extend(list(cs.collections))
@@ -565,6 +569,7 @@ class MapContourRenderer(ContourRenderer):
                 fmt=fmt,
                 colors=colors,
                 fontsize=plotvars.text_fontsize,
+                zorder=zorder,
             )
 
         if zero_thick:
@@ -578,9 +583,47 @@ class MapContourRenderer(ContourRenderer):
                 linestyles=linestyles,
                 alpha=1.0,
                 transform=ccrs.PlateCarree(),
+                zorder=zorder,
             )
             if hasattr(cs0, "collections"):
                 self.frame_artists.extend(list(cs0.collections))
+
+    def render_colorbar(
+        self,
+        orientation: str | None,
+        shrink: float | None,
+        position: list[float] | None,
+        fraction: float | None,
+        thick: float | None,
+        anchor: float | None,
+        fontsize: int | None,
+        fontweight: str | None,
+        text_up_down: bool,
+        text_down_up: bool,
+        drawedges: bool,
+        labels: list[str] | None = None,
+        title: str | None = None,
+    ) -> None:
+        """Render colorbar for map contour plots."""
+        if self.data.levels is None:
+            return
+
+        cbar(
+            labels=labels,
+            orientation=orientation,
+            position=position,
+            shrink=shrink,
+            title=title or self.data.colorbar_title,
+            fontsize=fontsize,
+            fontweight=fontweight,
+            text_up_down=text_up_down,
+            text_down_up=text_down_up,
+            drawedges=drawedges,
+            fraction=fraction,
+            thick=thick,
+            levs=self.data.levels,
+            anchor=anchor,
+        )
 
 
 class XYContourRenderer(ContourRenderer):
@@ -636,6 +679,7 @@ class XYContourRenderer(ContourRenderer):
         linestyles: Any,
         line_labels: bool,
         zero_thick: bool | int,
+        zorder: int = 1,
     ) -> None:
         """Render contour lines in Cartesian space."""
         if self.data.x is None or self.data.y is None or self.data.levels is None:
@@ -649,13 +693,20 @@ class XYContourRenderer(ContourRenderer):
             colors=colors,
             linewidths=linewidths,
             linestyles=linestyles,
+            zorder=zorder,
         )
         if line_labels and not isinstance(self.data.levels, int):
             nd = utility.ndecs(self.data.levels)
             fmt = "%d"
             if nd != 0:
                 fmt = "%1." + str(nd) + "f"
-            plotvars.plot.clabel(cs, fmt=fmt, colors=colors, fontsize=plotvars.text_fontsize)
+            plotvars.plot.clabel(
+                cs,
+                fmt=fmt,
+                colors=colors,
+                fontsize=plotvars.text_fontsize,
+                zorder=zorder,
+            )
 
         if zero_thick:
             plotvars.plot.contour(
@@ -667,6 +718,7 @@ class XYContourRenderer(ContourRenderer):
                 linewidths=zero_thick,
                 linestyles=linestyles,
                 alpha=1.0,
+                zorder=zorder,
             )
 
     def render_colorbar(
@@ -705,6 +757,19 @@ class XYContourRenderer(ContourRenderer):
             levs=self.data.levels,
             anchor=anchor,
         )
+
+
+def _add_cyclic(field: np.ndarray, lons: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Add a cyclic longitude column if the grid doesn't span the full 360°."""
+    try:
+        return cartopy_util.add_cyclic_point(field, lons)
+    except Exception:
+        # Promote to float64 and round to handle uneven spacing from numpy rounding.
+        ndecs_max = max(
+            len(str(float(v)).split(".")[-1].rstrip("0") or "0") for v in lons
+        )
+        lons64 = np.float64(lons).round(ndecs_max)
+        return cartopy_util.add_cyclic_point(field, lons64)
 
 
 def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
@@ -1299,6 +1364,21 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
                 )
             map_runtime.ensure_map_axes()
 
+        # Add a cyclic longitude column when the grid is near-global but
+        # doesn't close on itself (no explicit bounds), to avoid a gap at
+        # the wrap-around seam in Cartopy.
+        if (
+            data.x is not None
+            and data.y is not None
+            and np.ndim(data.x) == 1
+            and np.ndim(data.y) == 1
+            and not blockfill
+        ):
+            lonrange_data = float(np.nanmax(data.x)) - float(np.nanmin(data.x))
+            if 350.0 < lonrange_data < 360.0:
+                new_field, new_x = _add_cyclic(data.field, data.x)
+                data = replace(data, field=new_field, x=new_x)
+
         if np.ndim(data.y) == 1 and data.y[0] > data.y[-1]:
             data = replace(data, y=data.y[::-1], field=np.flipud(data.field))
 
@@ -1390,6 +1470,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             linestyles=linestyles,
             line_labels=line_labels,
             zero_thick=zero_thick,
+            zorder=zorder,
         )
 
     if data.ptype == 1:

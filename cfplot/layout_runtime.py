@@ -398,6 +398,10 @@ def _apply_map_axes(
         lon_labels = xticklabels
         lat_ticks = yticks
         lat_labels = yticklabels
+        lonrange = plotvars.lonmax - plotvars.lonmin
+        lon_mid = plotvars.lonmin + lonrange / 2.0
+        xticklen = (plotvars.lonmax - plotvars.lonmin) * 0.007
+        yticklen = (plotvars.latmax - plotvars.latmin) * 0.014
 
         if lon_ticks is None:
             lon_ticks, lon_labels = utility.mapaxis(
@@ -415,12 +419,34 @@ def _apply_map_axes(
             )
 
         if lon_ticks is not None:
-            map_ax.set_xticks(lon_ticks, crs=ccrs.PlateCarree())
+            lon_ticks_new = list(lon_ticks)
+            # Avoid wrapped endpoint labels overlapping for global ranges.
+            if lonrange >= 360 and len(lon_ticks_new) >= 2:
+                lon_ticks_new[0] = lon_ticks_new[0] + 0.01
+                lon_ticks_new[-1] = lon_ticks_new[-1] - 0.01
+
+            map_ax.set_xticks(lon_ticks_new, crs=ccrs.PlateCarree())
             map_ax.set_xticklabels(
-                lon_labels if lon_labels is not None else lon_ticks,
+                lon_labels if lon_labels is not None else lon_ticks_new,
                 rotation=plotvars.xtick_label_rotation,
                 horizontalalignment=plotvars.xtick_label_align,
             )
+
+            # Match legacy behavior: draw top-edge major tick marks manually.
+            if plotvars.plot_type == 1:
+                proj = ccrs.PlateCarree(central_longitude=lon_mid)
+                for xval in lon_ticks_new:
+                    xpt, ypt = proj.transform_point(
+                        xval, plotvars.latmax, ccrs.PlateCarree()
+                    )
+                    ypt2 = ypt + yticklen
+                    map_ax.plot(
+                        [xpt, xpt],
+                        [ypt, ypt2],
+                        color="k",
+                        linewidth=0.8,
+                        clip_on=False,
+                    )
         if lat_ticks is not None:
             map_ax.set_yticks(lat_ticks, crs=ccrs.PlateCarree())
             map_ax.set_yticklabels(
@@ -428,6 +454,22 @@ def _apply_map_axes(
                 rotation=plotvars.ytick_label_rotation,
                 horizontalalignment=plotvars.ytick_label_align,
             )
+
+            # Match legacy behavior: draw right-edge major tick marks manually.
+            if plotvars.plot_type == 1:
+                proj = ccrs.PlateCarree(central_longitude=lon_mid)
+                for ytick in lat_ticks:
+                    xpt, ypt = proj.transform_point(
+                        plotvars.lonmax - 0.001, ytick, ccrs.PlateCarree()
+                    )
+                    xpt2 = xpt + xticklen
+                    map_ax.plot(
+                        [xpt, xpt2],
+                        [ypt, ypt],
+                        color="k",
+                        linewidth=0.8,
+                        clip_on=False,
+                    )
 
         for label in map_ax.xaxis.get_ticklabels():
             label.set_fontsize(plotvars.axis_label_fontsize)
