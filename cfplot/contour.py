@@ -305,17 +305,39 @@ class ColourScale:
         self._includes_zero = includes_zero
         self._levels_extend = levels_extend
 
-        # Replicate cscale_flag == 0 logic (revert to default)
-        # Replicate cscale_flag == 0 logic (revert to default).
-        # Legacy behaviour: apply scale1 uniformly across all levels,
-        # regardless of whether zero is present.
+        # Replicate legacy cscale_flag == 0 logic (default colour scale).
+        # If zero is present in levels, split scale1 around zero so
+        # blue shades are strictly below zero and warm shades above.
         if self._plotvars.cscale_flag == 0:
-            ncols = np.size(self._levels) + 1
-            if self._plotvars.levels_extend in ("min", "max"):
-                ncols = ncols - 1
-            elif self._plotvars.levels_extend == "neither":
-                ncols = ncols - 2
-            apply_colour_scale("scale1", ncols=ncols)
+            col_zero = 0
+            includes_zero = False
+            for cval in self._levels:
+                if not includes_zero:
+                    col_zero += 1
+                if cval == 0:
+                    includes_zero = True
+
+            if includes_zero:
+                cs_below = col_zero
+                cs_above = np.size(self._levels) - col_zero + 1
+                if self._plotvars.levels_extend in ("max", "neither"):
+                    cs_below = cs_below - 1
+                if self._plotvars.levels_extend in ("min", "neither"):
+                    cs_above = cs_above - 1
+                apply_colour_scale(
+                    "scale1",
+                    below=cs_below,
+                    above=cs_above,
+                    uniform=bool(self._plotvars.cs_uniform),
+                )
+            else:
+                ncols = np.size(self._levels) + 1
+                if self._plotvars.levels_extend in ("min", "max"):
+                    ncols = ncols - 1
+                elif self._plotvars.levels_extend == "neither":
+                    ncols = ncols - 2
+                apply_colour_scale("viridis", ncols=ncols)
+
             self._plotvars.cscale_flag = 0
 
         # Replicate cscale_flag == 1 logic (user-selected color map, fit to levels)

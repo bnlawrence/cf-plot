@@ -57,6 +57,8 @@ def cbar(
             fraction = 0.04
     if shrink is None:
         shrink = 1.0
+        if plotvars.plot_type == 1 and plotvars.proj in ("npstere", "spstere"):
+            shrink = 0.8
     if anchor is None:
         anchor = 0.3
         if plotvars.plot_type > 1:
