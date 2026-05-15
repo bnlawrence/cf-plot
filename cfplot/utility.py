@@ -6,6 +6,7 @@ These are designed to be used by any plotting module.
 
 from __future__ import annotations
 
+import os
 from copy import deepcopy
 from typing import Any
 
@@ -20,6 +21,59 @@ def to_float_or_none(value: Any) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def resolve_colour_scale_file(scale: str) -> str:
+    """Resolve a named colour scale or explicit file path."""
+    package_path = os.path.dirname(__file__)
+    file_path = os.path.join(package_path, "colourmaps", f"{scale}.rgb")
+    if os.path.isfile(file_path):
+        return file_path
+    if os.path.isfile(scale):
+        return scale
+
+    errstr = (
+        "\ncscale error - colour scale not found:\n"
+        f"File {file_path} not found\n"
+        f"Scale {scale} not found\n"
+    )
+    raise Warning(errstr)
+
+
+def load_colour_scale_rgb(scale: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Load RGB channels for a colour scale."""
+    with open(resolve_colour_scale_file(scale), "r", encoding="ascii") as handle:
+        lines = handle.read().splitlines()
+
+    red: list[int] = []
+    green: list[int] = []
+    blue: list[int] = []
+    for line in lines:
+        vals = line.split()
+        red.append(int(vals[0]))
+        green.append(int(vals[1]))
+        blue.append(int(vals[2]))
+
+    return (
+        np.asarray(red, dtype=float),
+        np.asarray(green, dtype=float),
+        np.asarray(blue, dtype=float),
+    )
+
+
+def interpolate_colour_channels(
+    red: np.ndarray,
+    green: np.ndarray,
+    blue: np.ndarray,
+    positions: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Interpolate RGB channels to the requested positions."""
+    xpts = np.arange(np.size(red), dtype=float)
+    return (
+        np.interp(positions, xpts, red),
+        np.interp(positions, xpts, green),
+        np.interp(positions, xpts, blue),
+    )
 
 
 def ndecs(data: np.ndarray | list) -> int:

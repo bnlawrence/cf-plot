@@ -35,7 +35,7 @@ import numpy as np
 from matplotlib.axes import Axes
 
 from . import utility
-from .state import plotvars
+from .state import apply_colour_scale, get_colour_scale_map, plotvars
 
 
 @dataclass(frozen=True)
@@ -319,9 +319,6 @@ class ColourScale:
         self._includes_zero = includes_zero
         self._levels_extend = levels_extend
 
-        # Delegate to legacy cscale system for now
-        from .cfplot import cscale
-
         # Replicate cscale_flag == 0 logic (revert to default)
         if self._plotvars.cscale_flag == 0:
             col_zero = 0
@@ -347,7 +344,9 @@ class ColourScale:
                 uniform = True
                 if self._plotvars.cs_uniform is False:
                     uniform = False
-                cscale("scale1", below=cs_below, above=cs_above, uniform=uniform)
+                apply_colour_scale(
+                    "scale1", below=cs_below, above=cs_above, uniform=uniform
+                )
             else:
                 ncols = np.size(self._levels) + 1
                 if (
@@ -355,9 +354,7 @@ class ColourScale:
                     or self._plotvars.levels_extend == "max"
                 ):
                     ncols = ncols - 1
-                if self._plotvars.levels_extend == "neither":
-                    ncols = ncols - 2
-                cscale("viridis", ncols=ncols)
+                apply_colour_scale("viridis", ncols=ncols)
 
             self._plotvars.cscale_flag = 0
 
@@ -371,16 +368,14 @@ class ColourScale:
                 ncols = ncols - 1
             if self._plotvars.levels_extend == "neither":
                 ncols = ncols - 2
-            cscale(self._plotvars.cs_user, ncols=ncols)
+            apply_colour_scale(self._plotvars.cs_user, ncols=ncols)
             self._plotvars.cscale_flag = 1
 
         return self
 
     def get_cmap(self) -> matplotlib.colors.ListedColormap:
         """Get colormap after fitting to levels."""
-        from .cfplot import _cscale_get_map
-
-        colmap = _cscale_get_map()
+        colmap = get_colour_scale_map()
         cmap = matplotlib.colors.ListedColormap(colmap)
 
         if (
