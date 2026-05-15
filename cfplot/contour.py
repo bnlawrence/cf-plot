@@ -26,14 +26,16 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Any
 
+import os
+
 import cf
 import matplotlib.colors
+import matplotlib.pyplot as plot
 import numpy as np
 from matplotlib.axes import Axes
 
 from . import utility
 from .state import plotvars
-
 
 
 @dataclass(frozen=True)
@@ -1540,6 +1542,23 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             labels=list(cbar_labels),
             title=colorbar_title,
         )
+
+    file = plotvars.file
+    if file is not None:
+        saveargs = {}
+        if plotvars.tight:
+            saveargs = {"bbox_inches": "tight"}
+        if os.path.splitext(file)[1].lower() not in (".ps", ".eps", ".png", ".pdf"):
+            file = file + ".png"
+        figure = plotvars.master_plot or getattr(plotvars.plot, "figure", None)
+        if figure is not None:
+            figure.savefig(
+                file,
+                orientation=plotvars.orientation,
+                dpi=plotvars.dpi,
+                **saveargs,
+            )
+            plot.close(figure)
 
     if data.ptype == 1:
         title = kwargs.get("title", "") or ""

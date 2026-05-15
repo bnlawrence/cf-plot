@@ -22,6 +22,15 @@ REF_IMAGE_DIR = Path(__file__).parent.parent / "reference-example-images"
 TEST_GEN_DIR.mkdir(parents=True, exist_ok=True)
 
 
+@pytest.fixture
+def ggap_file():
+    """Return GGAP fields keyed by identity."""
+    if not (DATA_DIR / "ggap.nc").exists():
+        pytest.skip(f"Missing test data: {DATA_DIR / 'ggap.nc'}")
+    flds = cf.read(str(DATA_DIR / "ggap.nc"))
+    fdict = {f.identity(): f for f in flds}
+    return fdict
+
 def _configure_example_output(example_id: str) -> None:
     """Route plot output to the expected generated example filename."""
     fname = str(TEST_GEN_DIR / f"gen_fig_{example_id}.png")
@@ -100,12 +109,11 @@ def test_example_3_map_limits_and_levels():
 
 
 @pytest.mark.integration
-def test_example_4_north_pole_stereographic():
+def test_example_4_north_pole_stereographic(ggap_file):
     """Test Example 4: north pole polar stereographic projection."""
-    if not (DATA_DIR / "ggap.nc").exists():
-        pytest.skip(f"Missing test data: {DATA_DIR / 'ggap.nc'}")
 
-    f = cf.read(str(DATA_DIR / "ggap.nc"))[1]
+    f = ggap_file["eastward_wind"]
+    assert f.identity() == "eastward_wind"
     _configure_example_output("4")
 
     cfp.mapset(proj="npstere")
@@ -114,12 +122,12 @@ def test_example_4_north_pole_stereographic():
 
 
 @pytest.mark.integration
-def test_example_5_south_pole_with_boundary():
+def test_example_5_south_pole_with_boundary(ggap_file):
     """Test Example 5: south pole with bounding latitude."""
     if not (DATA_DIR / "ggap.nc").exists():
         pytest.skip(f"Missing test data: {DATA_DIR / 'ggap.nc'}")
 
-    f = cf.read(str(DATA_DIR / "ggap.nc"))[1]
+    f = ggap_file["eastward_wind"]
     _configure_example_output("5")
 
     cfp.mapset(proj="spstere", boundinglat=-30, lon_0=180)
@@ -141,12 +149,12 @@ def test_example_6_latitude_pressure_plot():
 
 
 @pytest.mark.integration
-def test_example_7_lat_pressure_zonal_mean():
+def test_example_7_lat_pressure_zonal_mean(ggap_file):
     """Test Example 7: latitude-pressure plot of a zonal mean."""
     if not (DATA_DIR / "ggap.nc").exists():
         pytest.skip(f"Missing test data: {DATA_DIR / 'ggap.nc'}")
 
-    f = cf.read(str(DATA_DIR / "ggap.nc"))[1]
+    f = ggap_file["eastward_wind"]
     _configure_example_output("7")
 
     cfp.con(f.collapse("mean", "longitude"))
@@ -154,12 +162,12 @@ def test_example_7_lat_pressure_zonal_mean():
 
 
 @pytest.mark.integration
-def test_example_8_log_scale_pressure():
+def test_example_8_log_scale_pressure(ggap_file):
     """Test Example 8: plot showing latitude against log-scale pressure."""
     if not (DATA_DIR / "ggap.nc").exists():
         pytest.skip(f"Missing test data: {DATA_DIR / 'ggap.nc'}")
 
-    f = cf.read(str(DATA_DIR / "ggap.nc"))[1]
+    f = ggap_file["eastward_wind"]
     _configure_example_output("8")
 
     cfp.con(f.collapse("mean", "longitude"), ylog=1)
@@ -225,12 +233,12 @@ def test_example_12_longitude_time_hovmuller():
 
 
 @pytest.mark.integration
-def test_example_19_multiple_subplots():
+def test_example_19_multiple_subplots(ggap_file):
     """Test Example 19: multiple plots as subplots."""
     if not (DATA_DIR / "ggap.nc").exists():
         pytest.skip(f"Missing test data: {DATA_DIR / 'ggap.nc'}")
 
-    f = cf.read(str(DATA_DIR / "ggap.nc"))[1]
+    f = ggap_file["eastward_wind"]
     _configure_example_output("19")
 
     cfp.gopen(rows=2, columns=2, bottom=0.2)
@@ -254,12 +262,12 @@ def test_example_19_multiple_subplots():
 
 
 @pytest.mark.integration
-def test_example_19a_user_positioned_subplots():
+def test_example_19a_user_positioned_subplots(ggap_file):
     """Test Example 19a: user specified subplot positions."""
     if not (DATA_DIR / "ggap.nc").exists():
         pytest.skip(f"Missing test data: {DATA_DIR / 'ggap.nc'}")
 
-    f = cf.read(str(DATA_DIR / "ggap.nc"))[1]
+    f = ggap_file["eastward_wind"]
     _configure_example_output("19a")
 
     cfp.gopen(user_position=True)
