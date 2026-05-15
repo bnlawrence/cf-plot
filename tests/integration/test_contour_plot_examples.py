@@ -284,7 +284,8 @@ def test_example_20_rotated_pole_data():
     if not (DATA_DIR / "Geostropic_Adjustment.nc").exists():
         pytest.skip(f"Missing test data: {DATA_DIR / 'Geostropic_Adjustment.nc'}")
 
-    f = cf.read(str(DATA_DIR / "Geostropic_Adjustment.nc"))[0]
+    flds = cf.read(str(DATA_DIR / "Geostropic_Adjustment.nc"))
+    f = {f.identity(): f for f in flds}["ncvar%v"]
     _configure_example_output("20")
 
     # Keep this as a functional contour check in pytest migration.
@@ -299,7 +300,8 @@ def test_example_21_rotated_pole_custom_ticks():
     if not (DATA_DIR / "Geostropic_Adjustment.nc").exists():
         pytest.skip(f"Missing test data: {DATA_DIR / 'Geostropic_Adjustment.nc'}")
 
-    f = cf.read(str(DATA_DIR / "Geostropic_Adjustment.nc"))[0]
+    flds = cf.read(str(DATA_DIR / "Geostropic_Adjustment.nc"))
+    f = {f.identity(): f for f in flds}["ncvar%v"]
     _configure_example_output("21")
 
     cfp.con(
@@ -390,14 +392,15 @@ def test_example_23other_incompass_contour_vectors():
     if not incompass_file.exists():
         pytest.skip(f"Missing test data: {incompass_file}")
 
-    f = cf.read(str(incompass_file))
+    flds = cf.read(str(incompass_file))
+    fdict = {f.identity(): f for f in flds}
     _configure_example_output("23other")
 
     cfp.mapset(50, 100, 5, 35)
     cfp.levs(0, 90, 15, extend="neither")
     cfp.gopen()
-    cfp.con(f[0], lines=False)
-    cfp.vect(u=f[1], v=f[2], stride=40, key_length=10)
+    cfp.con(fdict['long_name=Relative humidity'], lines=False)
+    cfp.vect(u=fdict['eastward_wind'], v=fdict['northward_wind'], stride=40, key_length=10)
     cfp.gclose()
     _assert_reference_match("23other")
 
