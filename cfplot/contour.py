@@ -29,12 +29,15 @@ from typing import Any
 import os
 
 import cf
+import cartopy.crs as ccrs
 import matplotlib.colors
 import matplotlib.pyplot as plot
 import numpy as np
 from matplotlib.axes import Axes
 
 from . import utility
+from .blockfill import _bfill
+from .colorbar import cbar
 from .state import apply_colour_scale, get_colour_scale_map, plotvars
 
 
@@ -494,8 +497,6 @@ class MapContourRenderer(ContourRenderer):
         self, alpha: float, zorder: int, transform_first: bool | None
     ) -> None:
         """Render filled contours on a map with Cartopy."""
-        from .cfplot import ccrs
-
         if self.data.x is None or self.data.y is None or self.data.levels is None:
             return
 
@@ -530,8 +531,6 @@ class MapContourRenderer(ContourRenderer):
         self, fast: bool | None, alpha: float, zorder: int
     ) -> None:
         """Render block-filled contours on a map."""
-        from .cfplot import _bfill
-
         if self.data.x is None or self.data.y is None or self.data.levels is None:
             return
 
@@ -556,9 +555,6 @@ class MapContourRenderer(ContourRenderer):
         zero_thick: bool | int,
     ) -> None:
         """Render contour lines on a map with Cartopy transform."""
-        # Local import to keep module dependency minimal
-        from .cfplot import ccrs
-
         if self.data.x is None or self.data.y is None or self.data.levels is None:
             return
 
@@ -636,8 +632,6 @@ class XYContourRenderer(ContourRenderer):
         self, fast: bool | None, alpha: float, zorder: int
     ) -> None:
         """Render block-filled contours in Cartesian space."""
-        from .cfplot import _bfill
-
         if self.data.x is None or self.data.y is None or self.data.levels is None:
             return
 
@@ -710,8 +704,6 @@ class XYContourRenderer(ContourRenderer):
         title: str | None = None,
     ) -> None:
         """Render colorbar for Cartesian contour plots."""
-        from .cfplot import cbar
-
         if self.data.levels is None:
             return
 
@@ -769,8 +761,6 @@ def _apply_map_title(
     title_fontweight: str,
 ) -> None:
     """Draw a title on a map axes at the geographically correct position."""
-    from .cfplot import ccrs
-
     polar_range = 90 - abs(boundinglat)
     myprojs = ["cyl", "robin", "moll", "merc"]
 
@@ -951,9 +941,6 @@ def _render_ptype6_rotated_pole(
     from .cfplot import (
         _plot_map_axes,
         _set_map,
-        _bfill,
-        cbar,
-        ccrs,
         mapset,
         plotvars,
     )
