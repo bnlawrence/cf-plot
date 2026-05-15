@@ -30,6 +30,7 @@ import os
 
 import cf
 import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 import matplotlib.colors
 import matplotlib.pyplot as plot
 import numpy as np
@@ -38,7 +39,13 @@ from matplotlib.axes import Axes
 from . import utility
 from .blockfill import _bfill
 from .colorbar import cbar
-from .layout_runtime import apply_axes, ensure_map_viewport, ensure_xy_viewport, set_plot_limits
+from .layout_runtime import (
+    apply_axes,
+    ensure_map_viewport,
+    ensure_xy_viewport,
+    set_plot_limits,
+)
+from .map_runtime import MapSet
 from .state import (
     apply_colour_scale,
     get_colour_scale_map,
@@ -913,12 +920,6 @@ def _render_ptype6_rotated_pole(
     zorder: int,
 ) -> bool:
     """Render ptype 6 (rotated pole) for cylindrical transformed-map mode."""
-    from .cfplot import (
-        _plot_map_axes,
-        _set_map,
-        mapset,
-        plotvars,
-    )
 
     if data.x is None or data.y is None or data.levels is None:
         return False
@@ -928,9 +929,7 @@ def _render_ptype6_rotated_pole(
         return False
 
     if plotvars.user_plot == 0:
-        from .cfplot import gopen
-
-        gopen(user_plot=0)
+        ensure_xy_viewport()
 
     xpts = data.x
     ypts = data.y
@@ -945,9 +944,8 @@ def _render_ptype6_rotated_pole(
 
     transform = ccrs.RotatedPole(pole_latitude=ypole, pole_longitude=xpole)
 
-    if plotvars.user_mapset == 1:
-        _set_map()
-    else:
+    map_runtime = MapSet(plotvars)
+    if plotvars.user_mapset != 1:
         if np.ndim(xpts) == 1:
             lonpts, latpts = np.meshgrid(xpts, ypts)
         else:
@@ -959,7 +957,7 @@ def _render_ptype6_rotated_pole(
         lons = np.array(points)[:, 0]
         lats = np.array(points)[:, 1]
 
-        mapset(
+        map_runtime.configure(
             lonmin=float(np.min(lons)),
             lonmax=float(np.max(lons)),
             latmin=float(np.min(lats)),
@@ -967,7 +965,7 @@ def _render_ptype6_rotated_pole(
             user_mapset=0,
             resolution=plotvars.resolution,
         )
-        _set_map()
+    map_runtime.ensure_map_axes()
 
     plotargs = {"transform": transform}
     plot = plotvars.mymap
@@ -1048,17 +1046,14 @@ def _render_ptype6_rotated_pole(
                 frame_artists.extend(list(cs0.collections))
 
     if kwargs.get("axes", True):
-        _plot_map_axes(
-            axes=kwargs.get("axes", True),
-            xaxis=kwargs.get("xaxis", True),
-            yaxis=kwargs.get("yaxis", True),
+        apply_axes(
+            plot_type=1,
             xticks=kwargs.get("xticks", None),
-            xticklabels=kwargs.get("xticklabels", None),
             yticks=kwargs.get("yticks", None),
+            xlabel=kwargs.get("xlabel", None),
+            ylabel=kwargs.get("ylabel", None),
+            xticklabels=kwargs.get("xticklabels", None),
             yticklabels=kwargs.get("yticklabels", None),
-            user_xlabel=kwargs.get("xlabel", None),
-            user_ylabel=kwargs.get("ylabel", None),
-            verbose=kwargs.get("verbose", None),
         )
 
     if kwargs.get("colorbar", True) and (fill or blockfill):
@@ -1273,7 +1268,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     default_ylabel = data.ylabel or ""
 
     if data.ptype == 1:
-        from .cfplot import _set_map, mapset
+        map_runtime = MapSet(plotvars)
 
         animation = bool(kwargs.get("animation", False))
         reuse_map_background = bool(kwargs.get("reuse_map_background", False))
@@ -1293,10 +1288,8 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             mylonmax = mylonmin + 360.0
 
         if draw_static_map:
-            if (lonrange > 350 and latrange > 160) or plotvars.user_mapset == 1:
-                _set_map()
-            else:
-                mapset(
+            if not ((lonrange > 350 and latrange > 160) or plotvars.user_mapset == 1):
+                map_runtime.configure(
                     lonmin=mylonmin,
                     lonmax=mylonmax,
                     latmin=mylatmin,
@@ -1304,7 +1297,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
                     user_mapset=0,
                     resolution=plotvars.resolution,
                 )
-                _set_map()
+            map_runtime.ensure_map_axes()
 
         if np.ndim(data.y) == 1 and data.y[0] > data.y[-1]:
             data = replace(data, y=data.y[::-1], field=np.flipud(data.field))
@@ -1400,28 +1393,21 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         )
 
     if data.ptype == 1:
-        from .cfplot import (
-            _plot_map_axes,
-            cfeature,
-            map_grid,
-        )
+        map_runtime = MapSet(plotvars)
 
         animation = bool(kwargs.get("animation", False))
         reuse_map_background = bool(kwargs.get("reuse_map_background", False))
         draw_static_map = not (animation and reuse_map_background)
 
         if draw_static_map:
-            _plot_map_axes(
-                axes=kwargs.get("axes", True),
-                xaxis=kwargs.get("xaxis", True),
-                yaxis=kwargs.get("yaxis", True),
+            apply_axes(
+                plot_type=1,
                 xticks=kwargs.get("xticks", None),
-                xticklabels=kwargs.get("xticklabels", None),
                 yticks=kwargs.get("yticks", None),
+                xlabel=kwargs.get("xlabel", None),
+                ylabel=kwargs.get("ylabel", None),
+                xticklabels=kwargs.get("xticklabels", None),
                 yticklabels=kwargs.get("yticklabels", None),
-                user_xlabel=kwargs.get("xlabel", None),
-                user_ylabel=kwargs.get("ylabel", None),
-                verbose=kwargs.get("verbose", None),
             )
 
             feature = cfeature.NaturalEarthFeature(
@@ -1459,7 +1445,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
                     zorder=plotvars.feature_zorder,
                 )
             if kwargs.get("grid", False):
-                map_grid()
+                map_runtime.draw_grid()
 
         # Persist only dynamic contour artists for animation updates.
         plotvars._contour_animation_artists = list(renderer.frame_artists)
