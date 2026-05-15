@@ -13,6 +13,7 @@ import numpy as np
 import pytest
 
 import cfplot as cfp
+import cfplot.layout_runtime as layout_runtime
 
 
 # Path to test data
@@ -63,6 +64,29 @@ def setup_cfplot():
     yield
     cfp.reset()
     plt.close("all")
+
+
+@pytest.mark.integration
+def test_gclose_view_false_does_not_launch_viewer(monkeypatch):
+    """Ensure gclose(view=False) does not trigger display or matplotlib viewer."""
+    calls = {"show": 0, "popen": 0}
+
+    def fake_show(*args, **kwargs):
+        calls["show"] += 1
+
+    def fake_popen(*args, **kwargs):
+        calls["popen"] += 1
+        return None
+
+    monkeypatch.setattr(plt, "show", fake_show)
+    monkeypatch.setattr(layout_runtime.subprocess, "Popen", fake_popen)
+
+    cfp.setvars(file=None, viewer="display")
+    cfp.gopen()
+    cfp.gclose(view=False)
+
+    assert calls["show"] == 0
+    assert calls["popen"] == 0
 
 
 @pytest.mark.integration

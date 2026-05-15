@@ -38,7 +38,15 @@ from matplotlib.axes import Axes
 from . import utility
 from .blockfill import _bfill
 from .colorbar import cbar
-from .state import apply_colour_scale, get_colour_scale_map, plotvars
+from .layout_runtime import apply_axes, ensure_map_viewport, ensure_xy_viewport, set_plot_limits
+from .state import (
+    apply_colour_scale,
+    get_colour_scale_map,
+    global_blockfill,
+    global_fill,
+    global_lines,
+    plotvars,
+)
 
 
 @dataclass(frozen=True)
@@ -155,20 +163,11 @@ class ContourLayout:
         
         Coordinates with plotvars for multi-plot grids.
         """
-        from .cfplot import gopen, gpos
-
         # Set colorbar orientation  
         self.colorbar_orientation = colorbar_orientation or "horizontal"
         self.colorbar_position = colorbar_position
 
-        # Call gpos(1) if multi-plot grid not already initialized
-        if plotvars.rows > 1 or plotvars.columns > 1:
-            if plotvars.gpos_called is False:
-                gpos(1)
-
-        # Open a new plot if necessary
-        if plotvars.user_plot == 0:
-            gopen(user_plot=0)
+        ensure_xy_viewport()
 
         # Store reference to current axes/map for later use
         self.viewport = plotvars.plot
@@ -185,19 +184,10 @@ class ContourLayout:
         This intentionally keeps map setup in a dedicated flow where projection
         creation (mapset/_set_map) happens after base viewport selection.
         """
-        from .cfplot import gopen, gpos
-
         self.colorbar_orientation = colorbar_orientation or "horizontal"
         self.colorbar_position = colorbar_position
 
-        # If map axes already exists, do not reopen/reset the viewport.
-        if plotvars.mymap is None:
-            if plotvars.rows > 1 or plotvars.columns > 1:
-                if plotvars.gpos_called is False:
-                    gpos(1)
-
-            if plotvars.user_plot == 0:
-                gopen(user_plot=0)
+        ensure_map_viewport()
 
         self.viewport = plotvars.plot
 
@@ -270,33 +260,18 @@ class ContourLayout:
         yticklabels: Any | None = None,
     ) -> None:
         """Apply axis labels and ticks to plot."""
-        from .cfplot import axes_plot, _plot_map_axes
-
         if self.viewport is None:
             return
 
-        # For map plots, use specialized axis handler
-        if self._plotvars.plot_type == 1:
-            _plot_map_axes(
-                axes=True,
-                xaxis=True,
-                yaxis=True,
-                xticks=xticks,
-                yticks=yticks,
-                user_xlabel=xlabel or None,
-                user_ylabel=ylabel or None,
-                verbose=None,
-            )
-        else:
-            # For non-map plots, use standard axes_plot
-            axes_plot(
-                xticks=xticks if xticks is not None else [],
-                xticklabels=xticklabels if xticklabels is not None else xticks,
-                yticks=yticks if yticks is not None else [],
-                yticklabels=yticklabels if yticklabels is not None else yticks,
-                xlabel=xlabel or "",
-                ylabel=ylabel or "",
-            )
+        apply_axes(
+            plot_type=self._plotvars.plot_type,
+            xticks=xticks,
+            yticks=yticks,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            xticklabels=xticklabels,
+            yticklabels=yticklabels,
+        )
 
 
 class ColourScale:
@@ -1131,15 +1106,6 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     Note: Imports from cfplot are local (inside function) to maintain
     module-level independence while preserving current functionality.
     """
-    from .cfplot import (
-        global_blockfill,
-        global_fill,
-        global_lines,
-        gopen,
-        gset,
-        plotvars,
-    )
-
     if isinstance(f, cf.Field) and (x is not None or y is not None):
         field_arr = np.asarray(f.array)
         x_arr = np.asarray(x.array) if isinstance(x, cf.Field) else x
@@ -1255,7 +1221,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         )
 
     if plotvars.user_plot == 0:
-        gopen(user_plot=0)
+        ensure_xy_viewport()
 
     xmin = kwargs.get("xmin", float(np.nanmin(data.x)))
     xmax = kwargs.get("xmax", float(np.nanmax(data.x)))
@@ -1283,25 +1249,16 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             t = cf.Data(cf.dt(plotvars.ymax), units=time_units)
             ymax = t.array
 
-    if kwargs.get("ylog", False):
-        if ymax == 0:
-            ymax = 1
-        gset(
-            xmin=xmin,
-            xmax=xmax,
-            ymin=ymin,
-            ymax=ymax,
-            ylog=True,
-            user_gset=kwargs.get("user_gset", plotvars.user_gset),
-        )
-    else:
-        gset(
-            xmin=xmin,
-            xmax=xmax,
-            ymin=ymin,
-            ymax=ymax,
-            user_gset=kwargs.get("user_gset", plotvars.user_gset),
-        )
+    if kwargs.get("ylog", False) and ymax == 0:
+        ymax = 1
+    set_plot_limits(
+        xmin=xmin,
+        xmax=xmax,
+        ymin=ymin,
+        ymax=ymax,
+        ylog=bool(kwargs.get("ylog", False)),
+        user_gset=kwargs.get("user_gset", plotvars.user_gset),
+    )
 
     if tmin is not None and tmax is not None:
         plotvars.ymin = tmin
@@ -1447,7 +1404,6 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             _plot_map_axes,
             cfeature,
             map_grid,
-            plotvars,
         )
 
         animation = bool(kwargs.get("animation", False))
@@ -1526,7 +1482,8 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         )
 
     file = plotvars.file
-    if file is not None:
+    session_open = bool(getattr(plotvars, "_contour_session_open", False))
+    if file is not None and not session_open:
         saveargs = {}
         if plotvars.tight:
             saveargs = {"bbox_inches": "tight"}
