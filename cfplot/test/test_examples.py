@@ -873,15 +873,6 @@ class ExamplesTest(unittest.TestCase):
         cfp.con(f)
 
     @compare_plot_results
-    def test_example_22(self):
-        """Test Example 22:"""
-        f = cf.read(f"{self.data_dir}/rgp.nc")[0]
-
-        cfp.cscale("gray")
-
-        cfp.con(f)
-
-    @compare_plot_results
     def test_example_22other(self):
         """Test Example 22 (other, due to duplicate label of 22)."""
         f = cf.read(f"{self.data_dir}/rgp.nc")[0]

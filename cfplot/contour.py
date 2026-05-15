@@ -992,6 +992,251 @@ def _clear_animation_artists(plotvars: Any) -> None:
     plotvars._contour_animation_artists = []
 
 
+def _rotated_vloc(
+    *, lons: np.ndarray, lats: np.ndarray, xvec: np.ndarray, yvec: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Map rotated-grid lon/lat points into plot coordinates.
+
+    This mirrors the legacy location helper but uses safer index lookup so
+    empty intersections do not raise during rotated projection plotting.
+    """
+    if any(val is None for val in [xvec, yvec, lons, lats]):
+        errstr = (
+            "\nvloc error\n"
+            "xvec, yvec, lons, lats all need to be passed to vloc to\n"
+            "generate a set of location points\n"
+        )
+        raise Warning(errstr)
+
+    xvec = np.asarray(xvec, dtype=float).copy()
+    yvec = np.asarray(yvec, dtype=float).copy()
+    lons = np.asarray(lons, dtype=float).copy()
+    lats = np.asarray(lats, dtype=float).copy()
+
+    xarr = np.zeros(np.size(lons))
+    yarr = np.zeros(np.size(lats))
+
+    for i in np.arange(np.size(xvec)):
+        xvec[i] = ((xvec[i] + 180) % 360) - 180
+    for i in np.arange(np.size(lons)):
+        lons[i] = ((lons[i] + 180) % 360) - 180
+
+    if np.nanmax(xvec) > 150:
+        for i in np.arange(np.size(xvec)):
+            xvec[i] = (xvec[i] + 360.0) % 360.0
+        pts = np.where(xvec < 0.0)
+        xvec[pts] = xvec[pts] + 360.0
+        for i in np.arange(np.size(lons)):
+            lons[i] = (lons[i] + 360.0) % 360.0
+        pts = np.where(lons < 0.0)
+        lons[pts] = lons[pts] + 360.0
+
+    for i in np.arange(np.size(lons)):
+        if (lons[i] < np.min(xvec)) or (lons[i] > np.max(xvec)):
+            xarr[i] = np.nan
+        else:
+            xpt = int(np.searchsorted(xvec, lons[i], side="right") - 1)
+            xpt = max(0, min(xpt, np.size(xvec) - 2))
+            xarr[i] = xpt + (lons[i] - xvec[xpt]) / (xvec[xpt + 1] - xvec[xpt])
+
+        if (lats[i] < np.min(yvec)) or (lats[i] > np.max(yvec)):
+            yarr[i] = np.nan
+        else:
+            ypt = int(np.searchsorted(yvec, lats[i], side="right") - 1)
+            ypt = max(0, min(ypt, np.size(yvec) - 2))
+            yarr[i] = ypt + (lats[i] - yvec[ypt]) / (yvec[ypt + 1] - yvec[ypt])
+
+    return (xarr, yarr)
+
+
+def _render_rotated_grid_axes(
+    *,
+    xpole: float,
+    ypole: float,
+    xvec: np.ndarray,
+    yvec: np.ndarray,
+    xticks: Any = None,
+    xticklabels: Any = None,
+    yticks: Any = None,
+    yticklabels: Any = None,
+    axes: bool = True,
+    xaxis: bool = True,
+    yaxis: bool = True,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+) -> None:
+    """Draw rotated-grid axes and optional graticule labels."""
+    import matplotlib.lines
+
+    spacing = plotvars.rotated_grid_spacing
+    degspacing = plotvars.rotated_deg_spacing
+    continents = plotvars.rotated_continents
+    grid = plotvars.rotated_grid
+    labels = plotvars.rotated_labels
+    grid_thickness = plotvars.rotated_grid_thickness
+
+    yvec = np.asarray(yvec)
+    xvec = np.asarray(xvec)
+    if yvec[0] > yvec[np.size(yvec) - 1]:
+        yvec = yvec[::-1]
+
+    set_plot_limits(
+        xmin=0,
+        xmax=float(np.size(xvec) - 1),
+        ymin=0,
+        ymax=float(np.size(yvec) - 1),
+        ylog=False,
+        user_gset=0,
+    )
+
+    if continents:
+        import cartopy.io.shapereader as shpreader
+        import shapefile
+
+        shpfilename = shpreader.natural_earth(
+            resolution=plotvars.resolution,
+            category="physical",
+            name="coastline",
+        )
+        reader = shapefile.Reader(shpfilename)
+        shapes = [s.points for s in reader.shapes()]
+        for shape in shapes:
+            lons, lats = list(zip(*shape))
+            lons = np.array(lons)
+            lats = np.array(lats)
+            rotated_transform = ccrs.RotatedPole(
+                pole_latitude=ypole, pole_longitude=xpole
+            )
+            points = rotated_transform.transform_points(
+                ccrs.PlateCarree(), lons, lats
+            )
+            xout = np.array(points)[:, 0]
+            yout = np.array(points)[:, 1]
+            xpts, ypts = _rotated_vloc(lons=xout, lats=yout, xvec=xvec, yvec=yvec)
+            plotvars.plot.plot(
+                xpts,
+                ypts,
+                linewidth=plotvars.continent_thickness or 1.5,
+                color=plotvars.continent_color or "k",
+            )
+
+    if xticks is None:
+        lons = -180 + np.arange(360 / spacing + 1) * spacing
+    else:
+        lons = xticks
+    if yticks is None:
+        lats = -90 + np.arange(180 / spacing + 1) * spacing
+    else:
+        lats = yticks
+
+    xlim = plotvars.plot.get_xlim()
+    spacing_x = (xlim[1] - xlim[0]) / 20
+    ylim = plotvars.plot.get_ylim()
+    spacing_y = (ylim[1] - ylim[0]) / 20
+    spacing = min(spacing_x, spacing_y)
+
+    rotated_transform = ccrs.RotatedPole(pole_latitude=ypole, pole_longitude=xpole)
+
+    if axes:
+        if xaxis:
+            for val in np.arange(np.size(lons)):
+                ipts = max(2, int(179.0 / degspacing))
+                lona = np.zeros(ipts) + lons[val]
+                lata = -90 + np.arange(ipts) * degspacing
+                points = rotated_transform.transform_points(
+                    ccrs.PlateCarree(), lona, lata
+                )
+                xout = np.array(points)[:, 0]
+                yout = np.array(points)[:, 1]
+                xpts, ypts = _rotated_vloc(lons=xout, lats=yout, xvec=xvec, yvec=yvec)
+                if grid:
+                    plotvars.plot.plot(
+                        xpts, ypts, ":", linewidth=grid_thickness, color="k"
+                    )
+
+                if labels and np.size(ypts[5:]) > np.sum(np.isnan(ypts[5:])):
+                    ymin = np.nanmin(ypts[5:])
+                    loc = np.where(ypts == ymin)[0]
+                    if np.size(loc) > 1:
+                        loc = loc[1]
+                    if loc > 0 and np.isfinite(xpts[loc]):
+                        xpos = float(np.asarray(xpts[loc]).reshape(-1)[0])
+                        line = matplotlib.lines.Line2D(
+                            [xpos, xpos], [0, -spacing / 2], color="k"
+                        )
+                        plotvars.plot.add_line(line)
+                        line.set_clip_on(False)
+                        xticklabel = (
+                            utility.mapaxis(lons[val], lons[val], axis_type=1, degsym=plotvars.degsym)[1][0]
+                            if xticklabels is None
+                            else xticklabels[val]
+                        )
+                        plotvars.plot.text(
+                            xpos,
+                            -spacing,
+                            xticklabel,
+                            horizontalalignment="center",
+                            verticalalignment="top",
+                            fontsize=plotvars.text_fontsize,
+                            fontweight=plotvars.text_fontweight,
+                        )
+
+        if yaxis:
+            for val in np.arange(np.size(lats)):
+                ipts = max(2, int(359.0 / degspacing))
+                lata = np.zeros(ipts) + lats[val]
+                lona = -180.0 + np.arange(ipts) * degspacing
+                points = rotated_transform.transform_points(
+                    ccrs.PlateCarree(), lona, lata
+                )
+                xout = np.array(points)[:, 0]
+                yout = np.array(points)[:, 1]
+                xpts, ypts = _rotated_vloc(lons=xout, lats=yout, xvec=xvec, yvec=yvec)
+
+                if grid:
+                    plotvars.plot.plot(
+                        xpts, ypts, ":", linewidth=grid_thickness, color="k"
+                    )
+
+                if labels and np.size(xpts[5:]) > np.sum(np.isnan(xpts[5:])):
+                    xmin = np.nanmin(xpts[5:])
+                    loc = np.where(xpts == xmin)[0]
+                    if np.size(loc) == 1 and loc > 0 and np.isfinite(ypts[loc]):
+                        ypos = float(np.asarray(ypts[loc]).reshape(-1)[0])
+                        line = matplotlib.lines.Line2D(
+                            [0, -spacing / 2], [ypos, ypos], color="k"
+                        )
+                        plotvars.plot.add_line(line)
+                        line.set_clip_on(False)
+                        yticklabel = (
+                            utility.mapaxis(lats[val], lats[val], axis_type=2, degsym=plotvars.degsym)[1][0]
+                            if yticklabels is None
+                            else yticklabels[val]
+                        )
+                        plotvars.plot.text(
+                            -spacing,
+                            ypos,
+                            yticklabel,
+                            horizontalalignment="right",
+                            verticalalignment="center",
+                            fontsize=plotvars.text_fontsize,
+                            fontweight=plotvars.text_fontweight,
+                        )
+
+    if xlabel:
+        plotvars.plot.set_xlabel(
+            xlabel,
+            fontsize=plotvars.axis_label_fontsize,
+            fontweight=plotvars.axis_label_fontweight,
+        )
+    if ylabel:
+        plotvars.plot.set_ylabel(
+            ylabel,
+            fontsize=plotvars.axis_label_fontsize,
+            fontweight=plotvars.axis_label_fontweight,
+        )
+
+
 def _render_ptype6_rotated_pole(
     *,
     f: Any,
@@ -1017,51 +1262,67 @@ def _render_ptype6_rotated_pole(
     if data.x is None or data.y is None or data.levels is None:
         return False
 
-    # Initial slice: support cylindrical transformed-map path.
-    if plotvars.proj != "cyl":
-        return False
-
     if plotvars.user_plot == 0:
         ensure_xy_viewport()
 
-    xpts = data.x
-    ypts = data.y
-
     rotated_pole = f.ref("grid_mapping_name:rotated_latitude_longitude", default=None)
-    if not rotated_pole:
-        return False
-    xpole = utility.to_float_or_none(rotated_pole.get("grid_north_pole_longitude"))
-    ypole = utility.to_float_or_none(rotated_pole.get("grid_north_pole_latitude"))
-    if xpole is None or ypole is None:
-        return False
+    xpole = ypole = None
+    transform = None
+    if rotated_pole:
+        xpole = utility.to_float_or_none(rotated_pole.get("grid_north_pole_longitude"))
+        ypole = utility.to_float_or_none(rotated_pole.get("grid_north_pole_latitude"))
 
-    transform = ccrs.RotatedPole(pole_latitude=ypole, pole_longitude=xpole)
-
-    map_runtime = MapSet(plotvars)
-    if plotvars.user_mapset != 1:
-        if np.ndim(xpts) == 1:
-            lonpts, latpts = np.meshgrid(xpts, ypts)
-        else:
-            lonpts = xpts
-            latpts = ypts
-        points = ccrs.PlateCarree().transform_points(
-            transform, lonpts.flatten(), latpts.flatten()
+    if plotvars.proj == "rotated":
+        xpts = np.arange(np.size(data.x))
+        ypts = np.arange(np.size(data.y))
+        plotargs: dict[str, Any] = {}
+        plot = plotvars.plot
+        set_plot_limits(
+            xmin=0,
+            xmax=float(np.size(xpts) - 1),
+            ymin=0,
+            ymax=float(np.size(ypts) - 1),
+            ylog=False,
+            user_gset=plotvars.user_gset,
         )
-        lons = np.array(points)[:, 0]
-        lats = np.array(points)[:, 1]
+    elif plotvars.proj == "cyl":
+        xpts = data.x
+        ypts = data.y
 
-        map_runtime.configure(
-            lonmin=float(np.min(lons)),
-            lonmax=float(np.max(lons)),
-            latmin=float(np.min(lats)),
-            latmax=float(np.max(lats)),
-            user_mapset=0,
-            resolution=plotvars.resolution,
-        )
-    map_runtime.ensure_map_axes()
+        if not rotated_pole:
+            return False
+        if xpole is None or ypole is None:
+            return False
 
-    plotargs = {"transform": transform}
-    plot = plotvars.mymap
+        transform = ccrs.RotatedPole(pole_latitude=ypole, pole_longitude=xpole)
+
+        map_runtime = MapSet(plotvars)
+        if plotvars.user_mapset != 1:
+            if np.ndim(xpts) == 1:
+                lonpts, latpts = np.meshgrid(xpts, ypts)
+            else:
+                lonpts = xpts
+                latpts = ypts
+            points = ccrs.PlateCarree().transform_points(
+                transform, lonpts.flatten(), latpts.flatten()
+            )
+            lons = np.array(points)[:, 0]
+            lats = np.array(points)[:, 1]
+
+            map_runtime.configure(
+                lonmin=float(np.min(lons)),
+                lonmax=float(np.max(lons)),
+                latmin=float(np.min(lats)),
+                latmax=float(np.max(lats)),
+                user_mapset=0,
+                resolution=plotvars.resolution,
+            )
+        map_runtime.ensure_map_axes()
+
+        plotargs = {"transform": transform}
+        plot = plotvars.mymap
+    else:
+        return False
 
     frame_artists: list[Any] = []
 
@@ -1139,15 +1400,32 @@ def _render_ptype6_rotated_pole(
                 frame_artists.extend(list(cs0.collections))
 
     if kwargs.get("axes", True):
-        apply_axes(
-            plot_type=1,
-            xticks=kwargs.get("xticks", None),
-            yticks=kwargs.get("yticks", None),
-            xlabel=kwargs.get("xlabel", None),
-            ylabel=kwargs.get("ylabel", None),
-            xticklabels=kwargs.get("xticklabels", None),
-            yticklabels=kwargs.get("yticklabels", None),
-        )
+        if plotvars.proj == "cyl":
+            apply_axes(
+                plot_type=1,
+                xticks=kwargs.get("xticks", None),
+                yticks=kwargs.get("yticks", None),
+                xlabel=kwargs.get("xlabel", None),
+                ylabel=kwargs.get("ylabel", None),
+                xticklabels=kwargs.get("xticklabels", None),
+                yticklabels=kwargs.get("yticklabels", None),
+            )
+        else:
+                _render_rotated_grid_axes(
+                xpole=xpole,
+                ypole=ypole,
+                xvec=data.x,
+                yvec=data.y,
+                xticks=kwargs.get("xticks", None),
+                xticklabels=kwargs.get("xticklabels", None),
+                yticks=kwargs.get("yticks", None),
+                yticklabels=kwargs.get("yticklabels", None),
+                axes=True,
+                xaxis=kwargs.get("xaxis", True),
+                yaxis=kwargs.get("yaxis", True),
+                xlabel=kwargs.get("xlabel", None),
+                ylabel=kwargs.get("ylabel", None),
+            )
 
     if kwargs.get("colorbar", True) and (fill or blockfill):
         cbar(

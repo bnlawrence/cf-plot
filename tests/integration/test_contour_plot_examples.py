@@ -365,18 +365,18 @@ def test_example_22_rgp_gray():
 
 
 @pytest.mark.integration
-def test_example_22other_rgp_rotated_projection():
-    """Test Example 22other: RGP data with rotated projection."""
+def test_example_22_rgp_rotated_projection():
+    """Test RGP data with rotated projection."""
     if not (DATA_DIR / "rgp.nc").exists():
         pytest.skip(f"Missing test data: {DATA_DIR / 'rgp.nc'}")
 
     f = cf.read(str(DATA_DIR / "rgp.nc"))[0]
-    _configure_example_output("22other")
+    _configure_example_output("22")
 
     cfp.cscale("plasma")
     cfp.mapset(proj="rotated")
     cfp.con(f)
-    _assert_reference_match("22other")
+    _assert_reference_match("22")
 
 
 @pytest.mark.integration
