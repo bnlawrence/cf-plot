@@ -31,7 +31,15 @@ faulthandler.enable()  # to debug seg faults and timeouts
 
 
 DATA_DIR = "cfplot_data"
-TEST_REF_DIR = "./reference-example-images"
+TEST_REF_DIR = os.path.abspath(
+    os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "..",
+        "tests",
+        "reference-example-images",
+    )
+)
 TEST_GEN_DIR = "./generated-example-images"
 if not os.path.exists(TEST_GEN_DIR):
     os.makedirs(TEST_GEN_DIR)

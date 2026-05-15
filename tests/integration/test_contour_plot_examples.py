@@ -18,7 +18,7 @@ import cfplot as cfp
 # Path to test data
 DATA_DIR = Path(__file__).parent.parent.parent / "docs" / "source" / "data"
 TEST_GEN_DIR = Path(__file__).parent.parent.parent / "generated-example-images"
-REF_IMAGE_DIR = Path(__file__).parent.parent.parent / "cfplot" / "test" / "reference-example-images"
+REF_IMAGE_DIR = Path(__file__).parent.parent / "reference-example-images"
 TEST_GEN_DIR.mkdir(parents=True, exist_ok=True)
 
 

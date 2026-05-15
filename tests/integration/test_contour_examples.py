@@ -11,7 +11,7 @@ import cfplot as cfp
 
 # Path to test data
 DATA_DIR = Path(__file__).parent.parent.parent / "docs" / "source" / "data"
-REF_IMAGE_DIR = Path(__file__).parent.parent.parent / "cfplot" / "test" / "reference-example-images"
+REF_IMAGE_DIR = Path(__file__).parent.parent / "reference-example-images"
 
 
 @pytest.fixture(autouse=True)
