@@ -302,7 +302,6 @@ def test_example_19a_user_positioned_subplots(ggap_file):
 
 
 @pytest.mark.integration
-@pytest.mark.xfail(reason="Rotated-pole contour path not yet supported in refactored renderer")
 def test_example_20_rotated_pole_data():
     """Test Example 20: user labelling of axes with rotated pole data."""
     if not (DATA_DIR / "Geostropic_Adjustment.nc").exists():
@@ -312,13 +311,12 @@ def test_example_20_rotated_pole_data():
     f = {f.identity(): f for f in flds}["ncvar%v"]
     _configure_example_output("20")
 
-    # Keep this as a functional contour check in pytest migration.
-    cfp.con(f)
+    # Legacy examples contour a 2D slice of this rotated-pole field.
+    cfp.con(f.subspace[9])
     _assert_reference_match("20")
 
 
 @pytest.mark.integration
-@pytest.mark.xfail(reason="Rotated-pole contour path not yet supported in refactored renderer")
 def test_example_21_rotated_pole_custom_ticks():
     """Test Example 21: rotated pole data plot with custom ticks."""
     if not (DATA_DIR / "Geostropic_Adjustment.nc").exists():
@@ -329,7 +327,7 @@ def test_example_21_rotated_pole_custom_ticks():
     _configure_example_output("21")
 
     cfp.con(
-        f,
+        f.subspace[9],
         title="test data",
         xticks=np.arange(5) * 100000 + 100000,
         yticks=np.arange(7) * 2000 + 2000,
@@ -367,7 +365,6 @@ def test_example_22_rgp_gray():
 
 
 @pytest.mark.integration
-@pytest.mark.xfail(reason="Rotated projection path not yet supported in refactored contour renderer")
 def test_example_22other_rgp_rotated_projection():
     """Test Example 22other: RGP data with rotated projection."""
     if not (DATA_DIR / "rgp.nc").exists():

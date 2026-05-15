@@ -1184,6 +1184,26 @@ def _render_ptype6_rotated_pole(
             title_fontweight=plotvars.title_fontweight,
         )
 
+    file = plotvars.file
+    session_open = bool(getattr(plotvars, "_contour_session_open", False))
+    if file is not None and not session_open:
+        saveargs = {}
+        if plotvars.tight:
+            saveargs = {"bbox_inches": "tight"}
+        if os.path.splitext(file)[1].lower() not in (".ps", ".eps", ".png", ".pdf"):
+            file = file + ".png"
+        figure = plotvars.master_plot or getattr(plotvars.plot, "figure", None)
+        if figure is not None:
+            figure.savefig(
+                file,
+                orientation=plotvars.orientation,
+                dpi=plotvars.dpi,
+                **saveargs,
+            )
+            import matplotlib.pyplot as _plt
+
+            _plt.close(figure)
+
     plotvars._contour_animation_artists = frame_artists
     return True
 
@@ -1219,8 +1239,9 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             verbose=kwargs.get("verbose", None),
             proj=getattr(plotvars, "proj", "cyl"),
         )
-        # Implemented CF extraction targets: map and selected non-map ptypes.
-        if data.ptype not in (1, 2, 3, 4, 5, 6):
+        # Implemented CF extraction targets include generic Cartesian (ptype 0),
+        # map, and selected non-map ptypes.
+        if data.ptype not in (0, 1, 2, 3, 4, 5, 6):
             return False
     else:
         data = ContourData.from_arrays(field=np.asarray(f), x=x, y=y)
@@ -1325,7 +1346,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     if cbar_labels is None:
         cbar_labels = clabels
 
-    colorbar_title = kwargs.get("colorbar_title", "")
+    colorbar_title = kwargs.get("colorbar_title", data.colorbar_title)
     if mult != 0:
         colorbar_title = f"{colorbar_title} *10^{{{mult}}}"
 
