@@ -197,7 +197,7 @@ def test_example_8_log_scale_pressure(ggap_file):
 
 
 @pytest.mark.integration
-@pytest.mark.xfail(reason="cf-python issue #799")
+#@pytest.mark.xfail(reason="cf-python issue #799")
 def test_example_9_longitude_pressure_plot(ggap_file):
     """Test Example 9: longitude-pressure plot."""
 

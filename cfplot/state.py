@@ -258,7 +258,7 @@ def apply_colour_scale(
             lower = max(above, below)
         if below == 1:
             x_below = 0
-        elif lower > 1:
+        if lower > 1:
             x_below = ((npoints - 1) / float(lower - 1)) * np.arange(lower)
 
         x_above: np.ndarray | float | list[float] = []
@@ -267,7 +267,7 @@ def apply_colour_scale(
             upper = max(above, below)
         if above == 1:
             x_above = npoints * 2 - 1
-        elif upper > 1:
+        if upper > 1:
             x_above = ((npoints - 1) / float(upper - 1)) * np.arange(upper) + npoints
 
         positions = np.append(x_below, x_above)

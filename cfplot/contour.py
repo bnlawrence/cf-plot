@@ -382,17 +382,49 @@ class ColourScale:
         custom_labels: list[str] | None,
     ) -> list[str]:
         """Generate colorbar labels from levels with skip/custom overrides."""
-        _ = (orientation, n_columns)
         if custom_labels is not None:
             return custom_labels
 
-        labels: list[str] = []
-        for idx, level in enumerate(levels):
-            if label_skip > 1 and idx % label_skip != 0:
-                labels.append("")
+        # Legacy default: estimate skip for horizontal colour bars from the
+        # total character count, and include fewer labels for readability.
+        if label_skip is None:
+            if orientation == "horizontal":
+                nchars = sum(len(str(level)) for level in levels)
+                label_skip = int(nchars / 80 + 1)
+                if n_columns > 1:
+                    label_skip = int(nchars * n_columns / 80)
             else:
-                labels.append(str(level))
-        return labels
+                label_skip = 1
+
+        if label_skip <= 1:
+            return [str(level) for level in levels]
+
+        if self._includes_zero:
+            zero_positions = np.where(np.asarray(levels) == 0)[0]
+            if np.size(zero_positions) > 0:
+                zero_pos = int(zero_positions[0])
+                labels = [levels[zero_pos]]
+
+                i = zero_pos + label_skip
+                while i <= len(levels) - 1:
+                    labels = list(np.append(labels, levels[i]))
+                    i += label_skip
+
+                i = zero_pos - label_skip
+                if i >= 0:
+                    while i >= 0:
+                        labels = list(np.append([levels[i]], labels))
+                        i -= label_skip
+
+                return [str(level) for level in labels]
+
+        labels = [levels[0]]
+        i = int(label_skip)
+        while i <= len(levels) - 1:
+            labels = list(np.append(labels, levels[i]))
+            i += label_skip
+
+        return [str(level) for level in labels]
 
 
 class ContourRenderer:
@@ -1173,6 +1205,14 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         )
         data = replace(data, ptype=kwargs.get("ptype", 0) or 0)
     elif isinstance(f, cf.Field):
+        # Legacy parity: when mapset is user-defined for polar stereographic
+        # plots, subset latitude before data extraction and level generation.
+        if plotvars.user_mapset:
+            if plotvars.proj == "npstere":
+                f = f.subspace(Y=cf.wi(plotvars.boundinglat, 90.0))
+            elif plotvars.proj == "spstere":
+                f = f.subspace(Y=cf.wi(-90.0, plotvars.boundinglat))
+
         data = ContourData.from_cf_field(
             f=f,
             colorbar_title=kwargs.get("colorbar_title", None),
@@ -1235,19 +1275,55 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         else:
             _cb_orient = "horizontal"
     colorbar_orientation = _cb_orient
-    colorbar_label_skip = kwargs.get("colorbar_label_skip", 1)
+    colorbar_label_skip = kwargs.get("colorbar_label_skip", None)
+
+    if colorbar_label_skip is None:
+        if colorbar_orientation == "horizontal":
+            nchars = 0
+            for lev in clevs:
+                nchars = nchars + len(str(lev))
+            colorbar_label_skip = int(nchars / 80 + 1)
+            if plotvars.columns > 1:
+                colorbar_label_skip = int(nchars * (plotvars.columns) / 80)
+        else:
+            colorbar_label_skip = 1
+
+    includes_zero = bool(np.any(np.asarray(clevs) == 0))
+    if colorbar_label_skip > 1:
+        if includes_zero:
+            zero_pos = [i for i, mylev in enumerate(clevs) if mylev == 0][0]
+            cbar_levels = clevs[zero_pos]
+            i = zero_pos + colorbar_label_skip
+            while i <= len(clevs) - 1:
+                cbar_levels = np.append(cbar_levels, clevs[i])
+                i = i + colorbar_label_skip
+            i = zero_pos - colorbar_label_skip
+            if i >= 0:
+                while i >= 0:
+                    cbar_levels = np.append(clevs[i], cbar_levels)
+                    i = i - colorbar_label_skip
+        else:
+            cbar_levels = clevs[0]
+            i = int(colorbar_label_skip)
+            while i <= len(clevs) - 1:
+                cbar_levels = np.append(cbar_levels, clevs[i])
+                i = i + colorbar_label_skip
+    else:
+        cbar_levels = clevs
+
     if colorbar_label_skip is None:
         colorbar_label_skip = 1
 
+    clabels = []
+    for lev in np.atleast_1d(cbar_levels):
+        clabels.append(str(lev))
+        if colorbar_label_skip > 1:
+            for _ in np.arange(colorbar_label_skip - 1):
+                clabels.append("")
+
     cbar_labels = kwargs.get("colorbar_labels")
     if cbar_labels is None:
-        cbar_labels = cs.colorbar_labels(
-            levels=np.asarray(clevs),
-            orientation=colorbar_orientation,
-            n_columns=plotvars.columns,
-            label_skip=colorbar_label_skip,
-            custom_labels=None,
-        )
+        cbar_labels = clabels
 
     colorbar_title = kwargs.get("colorbar_title", "")
     if mult != 0:
@@ -1292,6 +1368,34 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     xmax = kwargs.get("xmax", float(np.nanmax(data.x)))
     ymin = kwargs.get("ymin", float(np.nanmin(data.y)))
     ymax = kwargs.get("ymax", float(np.nanmax(data.y)))
+
+    # Legacy parity for latitude/longitude/time-pressure plots:
+    # pressure-like coordinates are rendered with pressure decreasing upward.
+    if data.ptype in (2, 3, 7) and kwargs.get("user_gset", plotvars.user_gset) == 0:
+        positive = "down"
+        if isinstance(f, cf.Field):
+            myz = utility.find_z(f)
+            if myz is not None and hasattr(f.construct(myz), "positive"):
+                positive = f.construct(myz).positive
+        if "theta" in (data.ylabel or "").split(" "):
+            positive = "up"
+        if "height" in (data.ylabel or "").split(" "):
+            positive = "up"
+
+        if data.ptype == 2:
+            if xmin < -80 and xmin >= -90:
+                xmin = -90
+            if xmax > 80 and xmax <= 90:
+                xmax = 90
+
+        if positive == "down":
+            ymin = float(np.nanmax(data.y))
+            ymax = float(np.nanmin(data.y))
+            if ymax < 10:
+                ymax = 0
+        else:
+            ymin = float(np.nanmin(data.y))
+            ymax = float(np.nanmax(data.y))
 
     # Respect user gset for Hovmuller plots with date-string y limits.
     tmin = None
@@ -1424,10 +1528,95 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             yticks = time_ticks
             yticklabels = time_labels
     else:
-        if xticks is None:
-            xticks = utility.gvals(dmin=xmin, dmax=xmax, mod=False)[0]
-        if yticks is None:
-            yticks = utility.gvals(dmin=ymax, dmax=ymin, mod=False)[0]
+        if data.ptype == 2:
+            if xticks is None:
+                xticks, xticklabels = utility.mapaxis(
+                    min_val=xmin,
+                    max_val=xmax,
+                    axis_type=2,
+                    degsym=plotvars.degsym,
+                )
+            if yticks is None:
+                if kwargs.get("ylog", False):
+                    ylo = min(ymin, ymax)
+                    yhi = max(ymin, ymax)
+                    yticks = [
+                        tick
+                        for tick in (1000, 100, 10, 1)
+                        if ylo <= tick <= yhi
+                    ]
+                else:
+                    ystep = 100.0
+                    yrange = abs(ymax - ymin)
+                    if yrange < 1:
+                        ystep = yrange / 10.0 if yrange != 0 else 0.1
+                    if yrange > 1:
+                        ystep = 1.0
+                    if yrange > 10:
+                        ystep = 10.0
+                    if yrange > 100:
+                        ystep = 100.0
+                    if yrange > 1000:
+                        ystep = 200.0
+                    if yrange > 2000:
+                        ystep = 500.0
+                    if yrange > 5000:
+                        ystep = 1000.0
+                    if yrange > 15000:
+                        ystep = 5000.0
+                    yticks = utility.gvals(
+                        dmin=min(ymin, ymax),
+                        dmax=max(ymin, ymax),
+                        mystep=ystep,
+                        mod=False,
+                    )[0]
+        elif data.ptype == 3:
+            if xticks is None:
+                xticks, xticklabels = utility.mapaxis(
+                    min_val=xmin,
+                    max_val=xmax,
+                    axis_type=1,
+                    degsym=plotvars.degsym,
+                )
+            if yticks is None:
+                if kwargs.get("ylog", False):
+                    ylo = min(ymin, ymax)
+                    yhi = max(ymin, ymax)
+                    yticks = [
+                        tick
+                        for tick in (1000, 100, 10, 1)
+                        if ylo <= tick <= yhi
+                    ]
+                else:
+                    ystep = 100.0
+                    yrange = abs(ymax - ymin)
+                    if yrange < 1:
+                        ystep = yrange / 10.0 if yrange != 0 else 0.1
+                    if yrange > 1:
+                        ystep = 1.0
+                    if yrange > 10:
+                        ystep = 10.0
+                    if yrange > 100:
+                        ystep = 100.0
+                    if yrange > 1000:
+                        ystep = 200.0
+                    if yrange > 2000:
+                        ystep = 500.0
+                    if yrange > 5000:
+                        ystep = 1000.0
+                    if yrange > 15000:
+                        ystep = 5000.0
+                    yticks = utility.gvals(
+                        dmin=min(ymin, ymax),
+                        dmax=max(ymin, ymax),
+                        mystep=ystep,
+                        mod=False,
+                    )[0]
+        else:
+            if xticks is None:
+                xticks = utility.gvals(dmin=xmin, dmax=xmax, mod=False)[0]
+            if yticks is None:
+                yticks = utility.gvals(dmin=ymax, dmax=ymin, mod=False)[0]
 
     if data.ptype == 1:
         layout = ContourLayout(plotvars).allocate_map_viewport(
