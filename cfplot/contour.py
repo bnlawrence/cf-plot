@@ -306,42 +306,16 @@ class ColourScale:
         self._levels_extend = levels_extend
 
         # Replicate cscale_flag == 0 logic (revert to default)
+        # Replicate cscale_flag == 0 logic (revert to default).
+        # Legacy behaviour: apply scale1 uniformly across all levels,
+        # regardless of whether zero is present.
         if self._plotvars.cscale_flag == 0:
-            col_zero = 0
-            for cval in self._levels:
-                if self._includes_zero is False:
-                    col_zero = col_zero + 1
-                if cval == 0:
-                    self._includes_zero = True
-
-            if self._includes_zero:
-                cs_below = col_zero
-                cs_above = np.size(self._levels) - col_zero + 1
-                if (
-                    self._plotvars.levels_extend == "max"
-                    or self._plotvars.levels_extend == "neither"
-                ):
-                    cs_below = cs_below - 1
-                if (
-                    self._plotvars.levels_extend == "min"
-                    or self._plotvars.levels_extend == "neither"
-                ):
-                    cs_above = cs_above - 1
-                uniform = True
-                if self._plotvars.cs_uniform is False:
-                    uniform = False
-                apply_colour_scale(
-                    "scale1", below=cs_below, above=cs_above, uniform=uniform
-                )
-            else:
-                ncols = np.size(self._levels) + 1
-                if (
-                    self._plotvars.levels_extend == "min"
-                    or self._plotvars.levels_extend == "max"
-                ):
-                    ncols = ncols - 1
-                apply_colour_scale("viridis", ncols=ncols)
-
+            ncols = np.size(self._levels) + 1
+            if self._plotvars.levels_extend in ("min", "max"):
+                ncols = ncols - 1
+            elif self._plotvars.levels_extend == "neither":
+                ncols = ncols - 2
+            apply_colour_scale("scale1", ncols=ncols)
             self._plotvars.cscale_flag = 0
 
         # Replicate cscale_flag == 1 logic (user-selected color map, fit to levels)
@@ -1229,7 +1203,16 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         levels_extend=plotvars.levels_extend,
     )
 
-    colorbar_orientation = kwargs.get("colorbar_orientation", None) or "horizontal"
+    import matplotlib
+    matplotlib.rcParams["contour.negative_linestyle"] = "solid"
+
+    _cb_orient = kwargs.get("colorbar_orientation", None)
+    if _cb_orient is None:
+        if data.ptype == 1 and plotvars.proj in ("npstere", "spstere"):
+            _cb_orient = "vertical"
+        else:
+            _cb_orient = "horizontal"
+    colorbar_orientation = _cb_orient
     colorbar_label_skip = kwargs.get("colorbar_label_skip", 1)
     if colorbar_label_skip is None:
         colorbar_label_skip = 1
@@ -1527,6 +1510,8 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
                 )
             if kwargs.get("grid", False):
                 map_runtime.draw_grid()
+
+            map_runtime.draw_polar_axes()
 
         # Persist only dynamic contour artists for animation updates.
         plotvars._contour_animation_artists = list(renderer.frame_artists)

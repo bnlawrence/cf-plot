@@ -125,14 +125,12 @@ class MapSet:
             lonmax = pv.lon_0 + 180.01
             latmin = pv.boundinglat
             latmax = 90
-            extent = False
         elif vproj == "spstere":
             proj = ccrs.SouthPolarStereo(central_longitude=pv.lon_0)
             lonmin = pv.lon_0 - 180
-            lonmax = pv.lonmax + 180.01
+            lonmax = pv.lon_0 + 180.01
             latmin = -90
             latmax = pv.boundinglat
-            extent = False
         elif vproj == "ortho":
             proj = ccrs.Orthographic(
                 central_longitude=pv.lon_0, central_latitude=pv.lat_0
@@ -229,3 +227,157 @@ class MapSet:
             ylocs=lats,
             zorder=pv.grid_zorder,
         )
+
+    def draw_polar_axes(self) -> None:
+        """Draw graticule lines and longitude labels for polar stereographic plots.
+
+        Replicates the legacy behaviour: latitude circles, longitude spokes,
+        and longitude text labels placed just outside the bounding latitude.
+        No latitude labels are drawn (matching legacy output).
+        """
+        pv = self.plotvars
+        if pv.mymap is None:
+            return
+        vproj = pv.proj
+        if vproj not in ("npstere", "spstere"):
+            return
+
+        mymap = pv.mymap
+        boundinglat = pv.boundinglat
+        lon_0 = pv.lon_0
+        geodetic = ccrs.Geodetic()
+
+        # --- latitude circles ---
+        latvals = np.arange(5) * 30 - 60  # [-60, -30, 0, 30, 60]
+        if vproj == "npstere":
+            latvals = latvals[latvals >= boundinglat]
+        else:
+            latvals = latvals[latvals <= boundinglat]
+
+        for lat in latvals:
+            if abs(lat - boundinglat) > 1:
+                lons_line = np.arange(361, dtype=float)
+                lats_line = np.full(361, lat)
+                mymap.plot(
+                    lons_line, lats_line,
+                    color=pv.grid_colour,
+                    linewidth=pv.grid_thickness,
+                    linestyle=pv.grid_linestyle,
+                    transform=geodetic,
+                )
+
+        # --- longitude spokes ---
+        lonvals = np.arange(7) * 60  # [0, 60, 120, 180, 240, 300, 360]
+        for lon in lonvals:
+            if vproj == "npstere":
+                lats_line = np.arange(90 - boundinglat) + boundinglat
+            else:
+                lats_line = np.arange(boundinglat + 91) - 90
+            lons_line = np.full(lats_line.size, float(lon))
+            mymap.plot(
+                lons_line, lats_line,
+                color=pv.grid_colour,
+                linewidth=pv.grid_thickness,
+                linestyle=pv.grid_linestyle,
+                transform=geodetic,
+            )
+
+        # --- longitude labels ---
+        if vproj == "npstere":
+            polar_proj = ccrs.NorthPolarStereo(central_longitude=lon_0)
+            pole = 90
+            latrange = 90 - abs(boundinglat)
+            latpt = boundinglat - latrange / 40.0
+        else:
+            polar_proj = ccrs.SouthPolarStereo(central_longitude=lon_0)
+            pole = -90
+            latrange = 90 - abs(boundinglat)
+            latpt = boundinglat + latrange / 40.0
+
+        axis_label_fontsize = getattr(pv, "axis_label_fontsize", 11)
+        axis_label_fontweight = getattr(pv, "axis_label_fontweight", "normal")
+
+        if axis_label_fontsize > 0:
+            for lon in lonvals:
+                # Build label the same way as legacy _mapaxis
+                lon2 = np.mod(lon + 180, 360) - 180
+                degsym = r"$\degree$" if getattr(pv, "degsym", False) else ""
+                if lon2 < 0 and lon2 > -180:
+                    label = str(abs(int(lon2))) + degsym + "W"
+                elif lon2 > 0 and lon2 <= 180:
+                    label = str(int(lon2)) + degsym + "E"
+                elif lon2 == 0:
+                    label = "0" + degsym
+                else:  # 180
+                    label = "180" + degsym
+
+                lonr, latr = polar_proj.transform_point(
+                    lon, latpt, ccrs.PlateCarree()
+                )
+
+                v_align = "center"
+                if lonr < -1:
+                    h_align = "right"
+                elif lonr > 1:
+                    h_align = "left"
+                else:
+                    h_align = "center"
+                    if latr < 0:
+                        v_align = "top"
+                    else:
+                        v_align = "bottom"
+
+                mymap.text(
+                    lonr, latr, label,
+                    horizontalalignment=h_align,
+                    verticalalignment=v_align,
+                    fontsize=axis_label_fontsize,
+                    fontweight=axis_label_fontweight,
+                    zorder=101,
+                )
+
+        # Blank off corners to make the plot circular, then draw the bounding
+        # latitude circle and adjust axes limits (mirrors legacy behaviour).
+        lons_b = np.arange(360, dtype=float)
+        lats_b = np.full(360, float(boundinglat))
+        device_coords = polar_proj.transform_points(
+            ccrs.PlateCarree(), lons_b, lats_b
+        )
+        xmax_b = np.max(device_coords[:, 0])
+        xmin_b = np.min(device_coords[:, 0])
+
+        pts = np.where(device_coords[:, 0] >= 0.0)
+        xpts = np.append(
+            device_coords[:, 0][pts], np.zeros(np.size(pts)) + xmax_b
+        )
+        ypts = np.append(
+            device_coords[:, 1][pts], device_coords[:, 1][pts][::-1]
+        )
+        mymap.fill(xpts, ypts, alpha=1.0, color="w", zorder=100)
+
+        xpts = np.append(
+            np.zeros(np.size(pts)) + xmin_b, -1.0 * device_coords[:, 0][pts]
+        )
+        ypts = np.append(
+            device_coords[:, 1][pts], device_coords[:, 1][pts][::-1]
+        )
+        mymap.fill(xpts, ypts, alpha=1.0, color="w", zorder=100)
+
+        mymap.set_frame_on(False)
+
+        # Draw the bounding latitude circle
+        lons_circ = np.arange(361, dtype=float)
+        lats_circ = np.full(361, float(boundinglat))
+        circle_coords = polar_proj.transform_points(
+            ccrs.PlateCarree(), lons_circ, lats_circ
+        )
+        mymap.plot(
+            circle_coords[:, 0], circle_coords[:, 1],
+            color="k", zorder=100, clip_on=False,
+        )
+
+        # Expand axes limits slightly so labels are not clipped
+        xmax_ax = np.max(np.abs(mymap.set_xlim(None)))
+        mymap.set_xlim((-xmax_ax, xmax_ax), emit=False)
+        ymax_ax = np.max(np.abs(mymap.set_ylim(None)))
+        mymap.set_ylim((-ymax_ax, ymax_ax), emit=False)
