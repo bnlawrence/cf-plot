@@ -136,12 +136,10 @@ def test_example_5_south_pole_with_boundary(ggap_file):
 
 
 @pytest.mark.integration
-def test_example_6_latitude_pressure_plot():
+def test_example_6_latitude_pressure_plot(ggap_file):
     """Test Example 6: latitude-pressure plot."""
-    if not (DATA_DIR / "ggap.nc").exists():
-        pytest.skip(f"Missing test data: {DATA_DIR / 'ggap.nc'}")
 
-    f = cf.read(str(DATA_DIR / "ggap.nc"))[3]
+    f = ggap_file["geopotential"]
     _configure_example_output("6")
 
     cfp.con(f.subspace(longitude=0))
@@ -176,12 +174,10 @@ def test_example_8_log_scale_pressure(ggap_file):
 
 @pytest.mark.integration
 @pytest.mark.xfail(reason="cf-python issue #799")
-def test_example_9_longitude_pressure_plot():
+def test_example_9_longitude_pressure_plot(ggap_file):
     """Test Example 9: longitude-pressure plot."""
-    if not (DATA_DIR / "ggap.nc").exists():
-        pytest.skip(f"Missing test data: {DATA_DIR / 'ggap.nc'}")
 
-    f = cf.read(str(DATA_DIR / "ggap.nc"))[0]
+    f = ggap_file["air_temperature"]
     _configure_example_output("9")
 
     cfp.con(f.collapse("mean", "latitude"))
