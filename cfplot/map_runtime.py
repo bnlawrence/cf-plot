@@ -125,12 +125,14 @@ class MapSet:
             lonmax = pv.lon_0 + 180.01
             latmin = pv.boundinglat
             latmax = 90
+            extent = False
         elif vproj == "spstere":
             proj = ccrs.SouthPolarStereo(central_longitude=pv.lon_0)
             lonmin = pv.lon_0 - 180
             lonmax = pv.lonmax + 180.01
             latmin = -90
             latmax = pv.boundinglat
+            extent = False
         elif vproj == "ortho":
             proj = ccrs.Orthographic(
                 central_longitude=pv.lon_0, central_latitude=pv.lat_0

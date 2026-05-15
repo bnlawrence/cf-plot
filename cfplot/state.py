@@ -203,6 +203,8 @@ plotvars_defaults = {
     "titles_con_called": False,
     "orientation": "landscape",
     "aspect": "equal",
+    "_contour_session_open": False,
+    "_contour_animation_artists": [],
 }
 
 allvars_defaults = {**setvars_defaults, **plotvars_defaults}

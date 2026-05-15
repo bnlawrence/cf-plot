@@ -96,18 +96,33 @@ def cbar(
 
         left, bottom, width, height = this_plot.get_position().bounds
 
+        # Cartopy can occasionally report inverted bounds for some map
+        # projections. Normalise to positive sizes so add_axes is valid.
+        width = abs(width)
+        height = abs(height)
+        width = max(width, 1e-6)
+        height = max(height, 1e-6)
+
         if orientation == "horizontal":
             if plotvars.plot_type == 1:
                 left, bottom, width, height = this_plot.get_position().bounds
+                width = abs(width)
+                height = abs(height)
+                width = max(width, 1e-6)
+                height = max(height, 1e-6)
                 if height / width >= 0.9:
                     this_plot.set_position([left, bottom + fraction, width, height - fraction])
                     left, bottom, width, height = this_plot.get_position().bounds
+                    width = abs(width)
+                    height = abs(height)
+                    width = max(width, 1e-6)
+                    height = max(height, 1e-6)
 
                 ax1 = plotvars.master_plot.add_axes(
                     [
                         left + width * (1.0 - shrink) / 2.0,
                         bottom + fraction * (anchor - 1.0),
-                        width * shrink,
+                        max(width * shrink, 1e-6),
                         thick,
                     ]
                 )
@@ -117,7 +132,7 @@ def cbar(
                     [
                         left + width * (1.0 - shrink) / 2.0,
                         bottom,
-                        width * shrink,
+                        max(width * shrink, 1e-6),
                         thick,
                     ]
                 )

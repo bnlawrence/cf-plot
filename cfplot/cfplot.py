@@ -540,6 +540,8 @@ plotvars_defaults = {
     # 13. General alignment
     "orientation": "landscape",
     "aspect": "equal",
+    "_contour_session_open": False,
+    "_contour_animation_artists": [],
 }
 allvars_defaults = {**setvars_defaults, **plotvars_defaults}
 from .state import plotvars
@@ -8065,6 +8067,21 @@ def reset():
     gset()
     mapset()
     setvars()
+
+    # Clear runtime plotting handles so a fresh figure/axes is created for
+    # subsequent plots. This avoids stale state leaking across tests.
+    plotvars.master_plot = None
+    plotvars.plot = None
+    plotvars.mymap = None
+    plotvars.norm = None
+    plotvars.image = None
+    plotvars.pos = 1
+    plotvars.gpos_called = False
+    plotvars.user_plot = 0
+
+    # Reset refactored contour-runtime session state as part of global reset.
+    plotvars._contour_session_open = False
+    plotvars._contour_animation_artists = []
 
 
 def setvars(**kwargs):
