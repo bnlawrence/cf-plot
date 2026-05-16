@@ -213,6 +213,8 @@ class MapSet:
         pv = self.plotvars
         if pv.mymap is None:
             return
+        if pv.proj != "cyl":
+            return
 
         lons = np.arange((360 / pv.grid_x_spacing) + 1) * pv.grid_x_spacing
         lons = np.concatenate([lons - 360, lons])
@@ -284,12 +286,10 @@ class MapSet:
         # --- longitude labels ---
         if vproj == "npstere":
             polar_proj = ccrs.NorthPolarStereo(central_longitude=lon_0)
-            pole = 90
             latrange = 90 - abs(boundinglat)
             latpt = boundinglat - latrange / 40.0
         else:
             polar_proj = ccrs.SouthPolarStereo(central_longitude=lon_0)
-            pole = -90
             latrange = 90 - abs(boundinglat)
             latpt = boundinglat + latrange / 40.0
 
@@ -673,6 +673,29 @@ def _apply_map_axes(
                     fontweight=plotvars.axis_label_fontweight,
                     zorder=101,
                 )
+
+    if plotvars.proj == "UKCP" and plotvars.grid and (
+        plotvars.grid_x_spacing != 60 or plotvars.grid_y_spacing != 30
+    ):
+        lons = (
+            np.arange((360 / plotvars.grid_x_spacing) + 1)
+            * plotvars.grid_x_spacing
+        )
+        lons = np.concatenate([lons - 360, lons])
+        lats = (
+            np.arange((180 / plotvars.grid_y_spacing) + 1)
+            * plotvars.grid_y_spacing
+            - 90
+        )
+
+        map_ax.gridlines(
+            color=plotvars.grid_colour,
+            linewidth=plotvars.grid_thickness,
+            linestyle=plotvars.grid_linestyle,
+            xlocs=lons,
+            ylocs=lats,
+            zorder=plotvars.grid_zorder,
+        )
 
     if xlabel:
         map_ax.text(

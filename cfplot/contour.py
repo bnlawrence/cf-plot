@@ -2017,7 +2017,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
                     facecolor=plotvars.lake_color,
                     zorder=plotvars.feature_zorder,
                 )
-            if kwargs.get("grid", False):
+            if kwargs.get("grid", plotvars.grid):
                 map_runtime.draw_grid()
 
             map_runtime.draw_polar_axes()

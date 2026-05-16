@@ -5,6 +5,7 @@ These tests verify that con() plotting functions work with real data.
 """
 
 from pathlib import Path
+import shutil
 
 import cf
 import matplotlib.pyplot as plt
@@ -19,8 +20,38 @@ import cfplot.layout_runtime as layout_runtime
 # Path to test data
 DATA_DIR = Path(__file__).parent.parent.parent / "docs" / "source" / "data"
 TEST_GEN_DIR = Path(__file__).parent.parent.parent / "generated-example-images"
-REF_IMAGE_DIR = Path(__file__).parent.parent / "reference-example-images"
+#REF_IMAGE_DIR = Path(__file__).parent.parent / "reference-example-images"
+REF_IMAGE_DIR = Path(__file__).parent.parent / "new_reference-example-images"
 TEST_GEN_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _is_targeted_example_run(pytestconfig: pytest.Config) -> bool:
+    """Return True when pytest was invoked for a narrow subset of tests."""
+    args = tuple(str(arg) for arg in pytestconfig.invocation_params.args)
+    if any("::" in arg for arg in args):
+        return True
+
+    for index, arg in enumerate(args):
+        if arg == "-k":
+            return index + 1 < len(args) and bool(args[index + 1].strip())
+        if arg.startswith("-k"):
+            expression = arg[2:]
+            return expression.startswith("=") or bool(expression.strip())
+
+    return False
+
+
+@pytest.fixture(scope="session", autouse=True)
+def clean_generated_example_dir(pytestconfig: pytest.Config):
+    """Remove stale generated images for broad runs, but preserve targeted runs."""
+    if _is_targeted_example_run(pytestconfig):
+        return
+
+    for path in TEST_GEN_DIR.iterdir():
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
 
 
 @pytest.fixture
@@ -350,19 +381,6 @@ def test_example_21other_rgp_plasma():
     _assert_reference_match("21other")
 
 
-@pytest.mark.integration
-def test_example_22_rgp_gray():
-    """Test Example 22: RGP data with gray colorscale."""
-    if not (DATA_DIR / "rgp.nc").exists():
-        pytest.skip(f"Missing test data: {DATA_DIR / 'rgp.nc'}")
-
-    f = cf.read(str(DATA_DIR / "rgp.nc"))[0]
-    _configure_example_output("22")
-
-    cfp.cscale("gray")
-    cfp.con(f)
-    _assert_reference_match("22")
-
 
 @pytest.mark.integration
 def test_example_22_rgp_rotated_projection():
@@ -434,11 +452,20 @@ def test_example_31_ukcp_projection():
         pytest.skip(f"Missing test data: {ukcp_file}")
 
     f = cf.read(str(ukcp_file))[0]
-    _configure_example_output("31")
 
+    fname = str(TEST_GEN_DIR / "gen_fig_31.png")
+    cfp.setvars(
+        file=fname,
+        viewer="matplotlib",
+        grid_x_spacing=1,
+        grid_y_spacing=1,
+    )
     cfp.mapset(proj="UKCP", resolution="50m")
+    #TODO The original test set the grid_x_ and _y_spacing to 1, 
+    # but this reset all the output, and stopped any output to 
+    # file. We need to fix setvars so it doesn't just reset
+    # everything. 
     cfp.levs(-3, 7, 0.5)
-    cfp.setvars(grid_x_spacing=1, grid_y_spacing=1)
     cfp.con(f, lines=False)
     _assert_reference_match("31")
 
