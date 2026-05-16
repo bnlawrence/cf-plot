@@ -50,3 +50,25 @@ def test_con_falls_back_when_new_path_declines(monkeypatch):
 
     with pytest.raises(NotImplementedError, match="not implemented"):
         contour.con(f=np.array([[1.0, 2.0], [3.0, 4.0]]), lines=False)
+
+
+def test_finalize_non_session_plot_calls_gclose(monkeypatch):
+    calls: list[bool] = []
+
+    monkeypatch.setattr(contour.plotvars, "_contour_session_open", False)
+    monkeypatch.setattr(contour, "gclose", lambda view=True: calls.append(view))
+
+    contour._finalize_non_session_plot()
+
+    assert calls == [True]
+
+
+def test_finalize_non_session_plot_skips_when_session_open(monkeypatch):
+    calls: list[bool] = []
+
+    monkeypatch.setattr(contour.plotvars, "_contour_session_open", True)
+    monkeypatch.setattr(contour, "gclose", lambda view=True: calls.append(view))
+
+    contour._finalize_non_session_plot()
+
+    assert calls == []

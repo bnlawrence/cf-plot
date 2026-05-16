@@ -101,7 +101,6 @@ def gclose(view: bool = True) -> None:
         if view and (plotvars.viewer == "matplotlib" or interactive):
             matplotlib.pyplot.ion()
             plot.show()
-            plot.close(figure)
         elif not view:
             plot.close(figure)
 
@@ -125,6 +124,8 @@ def gclose(view: bool = True) -> None:
 
 def ensure_xy_viewport() -> None:
     """Ensure a Cartesian viewport exists, matching legacy gopen/gpos behavior."""
+    _reset_closed_figure_state()
+
     if plotvars.master_plot is None:
         _open_figure(user_plot=0)
 
@@ -275,6 +276,8 @@ def _open_figure(
 
 def _select_position(pos: int) -> None:
     """Select subplot position in the contour-owned figure state."""
+    _reset_closed_figure_state()
+
     if plotvars.master_plot is None:
         _open_figure(user_plot=0)
 
@@ -316,6 +319,26 @@ def _select_position(pos: int) -> None:
     plotvars.graph_ymin = None
     plotvars.graph_ymax = None
     plotvars.titles_con_called = False
+
+
+def _reset_closed_figure_state() -> None:
+    """Drop stale figure/axes handles after a window has been closed."""
+    figure = plotvars.master_plot
+    if figure is None:
+        return
+
+    try:
+        alive = matplotlib.pyplot.fignum_exists(figure.number)
+    except Exception:
+        alive = False
+
+    if alive:
+        return
+
+    plotvars.master_plot = None
+    plotvars.plot = None
+    plotvars.mymap = None
+    plotvars.gpos_called = False
 
 
 def _apply_xy_axes(

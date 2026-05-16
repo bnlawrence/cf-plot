@@ -385,7 +385,13 @@ class MapSet:
 def ensure_map_viewport() -> None:
     """Ensure a map viewport exists without resetting an existing map axes."""
     if plotvars.mymap is None:
-        from .layout_runtime import _open_figure, _select_position
+        from .layout_runtime import (
+            _open_figure,
+            _reset_closed_figure_state,
+            _select_position,
+        )
+
+        _reset_closed_figure_state()
 
         if plotvars.master_plot is None:
             _open_figure(user_plot=0)

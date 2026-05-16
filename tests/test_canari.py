@@ -4,24 +4,24 @@ import cf
 import pytest
 
 import cfplot as cfp
+from tests.integration.test_contour_plot_examples import _configure_example_output
 
 
-# Use available test data from docs directory
-DATA_DIR = Path(__file__).parent.parent / "docs" / "source" / "data"
-DF = DATA_DIR / "tas_A1.nc"
+# This is a specific test for a bug report
+DATA_DIR = Path(__file__).parent / "data"
+DF = DATA_DIR / "bnl_tmp_NAEW.nc"
 
 
 @pytest.mark.integration
-@pytest.mark.xfail(reason="Test data handling in progress")
-def test_simple():
+def test_canari_1():
     if not DF.exists():
         pytest.skip(f"Missing integration dataset: {DF}")
-
+    _configure_example_output("canari_1")
     flds = cf.read(str(DF))
     f = flds[0]
-    field = f[0, 0, :, :]
-    cfp.con(field)
-
+    field = f[0, 3, :, :]
+    cfp.mapset(proj="rotated")
+    cfp.con(field, lines=False)
 
 
 

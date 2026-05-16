@@ -43,6 +43,7 @@ from .colorbar import cbar
 from .layout_runtime import (
     apply_axes,
     ensure_xy_viewport,
+    gclose,
     set_plot_limits,
 )
 from .map_runtime import MapSet, ensure_map_viewport
@@ -279,6 +280,13 @@ class ContourLayout:
             xticklabels=xticklabels,
             yticklabels=yticklabels,
         )
+
+
+def _finalize_non_session_plot() -> None:
+    """Legacy parity: auto-save/show and close when not in an explicit session."""
+    session_open = bool(getattr(plotvars, "_contour_session_open", False))
+    if not session_open:
+        gclose(view=True)
 
 
 class ColourScale:
@@ -1102,6 +1110,21 @@ def _render_rotated_grid_axes(
         user_gset=0,
     )
 
+    # Rotated-grid labels are drawn manually as text; hide the base
+    # index-space ticks/labels to avoid a duplicate numeric axis.
+    plotvars.plot.set_xticks([])
+    plotvars.plot.set_yticks([])
+    plotvars.plot.tick_params(
+        bottom=False,
+        top=False,
+        left=False,
+        right=False,
+        labelbottom=False,
+        labeltop=False,
+        labelleft=False,
+        labelright=False,
+    )
+
     if continents:
         import cartopy.io.shapereader as shpreader
         import shapefile
@@ -1440,6 +1463,46 @@ def _render_ptype6_rotated_pole(
                 ylabel=kwargs.get("ylabel", None),
             )
 
+    if plotvars.proj == "cyl" and plotvars.mymap is not None:
+        feature = cfeature.NaturalEarthFeature(
+            name="land",
+            category="physical",
+            scale=plotvars.resolution,
+            facecolor="none",
+        )
+        plotvars.mymap.add_feature(
+            feature,
+            edgecolor=plotvars.continent_color or "k",
+            linewidth=plotvars.continent_thickness or 1.5,
+            linestyle=plotvars.continent_linestyle or "solid",
+            zorder=kwargs.get("zorder", 1),
+        )
+
+        if plotvars.ocean_color is not None:
+            plotvars.mymap.add_feature(
+                cfeature.OCEAN,
+                edgecolor="face",
+                facecolor=plotvars.ocean_color,
+                zorder=plotvars.feature_zorder,
+            )
+        if plotvars.land_color is not None:
+            plotvars.mymap.add_feature(
+                cfeature.LAND,
+                edgecolor="face",
+                facecolor=plotvars.land_color,
+                zorder=plotvars.feature_zorder,
+            )
+        if plotvars.lake_color is not None:
+            plotvars.mymap.add_feature(
+                cfeature.LAKES,
+                edgecolor="face",
+                facecolor=plotvars.lake_color,
+                zorder=plotvars.feature_zorder,
+            )
+
+        if kwargs.get("grid", plotvars.grid):
+            MapSet(plotvars).draw_grid()
+
     if kwargs.get("colorbar", True) and (fill or blockfill):
         cbar(
             labels=cbar_labels,
@@ -1475,25 +1538,7 @@ def _render_ptype6_rotated_pole(
             title_fontweight=plotvars.title_fontweight,
         )
 
-    file = plotvars.file
-    session_open = bool(getattr(plotvars, "_contour_session_open", False))
-    if file is not None and not session_open:
-        saveargs = {}
-        if plotvars.tight:
-            saveargs = {"bbox_inches": "tight"}
-        if os.path.splitext(file)[1].lower() not in (".ps", ".eps", ".png", ".pdf"):
-            file = file + ".png"
-        figure = plotvars.master_plot or getattr(plotvars.plot, "figure", None)
-        if figure is not None:
-            figure.savefig(
-                file,
-                orientation=plotvars.orientation,
-                dpi=plotvars.dpi,
-                **saveargs,
-            )
-            import matplotlib.pyplot as _plt
-
-            _plt.close(figure)
+    _finalize_non_session_plot()
 
     plotvars._contour_animation_artists = frame_artists
     return True
@@ -2056,24 +2101,6 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             title=colorbar_title,
         )
 
-    file = plotvars.file
-    session_open = bool(getattr(plotvars, "_contour_session_open", False))
-    if file is not None and not session_open:
-        saveargs = {}
-        if plotvars.tight:
-            saveargs = {"bbox_inches": "tight"}
-        if os.path.splitext(file)[1].lower() not in (".ps", ".eps", ".png", ".pdf"):
-            file = file + ".png"
-        figure = plotvars.master_plot or getattr(plotvars.plot, "figure", None)
-        if figure is not None:
-            figure.savefig(
-                file,
-                orientation=plotvars.orientation,
-                dpi=plotvars.dpi,
-                **saveargs,
-            )
-            plot.close(figure)
-
     if data.ptype == 1:
         title = kwargs.get("title", "") or ""
         animation = bool(kwargs.get("animation", False))
@@ -2099,6 +2126,8 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             fontsize=plotvars.title_fontsize,
             fontweight=plotvars.title_fontweight,
         )
+
+    _finalize_non_session_plot()
 
     return True
 
