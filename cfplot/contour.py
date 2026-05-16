@@ -384,6 +384,9 @@ class ColourScale:
         if custom_labels is not None:
             return custom_labels
 
+        if label_skip is None:
+            label_skip = 1
+
         # Legacy default: estimate skip for horizontal colour bars from the
         # total character count, and include fewer labels for readability.
         if label_skip is None:
@@ -415,7 +418,7 @@ class ColourScale:
                         labels = list(np.append([levels[i]], labels))
                         i -= label_skip
 
-                return [str(level) for level in labels]
+                return self._expand_skipped_labels(labels, label_skip)
 
         labels = [levels[0]]
         i = int(label_skip)
@@ -423,7 +426,18 @@ class ColourScale:
             labels = list(np.append(labels, levels[i]))
             i += label_skip
 
-        return [str(level) for level in labels]
+        return self._expand_skipped_labels(labels, label_skip)
+
+    @staticmethod
+    def _expand_skipped_labels(labels: list[Any], label_skip: int) -> list[str]:
+        """Interleave skipped colour-bar labels with blank placeholders."""
+        clabels: list[str] = []
+        for label in labels:
+            clabels.append(str(label))
+            if label_skip > 1:
+                clabels.extend([""] * (label_skip - 1))
+
+        return clabels
 
 
 class ContourRenderer:
