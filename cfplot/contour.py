@@ -42,11 +42,10 @@ from .blockfill import _bfill
 from .colorbar import cbar
 from .layout_runtime import (
     apply_axes,
-    ensure_map_viewport,
     ensure_xy_viewport,
     set_plot_limits,
 )
-from .map_runtime import MapSet
+from .map_runtime import MapSet, ensure_map_viewport
 from .state import (
     apply_colour_scale,
     get_colour_scale_map,
