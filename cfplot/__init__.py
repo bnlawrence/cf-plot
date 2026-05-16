@@ -6,9 +6,9 @@ See the cf-plot home page http://ajheaps.github.io/cf-plot for a
 gallery of plots and how to use cf-plot.
 """
 
-__author__ = "Andy Heaps - andy.heaps@ncas.ac.uk"
-__date__ = "15th Jan 2024"
-__version__ = "3.3.0"
+__author__ = "Andy Heaps, Sadie Bartholomew, Bryan Lawrence"
+__date__ = "16th May, 2026"
+__version__ = "4.0.0"
 
 from .cfplot import *  # noqa: F403, F401
 from .layout_runtime import gclose, gopen

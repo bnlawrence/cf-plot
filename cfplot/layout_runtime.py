@@ -14,6 +14,7 @@ from typing import Any
 import cartopy.crs as ccrs
 import matplotlib
 import matplotlib.pyplot as plot
+import numpy as np
 
 from . import utility
 from .state import plotvars
@@ -392,6 +393,9 @@ def _apply_map_axes(
     map_ax = plotvars.mymap
     if map_ax is None:
         return
+    axes = True
+    xaxis = True
+    yaxis = True
 
     if plotvars.proj == "cyl":
         lon_ticks = xticks
@@ -477,6 +481,183 @@ def _apply_map_axes(
         for label in map_ax.yaxis.get_ticklabels():
             label.set_fontsize(plotvars.axis_label_fontsize)
             label.set_fontweight(plotvars.axis_label_fontweight)
+
+    if plotvars.proj == "lcc":
+        lonmin = plotvars.lonmin
+        lonmax = plotvars.lonmax
+        latmin = plotvars.latmin
+        latmax = plotvars.latmax
+        lon_0 = lonmin + (lonmax - lonmin) / 2.0
+        lat_0 = latmin + (latmax - latmin) / 2.0
+        standard_parallels = [33, 45]
+        if latmin <= 0 and latmax <= 0:
+            standard_parallels = [-45, -33]
+
+        proj = ccrs.LambertConformal(
+            central_longitude=lon_0,
+            central_latitude=lat_0,
+            cutoff=40,
+            standard_parallels=standard_parallels,
+        )
+
+        ymin, ymax = map_ax.set_ylim(None)
+        map_ax.set_ylim(ymin * 1.05, ymax, emit=False)
+        map_ax.set_ylim(None)
+
+        lons = np.arange(lonmax - lonmin + 1) + lonmin
+        lats = np.arange(latmax - latmin + 1) + latmin
+
+        # Mask left and right of plot
+        lons_lr = np.zeros(np.size(lats)) + lonmin
+        device_coords = proj.transform_points(ccrs.PlateCarree(), lons_lr, lats)
+        xmin = np.min(device_coords[:, 0])
+        xmax = np.max(device_coords[:, 0])
+        if lat_0 > 0:
+            ymin_lr = np.min(device_coords[:, 1])
+            ymax_lr = np.max(device_coords[:, 1])
+        else:
+            ymin_lr = np.max(device_coords[:, 1])
+            ymax_lr = np.min(device_coords[:, 1])
+
+        map_ax.fill(
+            [xmin, xmin, xmax, xmin],
+            [ymin_lr, ymax_lr, ymax_lr, ymin_lr],
+            alpha=1.0,
+            color="w",
+            zorder=100,
+        )
+        map_ax.plot(
+            [xmin, xmax], [ymin_lr, ymax_lr], color="k", zorder=101, clip_on=False
+        )
+
+        map_ax.fill(
+            [-xmin, -xmin, -xmax, -xmin],
+            [ymin_lr, ymax_lr, ymax_lr, ymin_lr],
+            alpha=1.0,
+            color="w",
+            zorder=100,
+        )
+        map_ax.plot(
+            [-xmin, -xmax], [ymin_lr, ymax_lr], color="k", zorder=101, clip_on=False
+        )
+
+        # Upper mask/boundary
+        lats_top = np.zeros(np.size(lons)) + latmax
+        device_coords = proj.transform_points(ccrs.PlateCarree(), lons, lats_top)
+        ymax_top = np.max(device_coords[:, 1])
+        xpts = np.append(device_coords[:, 0], device_coords[:, 0][::-1])
+        ypts = np.append(device_coords[:, 1], np.zeros(np.size(lons)) + ymax_top)
+        map_ax.fill(xpts, ypts, alpha=1.0, color="w", zorder=100)
+        map_ax.plot(
+            device_coords[:, 0], device_coords[:, 1], color="k", zorder=101, clip_on=False
+        )
+
+        # Lower mask/boundary
+        lats_bottom = np.zeros(np.size(lons)) + latmin
+        device_coords = proj.transform_points(
+            ccrs.PlateCarree(), lons, lats_bottom
+        )
+        ymin_bottom = np.min(device_coords[:, 1]) * 1.05
+        xpts = np.append(device_coords[:, 0], device_coords[:, 0][::-1])
+        ypts = np.append(device_coords[:, 1], np.zeros(np.size(lons)) + ymin_bottom)
+        map_ax.fill(xpts, ypts, alpha=1.0, color="w", zorder=100)
+        map_ax.plot(
+            device_coords[:, 0], device_coords[:, 1], color="k", zorder=101, clip_on=False
+        )
+
+        map_ax.set_frame_on(False)
+
+        if axes and xaxis:
+            if xticks is None:
+                map_xticks, map_xticklabels = utility.mapaxis(
+                    min_val=plotvars.lonmin,
+                    max_val=plotvars.lonmax,
+                    axis_type=1,
+                    degsym=bool(plotvars.degsym),
+                )
+            else:
+                map_xticks = xticks
+                map_xticklabels = xticks if xticklabels is None else xticklabels
+
+            lats_x = np.arange(latmax - latmin + 1) + latmin
+            for tick, tick_label in zip(map_xticks, map_xticklabels):
+                lons_x = np.zeros(np.size(lats_x)) + tick
+                device_coords = proj.transform_points(
+                    ccrs.PlateCarree(), lons_x, lats_x
+                )
+                map_ax.plot(
+                    device_coords[:, 0],
+                    device_coords[:, 1],
+                    linewidth=plotvars.grid_thickness,
+                    linestyle=plotvars.grid_linestyle,
+                    color=plotvars.grid_colour,
+                    zorder=101,
+                )
+
+                latpt = latmin - 3
+                if lat_0 < 0:
+                    latpt = latmax + 1
+                dpt = proj.transform_point(tick, latpt, ccrs.PlateCarree())
+                map_ax.text(
+                    dpt[0],
+                    dpt[1],
+                    tick_label,
+                    horizontalalignment="center",
+                    fontsize=plotvars.axis_label_fontsize,
+                    fontweight=plotvars.axis_label_fontweight,
+                    zorder=101,
+                )
+
+        if axes and yaxis:
+            if yticks is None:
+                map_yticks, map_yticklabels = utility.mapaxis(
+                    min_val=plotvars.latmin,
+                    max_val=plotvars.latmax,
+                    axis_type=2,
+                    degsym=bool(plotvars.degsym),
+                )
+            else:
+                map_yticks = yticks
+                map_yticklabels = yticks if yticklabels is None else yticklabels
+
+            lons_y = np.arange(lonmax - lonmin + 1) + lonmin
+            for tick, tick_label in zip(map_yticks, map_yticklabels):
+                lats_y = np.zeros(np.size(lons_y)) + tick
+                device_coords = proj.transform_points(
+                    ccrs.PlateCarree(), lons_y, lats_y
+                )
+                map_ax.plot(
+                    device_coords[:, 0],
+                    device_coords[:, 1],
+                    linewidth=plotvars.grid_thickness,
+                    linestyle=plotvars.grid_linestyle,
+                    color=plotvars.grid_colour,
+                    zorder=101,
+                )
+
+                dpt_l = proj.transform_point(lonmin - 1, tick, ccrs.PlateCarree())
+                map_ax.text(
+                    dpt_l[0],
+                    dpt_l[1],
+                    tick_label,
+                    horizontalalignment="right",
+                    verticalalignment="center",
+                    fontsize=plotvars.axis_label_fontsize,
+                    fontweight=plotvars.axis_label_fontweight,
+                    zorder=101,
+                )
+
+                dpt_r = proj.transform_point(lonmax + 1, tick, ccrs.PlateCarree())
+                map_ax.text(
+                    dpt_r[0],
+                    dpt_r[1],
+                    tick_label,
+                    horizontalalignment="left",
+                    verticalalignment="center",
+                    fontsize=plotvars.axis_label_fontsize,
+                    fontweight=plotvars.axis_label_fontweight,
+                    zorder=101,
+                )
 
     if xlabel:
         map_ax.text(

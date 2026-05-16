@@ -8075,6 +8075,8 @@ def reset():
     plotvars.mymap = None
     plotvars.norm = None
     plotvars.image = None
+    plotvars.rows = 1
+    plotvars.columns = 1
     plotvars.pos = 1
     plotvars.gpos_called = False
     plotvars.user_plot = 0

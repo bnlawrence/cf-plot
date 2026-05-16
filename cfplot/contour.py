@@ -109,7 +109,7 @@ class ContourData:
             cbar_title = colorbar_title
 
         return cls(
-            field=np.asarray(field),
+            field=np.asanyarray(field),
             x=x if x is None else np.asarray(x),
             y=y if y is None else np.asarray(y),
             ptype=ptype if ptype is not None else 0,
@@ -128,7 +128,7 @@ class ContourData:
         y: np.ndarray | None = None,
     ) -> "ContourData":
         """Create from raw numpy arrays with validation."""
-        field = np.asarray(field)
+        field = np.asanyarray(field)
         x = np.asarray(x) if x is not None else np.arange(field.shape[1])
         y = np.asarray(y) if y is not None else np.arange(field.shape[0])
 
@@ -1493,7 +1493,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     module-level independence while preserving current functionality.
     """
     if isinstance(f, cf.Field) and (x is not None or y is not None):
-        field_arr = np.asarray(f.array)
+        field_arr = np.asanyarray(f.array)
         x_arr = np.asarray(x.array) if isinstance(x, cf.Field) else x
         y_arr = np.asarray(y.array) if isinstance(y, cf.Field) else y
         data = ContourData.from_arrays(
@@ -1522,7 +1522,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         if data.ptype not in (0, 1, 2, 3, 4, 5, 6):
             return False
     else:
-        data = ContourData.from_arrays(field=np.asarray(f), x=x, y=y)
+        data = ContourData.from_arrays(field=np.asanyarray(f), x=x, y=y)
         data = replace(data, ptype=kwargs.get("ptype", 0) or 0)
 
     # Keep legacy behavior for axis-routing logic by setting active plot type.
