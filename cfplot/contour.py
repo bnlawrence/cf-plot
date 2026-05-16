@@ -46,7 +46,12 @@ from .layout_runtime import (
     gclose,
     set_plot_limits,
 )
-from .map_runtime import MapSet, ensure_map_viewport
+from .map_runtime import (
+    MapSet,
+    _apply_dim_titles,
+    _apply_map_title,
+    ensure_map_viewport,
+)
 from .state import (
     apply_colour_scale,
     get_colour_scale_map,
@@ -842,164 +847,6 @@ def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
         return False
 
     return True
-def _apply_map_title(
-    *,
-    mymap: Any,
-    title: str,
-    proj: str,
-    boundinglat: float,
-    lon_0: float,
-    lonmin: float,
-    lonmax: float,
-    latmin: float,
-    latmax: float,
-    title_fontsize: int,
-    title_fontweight: str,
-) -> None:
-    """Draw a title on a map axes at the geographically correct position."""
-    polar_range = 90 - abs(boundinglat)
-    myprojs = ["cyl", "robin", "moll", "merc"]
-
-    if proj in myprojs:
-        lon_mid = lonmin + (lonmax - lonmin) / 2.0
-        projs = [ccrs.PlateCarree, ccrs.Robinson, ccrs.Mollweide, ccrs.Mercator]
-        myind = myprojs.index(proj)
-        map_proj = projs[myind](central_longitude=lon_mid)
-        xpt, ypt = map_proj.transform_point(lon_mid, latmax, ccrs.PlateCarree())
-        ypt = ypt + (latmax - latmin) / 40.0
-    elif proj == "npstere":
-        mylon = lon_0 + 180
-        mylat = boundinglat - polar_range / 15.0
-        map_proj = ccrs.NorthPolarStereo(central_longitude=lon_0)
-        xpt, ypt = map_proj.transform_point(mylon, mylat, ccrs.PlateCarree())
-    elif proj == "spstere":
-        mylon = lon_0
-        mylat = boundinglat + polar_range / 15.0
-        map_proj = ccrs.SouthPolarStereo(central_longitude=lon_0)
-        xpt, ypt = map_proj.transform_point(mylon, mylat, ccrs.PlateCarree())
-    elif proj == "lcc":
-        lon_mid = lonmin + (lonmax - lonmin) / 2.0
-        lat_0 = 40
-        if latmin <= 0 and latmax <= 0:
-            lat_0 = 40
-        map_proj = ccrs.LambertConformal(
-            central_longitude=lon_0,
-            central_latitude=lat_0,
-            cutoff=latmin,
-        )
-        xpt, ypt = map_proj.transform_point(lon_mid, latmax, ccrs.PlateCarree())
-    else:
-        return
-
-    mymap.text(
-        xpt,
-        ypt,
-        title,
-        va="bottom",
-        ha="center",
-        rotation="horizontal",
-        rotation_mode="anchor",
-        fontsize=title_fontsize,
-        fontweight=title_fontweight,
-    )
-
-
-def _apply_dim_titles(
-    *,
-    plot: Any,
-    mymap: Any,
-    plot_type: int,
-    proj: str,
-    lonmin: float,
-    lonmax: float,
-    latmin: float,
-    latmax: float,
-    axis_label_fontsize: int,
-    axis_label_fontweight: str,
-    title: str | None = None,
-    title2: str | None = None,
-    title3: str | None = None,
-) -> None:
-    """Draw a set of dimension titles on the active contour axes."""
-    this_plot = mymap if plot_type == 1 else plot
-
-    left, bottom, width, height = this_plot.get_position().bounds
-    valign = "bottom"
-
-    if plot_type == 1 and proj != "cyl":
-        left -= 0.1
-        myx = 1.25
-        myy = 1.0
-        valign = "top"
-        if title3 is None:
-            myx = 1.05
-    elif plot_type == 1 and proj == "cyl":
-        lonrange = lonmax - lonmin
-        latrange = latmax - latmin
-        if (lonrange / latrange) > 1.5:
-            myx = 0.0
-            myy = 1.02
-        elif (lonrange / latrange) > 1.2:
-            myx = 0.0
-            myy = 1.02
-            height -= 0.015
-        else:
-            left -= 0.1
-            myx = 1.05
-            myy = 1.0
-            width -= 0.1
-            valign = "top"
-    else:
-        height -= 0.1
-        myx = 0.0
-        myy = 1.02
-
-    if title3 is None:
-        this_plot.set_position([left, bottom, width, height])
-
-    xspacing = 0.3
-    yspacing = 0.0
-    if myx in (1.05, 1.25):
-        xspacing = 0.0
-        yspacing = 0.2
-
-    if title is not None:
-        this_plot.text(
-            myx,
-            myy,
-            title,
-            va=valign,
-            ha="left",
-            fontsize=axis_label_fontsize,
-            fontweight=axis_label_fontweight,
-            transform=this_plot.transAxes,
-        )
-
-    if title2 is not None:
-        this_plot.text(
-            myx + xspacing,
-            myy - yspacing,
-            title2,
-            va=valign,
-            ha="left",
-            fontsize=axis_label_fontsize,
-            fontweight=axis_label_fontweight,
-            transform=this_plot.transAxes,
-        )
-
-    if title3 is not None:
-        this_plot.text(
-            myx + xspacing * 2,
-            myy - yspacing * 2,
-            title3,
-            va=valign,
-            ha="left",
-            fontsize=axis_label_fontsize,
-            fontweight=axis_label_fontweight,
-            transform=this_plot.transAxes,
-        )
-
-
 def _clear_animation_artists(plotvars: Any) -> None:
     """Remove artists from previous animation frame if present."""
     artists = getattr(plotvars, "_contour_animation_artists", None)
