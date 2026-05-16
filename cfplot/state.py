@@ -7,6 +7,7 @@ from typing import Any
 
 import cartopy
 import matplotlib
+import matplotlib.pyplot as pyplot
 import numpy as np
 
 from . import utility
@@ -118,7 +119,7 @@ setvars_defaults = {
     "legend_frame": True,
     "legend_frame_edge_color": "k",
     "legend_frame_face_color": None,
-    "grid": True,
+    "grid": False,
     "grid_x_spacing": 60,
     "grid_y_spacing": 30,
     "grid_zorder": 100,
@@ -209,6 +210,30 @@ plotvars_defaults = {
 
 allvars_defaults = {**setvars_defaults, **plotvars_defaults}
 plotvars = pvars(**allvars_defaults)
+
+
+def setvars(**kwargs: Any) -> None:
+    """Set shared plotting variables from defaults plus explicit overrides."""
+    for def_var, def_value in setvars_defaults.items():
+        setattr(plotvars, def_var, def_value)
+
+    for set_var, set_value in kwargs.items():
+        if set_var not in setvars_defaults:
+            raise ValueError(
+                f"Unrecognised keyword argument for setvars: {set_var}"
+            )
+
+        setattr(plotvars, set_var, set_value)
+
+    if "grid" not in kwargs and (
+        "grid_x_spacing" in kwargs or "grid_y_spacing" in kwargs
+    ):
+        plotvars.grid = (
+            plotvars.grid_x_spacing != setvars_defaults["grid_x_spacing"]
+            or plotvars.grid_y_spacing != setvars_defaults["grid_y_spacing"]
+        )
+
+    pyplot.ioff()
 
 
 def get_colour_scale_map() -> list[str]:

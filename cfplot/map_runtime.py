@@ -674,9 +674,7 @@ def _apply_map_axes(
                     zorder=101,
                 )
 
-    if plotvars.proj == "UKCP" and plotvars.grid and (
-        plotvars.grid_x_spacing != 60 or plotvars.grid_y_spacing != 30
-    ):
+    if plotvars.proj == "UKCP" and plotvars.grid:
         lons = (
             np.arange((360 / plotvars.grid_x_spacing) + 1)
             * plotvars.grid_x_spacing

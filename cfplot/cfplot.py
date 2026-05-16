@@ -544,7 +544,7 @@ plotvars_defaults = {
     "_contour_animation_artists": [],
 }
 allvars_defaults = {**setvars_defaults, **plotvars_defaults}
-from .state import plotvars
+from .state import plotvars, setvars as _state_setvars
 
 # Check for iPython notebook inline
 # and set the viewer to None if found
@@ -8139,9 +8139,9 @@ def setvars(**kwargs):
     | legend_frame_face_color=None - color for the legend background
     | degsym=True - add degree symbol to longitude and latitude axis labels
     | axis_width=None - width of line for the axes
-    | grid=True - draw grid
+    | grid=False - draw grid
     | grid_x_spacing=60 - grid longitude spacing in degrees
-    | grid_x_spacing=30 - grid latitude spacing in degrees
+    | grid_y_spacing=30 - grid latitude spacing in degrees
     | grid_colour='k' - grid colour
     | grid_linestyle='--' - grid line style
     | grid_zorder=100 - plotting order for the grid lines
@@ -8155,24 +8155,7 @@ def setvars(**kwargs):
     :Returns:
      name
     """
-    # Set defaults first to ensure everything is assigned a valid value
-    for def_var, def_value in setvars_defaults.items():
-        setattr(plotvars, def_var, def_value)
-    # Now override with anything the user specifies, which is unlikely to
-    # be a large listing relative to the amount set as defaults above
-    if kwargs:
-        # TODO eventually add kwarg value validation e.g. type checking?
-        for set_var, set_value in kwargs.items():
-
-            # First ensure a given kwarg is a valid cf-plot setvars input i.e.
-            # OK and meaningful to set on plotvars
-            if set_var not in setvars_defaults:
-                raise ValueError(
-                    f"Unrecognised keyword argument for setvars: {set_var}")
-
-            setattr(plotvars, set_var, set_value)
-
-    matplotlib.pyplot.ioff()
+    _state_setvars(**kwargs)
 
 
 def vloc(xvec=None, yvec=None, lons=None, lats=None):
