@@ -292,10 +292,13 @@ and index-space grid lines/axis labels.
 
 ### L2 — `_render_rotated_grid_axes` and `_render_ptype6_rotated_pole` moved to `rotated_runtime.py` (completed)
 
-**Status (2026-05-16):** Completed. Both helpers now live in `rotated_runtime.py` and
-`contour.py` calls them from there.
+**Status (2026-05-17):** Extraction complete. Both functions moved to `rotated_runtime.py`.
+Post-move simplification:  extracted duplicated map feature decoration code into a
+centralized `_apply_map_features()` helper in `map_runtime.py`, eliminating ~35 lines
+of duplicate code in both `contour.py` and `rotated_runtime.py`.
 
-**Result:** Done. Ptype-6 rendering has its own module, reducing `contour.py` complexity.
+**Result:** Done. Ptype-6 rendering has its own module with reduced duplication. Map
+decoration logic is now centralized.
 
 ---
 
