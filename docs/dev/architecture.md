@@ -105,11 +105,8 @@ The main rendering module. Provides `con()` as its sole public entry point.
 |----------|------|
 | `con()` | Public entry point; guards unsupported cases, delegates to `_render_with_new_xy` |
 | `_render_with_new_xy` | Orchestrates: data extraction → levels → colour → layout → render → colorbar → title |
-| `_render_ptype6_rotated_pole` | Handles rotated-pole plots (ptype 6) as a self-contained branch |
-| `_render_rotated_grid_axes` | Draws rotated-pole graticule + continent lines in index space |
 | `_add_cyclic` | Adds a cyclic longitude column using `cartopy_util` |
 | `_clear_animation_artists` | Removes artists from the previous animation frame |
-| `_rotated_vloc` | Maps geographic lon/lat points into rotated-grid index space |
 | `_can_use_new_xy_path` | Guards entry to the new renderer path |
 
 **Imports:** `cf`, `cartopy.crs`, `cartopy.feature`, `matplotlib`, `numpy`,
@@ -275,20 +272,30 @@ supposed to own.
 
 ---
 
-### L2 — `_render_rotated_grid_axes` and `_render_ptype6_rotated_pole` in `contour.py`
+### `rotated_runtime.py`
+Rotated-pole (ptype 6) rendering and grid axes helpers. Encapsulates rotated-latitude-longitude
+coordinate system rendering, including continent drawing via shapefile, rotated transforms,
+and index-space grid lines/axis labels.
 
-**What:** A ~150-line rotated-pole axes renderer and a ~250-line ptype-6 orchestration
-function both live in `contour.py`. Together they handle continent drawing via
-`shapefile`, Cartopy `RotatedPole` transforms, index-space grid lines, and axis
-label placement — all map-rendering concerns.
+**Key functions:**
 
-**Why it matters:** `contour.py` is already the largest and most complex file.
-Ptype 6 is a distinct projection mode with its own render path; that path is
-complex enough to deserve its own module or at minimum to live with the other
-map helpers.
+| Function | Role |
+|----------|------|
+| `_rotated_vloc` | Maps geographic lon/lat points into rotated-grid index space |
+| `_render_rotated_grid_axes` | Draws rotated-pole graticule + continent lines in index space |
+| `_render_ptype6_rotated_pole` | Handles rotated-pole plots (ptype 6) orchestration |
 
-**Recommendation:** Create `rotated_runtime.py` (or move both into `map_runtime.py`)
-and have `_render_with_new_xy` call through to the new location.
+**Imports:** `cartopy.crs`, `cartopy.feature`, `numpy`, `utility`, `blockfill._bfill`,
+`colorbar.cbar`, `layout_runtime`, `map_runtime`, `state`.
+
+---
+
+### L2 — `_render_rotated_grid_axes` and `_render_ptype6_rotated_pole` moved to `rotated_runtime.py` (completed)
+
+**Status (2026-05-16):** Completed. Both helpers now live in `rotated_runtime.py` and
+`contour.py` calls them from there.
+
+**Result:** Done. Ptype-6 rendering has its own module, reducing `contour.py` complexity.
 
 ---
 
@@ -398,8 +405,8 @@ explicit in the function's docstring.
 | 2 (low friction) | Fix L7: extract `maybe_autosave` | `layout_runtime`, `contour` |
 | 3 (medium) | Fix L3: remove dead `colorbar_labels` or use it | `contour` |
 | 4 (done) | Fix L1: move `_apply_map_title` / `_apply_dim_titles` to `map_runtime` | `contour`, `map_runtime` |
-| 5 (medium) | Fix L6: extract tick logic to `utility` or `axis_helpers` | `contour`, `utility` |
-| 6 (larger) | Fix L2: extract rotated-pole path to `rotated_runtime` | `contour`, new module |
+| 5 (done) | Fix L2: extract rotated-pole path to `rotated_runtime` | `contour`, `rotated_runtime` |
+| 6 (medium) | Fix L6: extract tick logic to `utility` or `axis_helpers` | `contour`, `utility` |
 | 7 (larger) | Fix L9: honour `lonlat` parameter in `_bfill` | `blockfill` |
 | 8 (future) | Fix L8: thread colorbar params explicitly | `colorbar`, `contour` |
 | 9 (future) | Fix L5: decouple renderers from global `plotvars` | `contour` |
