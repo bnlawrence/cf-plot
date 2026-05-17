@@ -43,6 +43,7 @@ from .layout_runtime import (
     apply_axes,
     ensure_xy_viewport,
     gclose,
+    maybe_autosave,
     set_plot_limits,
 )
 from .map_runtime import (
@@ -288,13 +289,6 @@ class ContourLayout:
         )
 
 
-def _finalize_non_session_plot() -> None:
-    """Legacy parity: auto-save/show and close when not in an explicit session."""
-    session_open = bool(getattr(plotvars, "_contour_session_open", False))
-    if not session_open:
-        gclose(view=True)
-
-
 class ColourScale:
     """Encapsulate level fitting, colormap selection, and cbar labels.
     
@@ -386,20 +380,17 @@ class ColourScale:
 
         return cmap
 
-    def colorbar_labels(
+    def colourbar_labels(
         self,
         levels: np.ndarray,
         orientation: str,
         n_columns: int,
-        label_skip: int,
+        label_skip: int | None,
         custom_labels: list[str] | None,
     ) -> list[str]:
-        """Generate colorbar labels from levels with skip/custom overrides."""
+        """Generate colourbar labels from levels with skip/custom overrides."""
         if custom_labels is not None:
             return custom_labels
-
-        if label_skip is None:
-            label_skip = 1
 
         # Legacy default: estimate skip for horizontal colour bars from the
         # total character count, and include fewer labels for readability.
@@ -936,55 +927,15 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         else:
             _cb_orient = "horizontal"
     colorbar_orientation = _cb_orient
-    colorbar_label_skip = kwargs.get("colorbar_label_skip", None)
 
-    if colorbar_label_skip is None:
-        if colorbar_orientation == "horizontal":
-            nchars = 0
-            for lev in clevs:
-                nchars = nchars + len(str(lev))
-            colorbar_label_skip = int(nchars / 80 + 1)
-            if plotvars.columns > 1:
-                colorbar_label_skip = int(nchars * (plotvars.columns) / 80)
-        else:
-            colorbar_label_skip = 1
-
-    includes_zero = bool(np.any(np.asarray(clevs) == 0))
-    if colorbar_label_skip > 1:
-        if includes_zero:
-            zero_pos = [i for i, mylev in enumerate(clevs) if mylev == 0][0]
-            cbar_levels = clevs[zero_pos]
-            i = zero_pos + colorbar_label_skip
-            while i <= len(clevs) - 1:
-                cbar_levels = np.append(cbar_levels, clevs[i])
-                i = i + colorbar_label_skip
-            i = zero_pos - colorbar_label_skip
-            if i >= 0:
-                while i >= 0:
-                    cbar_levels = np.append(clevs[i], cbar_levels)
-                    i = i - colorbar_label_skip
-        else:
-            cbar_levels = clevs[0]
-            i = int(colorbar_label_skip)
-            while i <= len(clevs) - 1:
-                cbar_levels = np.append(cbar_levels, clevs[i])
-                i = i + colorbar_label_skip
-    else:
-        cbar_levels = clevs
-
-    if colorbar_label_skip is None:
-        colorbar_label_skip = 1
-
-    clabels = []
-    for lev in np.atleast_1d(cbar_levels):
-        clabels.append(str(lev))
-        if colorbar_label_skip > 1:
-            for _ in np.arange(colorbar_label_skip - 1):
-                clabels.append("")
-
-    cbar_labels = kwargs.get("colorbar_labels")
-    if cbar_labels is None:
-        cbar_labels = clabels
+    clabels = cs.colourbar_labels(
+        levels=np.asarray(clevs),
+        orientation=colorbar_orientation,
+        n_columns=plotvars.columns,
+        label_skip=kwargs.get("colorbar_label_skip", None),
+        custom_labels=kwargs.get("colorbar_labels"),
+    )
+    cbar_labels = clabels
 
     colorbar_title = kwargs.get("colorbar_title", data.colorbar_title)
     if mult != 0:
@@ -1020,7 +971,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             linestyles=linestyles,
             alpha=alpha,
             zorder=zorder,
-            finalize_callback=_finalize_non_session_plot,
+            finalize_callback=maybe_autosave,
         )
 
     if plotvars.user_plot == 0:
@@ -1405,7 +1356,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             fontweight=plotvars.title_fontweight,
         )
 
-    _finalize_non_session_plot()
+    maybe_autosave()
 
     return True
 

@@ -302,19 +302,24 @@ decoration logic is now centralized.
 
 ---
 
-### L3 — `ColourScale.colorbar_labels` is dead code relative to the render path
+### L3 — `ColourScale.colourbar_labels` now the single source of truth (completed)
 
-**What:** `ColourScale` has a `colorbar_labels()` method implementing label-skip
-and zero-centering logic. However, `_render_with_new_xy` never calls it; instead
-it contains an equivalent (~50-line) inline implementation.
+**Status (completed):** The ~50-line inline colourbar label logic in
+`_render_with_new_xy` has been removed and replaced with a call to
+`cs.colourbar_labels()`. The method itself was fixed: the dead-code second
+`if label_skip is None:` guard was removed so the horizontal skip heuristic
+now runs correctly.
 
-**Why it matters:** The method advertises a clean interface but is silently bypassed.
-Any future caller that uses `ColourScale.colorbar_labels` will get different
-behaviour from what `_render_with_new_xy` actually produces.
+**What was done:**
+- Renamed `colorbar_labels()` to `colourbar_labels()` on `ColourScale`
+- Fixed dead-code bug in method: removed early `label_skip = 1` that
+  prevented the horizontal skip heuristic from ever executing
+- Replaced ~50 lines of inline label-skip/level-selection logic in
+  `_render_with_new_xy` with a single call to `cs.colourbar_labels()`
+- All 112 tests passing
 
-**Recommendation:** Either delete `colorbar_labels()` and canonise the inline logic,
-or replace the inline logic with a call to `colorbar_labels()` and delete the
-duplicate.
+**Result:** ~50 lines of duplicate logic removed. `ColourScale.colourbar_labels`
+is now the canonical implementation.
 
 ---
 
@@ -368,13 +373,22 @@ in `utility.py` or a new `axis_helpers.py`.
 
 ---
 
-### L7 — File-save block duplicated in `_render_with_new_xy` and `_render_ptype6_rotated_pole`
+### L7 — `maybe_autosave` extracted to `layout_runtime` (completed)
 
-**What:** Both functions end with an identical "if `plotvars.file` and not session
-open, then `figure.savefig` and close" block.
+**Status (completed):** `_finalize_non_session_plot()` (previously a private
+function in `contour.py`) has been moved to `layout_runtime` as the public
+`maybe_autosave()` function. Both `_render_with_new_xy` (direct call) and
+`_render_ptype6_rotated_pole` (via `finalize_callback` argument) now use it.
 
-**Recommendation:** Extract to `layout_runtime.maybe_autosave()`. Both functions
-call it once at the end.
+**What was done:**
+- Added `maybe_autosave()` to `layout_runtime.py`
+- Removed `_finalize_non_session_plot()` from `contour.py`
+- Updated `contour.py` import to include `maybe_autosave`
+- Updated direct call site in `_render_with_new_xy`
+- Updated `finalize_callback=maybe_autosave` passed to `_render_ptype6_rotated_pole`
+- All 112 tests passing
+
+**Result:** File-save/close responsibility correctly owned by `layout_runtime`.
 
 ---
 
@@ -411,9 +425,9 @@ explicit in the function's docstring.
 
 | Priority | Item | Module(s) affected |
 |----------|------|--------------------|
-| 1 (low friction) | Fix L4: merge `_add_cyclic` into `utility` | `contour`, `blockfill`, `utility` |
-| 2 (low friction) | Fix L7: extract `maybe_autosave` | `layout_runtime`, `contour` |
-| 3 (medium) | Fix L3: remove dead `colorbar_labels` or use it | `contour` |
+| 1 (done) | Fix L4: merge `_add_cyclic` into `utility` | `contour`, `blockfill`, `utility` |
+| 2 (done) | Fix L7: extract `maybe_autosave` to `layout_runtime` | `layout_runtime`, `contour` |
+| 3 (done) | Fix L3: replace inline label logic with `colourbar_labels()` | `contour` |
 | 4 (done) | Fix L1: move `_apply_map_title` / `_apply_dim_titles` to `map_runtime` | `contour`, `map_runtime` |
 | 5 (done) | Fix L2: extract rotated-pole path to `rotated_runtime` | `contour`, `rotated_runtime` |
 | 6 (medium) | Fix L6: extract tick logic to `utility` or `axis_helpers` | `contour`, `utility` |

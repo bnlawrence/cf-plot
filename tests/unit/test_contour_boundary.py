@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from cfplot import contour
+from cfplot import layout_runtime
 
 
 def test_con_delegates_to_legacy(monkeypatch):
@@ -14,7 +15,7 @@ def test_con_delegates_to_legacy(monkeypatch):
 def test_colour_scale_label_skip():
     cs = contour.ColourScale(plotvars=object())
 
-    labels = cs.colorbar_labels(
+    labels = cs.colourbar_labels(
         levels=np.array([0, 1, 2, 3]),
         orientation="horizontal",
         n_columns=1,
@@ -52,23 +53,23 @@ def test_con_falls_back_when_new_path_declines(monkeypatch):
         contour.con(f=np.array([[1.0, 2.0], [3.0, 4.0]]), lines=False)
 
 
-def test_finalize_non_session_plot_calls_gclose(monkeypatch):
+def test_maybe_autosave_calls_gclose(monkeypatch):
     calls: list[bool] = []
 
-    monkeypatch.setattr(contour.plotvars, "_contour_session_open", False)
-    monkeypatch.setattr(contour, "gclose", lambda view=True: calls.append(view))
+    monkeypatch.setattr(layout_runtime.plotvars, "_contour_session_open", False)
+    monkeypatch.setattr(layout_runtime, "gclose", lambda view=True: calls.append(view))
 
-    contour._finalize_non_session_plot()
+    layout_runtime.maybe_autosave()
 
     assert calls == [True]
 
 
-def test_finalize_non_session_plot_skips_when_session_open(monkeypatch):
+def test_maybe_autosave_skips_when_session_open(monkeypatch):
     calls: list[bool] = []
 
-    monkeypatch.setattr(contour.plotvars, "_contour_session_open", True)
-    monkeypatch.setattr(contour, "gclose", lambda view=True: calls.append(view))
+    monkeypatch.setattr(layout_runtime.plotvars, "_contour_session_open", True)
+    monkeypatch.setattr(layout_runtime, "gclose", lambda view=True: calls.append(view))
 
-    contour._finalize_non_session_plot()
+    layout_runtime.maybe_autosave()
 
     assert calls == []

@@ -122,6 +122,13 @@ def gclose(view: bool = True) -> None:
     plotvars._contour_session_open = False
 
 
+def maybe_autosave() -> None:
+    """Auto-save/show and close when not inside an explicit gopen/gclose session."""
+    session_open = bool(getattr(plotvars, "_contour_session_open", False))
+    if not session_open:
+        gclose(view=True)
+
+
 def ensure_xy_viewport() -> None:
     """Ensure a Cartesian viewport exists, matching legacy gopen/gpos behavior."""
     _reset_closed_figure_state()
