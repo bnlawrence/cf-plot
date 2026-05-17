@@ -9,42 +9,14 @@ from __future__ import annotations
 from copy import deepcopy
 
 import cartopy.crs as ccrs
-import cartopy.util as cartopy_util
 import cf
 import matplotlib.colors
 import matplotlib.patches as mpatches
 import numpy as np
 from matplotlib.collections import PolyCollection
 
+from . import utility
 from .state import get_colour_scale_map, plotvars
-
-
-def _max_ndecs_data(data: np.ndarray) -> int:
-    """Return the maximum decimal places in the provided array."""
-    ndecs_max = 1
-    data_ndecs = np.zeros(len(data))
-    for i in np.arange(len(data)):
-        data_ndecs[i] = len(str(data[i]).split(".")[1])
-
-    if max(data_ndecs) >= ndecs_max:
-        if min(data_ndecs) < 10:
-            pts = np.where(data_ndecs >= 10)
-            data_ndecs[pts] = 0
-            ndecs_max = int(max(data_ndecs))
-
-    return ndecs_max
-
-
-def _add_cyclic(field: np.ndarray, lons: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Add cyclic point handling floating precision edge cases."""
-    try:
-        field, lons = cartopy_util.add_cyclic_point(field, lons)
-    except Exception:
-        ndecs_max = _max_ndecs_data(lons)
-        lons = np.float64(lons).round(ndecs_max)
-        field, lons = cartopy_util.add_cyclic_point(field, lons)
-
-    return field, lons
 
 
 def _bfill(
@@ -199,7 +171,7 @@ def _bfill(
 
                 lonrange = np.nanmax(xpts) - np.nanmin(xpts)
                 if lonrange < 360 and lonrange > 350:
-                    field, xpts = _add_cyclic(field, xpts)
+                    field, xpts = utility.add_cyclic(field, xpts)
 
                 right_bound = xpts[-1] + (xpts[-1] - xpts[-2])
 

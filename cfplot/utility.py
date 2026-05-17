@@ -10,6 +10,7 @@ import os
 from copy import deepcopy
 from typing import Any
 
+import cartopy.util as cartopy_util
 import numpy as np
 
 
@@ -1160,3 +1161,20 @@ def cf_data_assign(
                 colorbar_title = f"{colorbar_title} ({_supscr(units_str)})"
 
     return (field, x, y, ptype, colorbar_title, xlabel, ylabel, xpole, ypole)
+
+
+def add_cyclic(field: np.ndarray, lons: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Add a cyclic longitude column if the grid doesn't span the full 360°.
+    
+    Wraps cartopy_util.add_cyclic_point with float-rounding fallback for
+    uneven longitude spacing due to numpy precision.
+    """
+    try:
+        return cartopy_util.add_cyclic_point(field, lons)
+    except Exception:
+        # Promote to float64 and round to handle uneven spacing from numpy rounding.
+        ndecs_max = max(
+            len(str(float(v)).split(".")[-1].rstrip("0") or "0") for v in lons
+        )
+        lons64 = np.float64(lons).round(ndecs_max)
+        return cartopy_util.add_cyclic_point(field, lons64)

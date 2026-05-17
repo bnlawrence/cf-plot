@@ -31,7 +31,6 @@ import os
 import cf
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-import cartopy.util as cartopy_util
 import matplotlib.colors
 import matplotlib.pyplot as plot
 import numpy as np
@@ -815,19 +814,6 @@ class XYContourRenderer(ContourRenderer):
         )
 
 
-def _add_cyclic(field: np.ndarray, lons: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Add a cyclic longitude column if the grid doesn't span the full 360°."""
-    try:
-        return cartopy_util.add_cyclic_point(field, lons)
-    except Exception:
-        # Promote to float64 and round to handle uneven spacing from numpy rounding.
-        ndecs_max = max(
-            len(str(float(v)).split(".")[-1].rstrip("0") or "0") for v in lons
-        )
-        lons64 = np.float64(lons).round(ndecs_max)
-        return cartopy_util.add_cyclic_point(field, lons64)
-
-
 def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
     """Return True when the new XY renderer can safely handle this call."""
     unsupported = (
@@ -1161,7 +1147,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         ):
             lonrange_data = float(np.nanmax(data.x)) - float(np.nanmin(data.x))
             if 350.0 < lonrange_data < 360.0:
-                new_field, new_x = _add_cyclic(data.field, data.x)
+                new_field, new_x = utility.add_cyclic(data.field, data.x)
                 data = replace(data, field=new_field, x=new_x)
 
         if np.ndim(data.y) == 1 and data.y[0] > data.y[-1]:

@@ -318,15 +318,22 @@ duplicate.
 
 ---
 
-### L4 — `_add_cyclic` duplicated in `contour.py` and `blockfill.py`
+### L4 — `_add_cyclic` consolidated into `utility.py`
 
-**What:** Both modules define a private `_add_cyclic` helper that wraps
-`cartopy_util.add_cyclic_point` with a float-rounding fallback. The two copies
-are functionally identical.
+**Status (completed):** Duplicate implementations from `contour.py` and `blockfill.py`
+merged into single canonical function `utility.add_cyclic()` with unified error
+handling for cyclic longitude grids. Both modules now import and call `utility.add_cyclic()`.
 
-**Recommendation:** Move to `utility.py` (which should grow a `cartopy` import)
-or create a thin `_cartopy_helpers.py`. Both modules import the single canonical
-copy.
+**What was done:** 
+- Added `cartopy.util as cartopy_util` import to `utility.py`
+- Created canonical `add_cyclic()` function combining error handling from both sources
+- Updated `contour.py` line 1164: changed from local `_add_cyclic()` to `utility.add_cyclic()`
+- Updated `blockfill.py` line 202: changed from local `_add_cyclic()` to `utility.add_cyclic()`
+- Removed duplicate `_add_cyclic()` and `_max_ndecs_data()` definitions
+- Removed now-unused `cartopy.util` imports from both modules
+- All 112 tests passing
+
+**Result:** ~25 lines of duplicate code removed. Cyclic longitude handling centralized in utility layer.
 
 ---
 
