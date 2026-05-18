@@ -358,18 +358,25 @@ change. It should be tracked as a future goal rather than fixed immediately.
 
 ---
 
-### L6 — Tick generation for ptypes 2–5 is inline in `_render_with_new_xy`
+### L6 — Tick generation for ptypes 2–5 extracted from `_render_with_new_xy` (completed)
 
-**What:** Approximately 80 lines of ptype-dispatch logic determines y-axis tick
-marks for pressure, latitude, longitude, and time axes. This logic is embedded
-directly in the 300-line `_render_with_new_xy` orchestration function.
+**Status (completed):** The inline ptype tick-generation block was moved out of
+`contour._render_with_new_xy` and consolidated in `utility.compute_xy_ticks()`.
 
-**Why it matters:** Tick computation is a domain/axis concern, not an orchestration
-concern. It makes the function hard to read and means the logic cannot be reused
-(e.g. by a hypothetical `vec()` or `graph()` equivalent in the new architecture).
+**What was done:**
+- Added `utility.compute_xy_ticks()` as the canonical non-map tick/label helper
+  for ptypes 2-5, including default axis-label resolution.
+- Added `utility._pressure_axis_ticks()` to keep pressure/log-pressure Y tick
+  logic shared and centralized.
+- Replaced the inline ptype-dispatch tick block in
+  `contour._render_with_new_xy` with one call to `utility.compute_xy_ticks()`.
+- Kept behaviour parity for Hovmuller time-axis handling by passing precomputed
+  `time_ticks`, `time_labels`, and `time_label` through the new helper.
+- Verified with focused unit and integration tests.
 
-**Recommendation:** Extract to a `_compute_xy_ticks(data, kwargs, plotvars)` helper
-in `utility.py` or a new `axis_helpers.py`.
+**Result:** Tick-generation concerns are now owned by the utility layer,
+reducing orchestration complexity in `contour.py` and making axis logic easier
+to reuse and test.
 
 ---
 
@@ -436,7 +443,7 @@ without changing rendering behaviour.
 | 3 (done) | Fix L3: replace inline label logic with `colourbar_labels()` | `contour` |
 | 4 (done) | Fix L1: move `_apply_map_title` / `_apply_dim_titles` to `map_runtime` | `contour`, `map_runtime` |
 | 5 (done) | Fix L2: extract rotated-pole path to `rotated_runtime` | `contour`, `rotated_runtime` |
-| 6 (medium) | Fix L6: extract tick logic to `utility` or `axis_helpers` | `contour`, `utility` |
+| 6 (done) | Fix L6: extract tick logic to utility helper(s) | `contour`, `utility` |
 | 7 (done) | Fix L9: remove misleading `lonlat` parameter from `_bfill` | `blockfill` |
 | 8 (future) | Fix L8: thread colorbar params explicitly | `colorbar`, `contour` |
 | 9 (future) | Fix L5: decouple renderers from global `plotvars` | `contour` |
