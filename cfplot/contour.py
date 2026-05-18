@@ -26,13 +26,9 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Any
 
-import os
-
 import cf
 import cartopy.crs as ccrs
-import cartopy.feature as cfeature
 import matplotlib.colors
-import matplotlib.pyplot as plot
 import numpy as np
 from matplotlib.axes import Axes
 
@@ -42,7 +38,6 @@ from .colorbar import cbar
 from .layout_runtime import (
     apply_axes,
     ensure_xy_viewport,
-    gclose,
     maybe_autosave,
     set_plot_limits,
 )
@@ -569,7 +564,6 @@ class MapContourRenderer(ContourRenderer):
             x=self.data.x,
             y=self.data.y,
             clevs=self.data.levels,
-            lonlat=True,
             bound=0,
             alpha=alpha,
             fast=fast,
@@ -711,7 +705,6 @@ class XYContourRenderer(ContourRenderer):
             x=self.data.x,
             y=self.data.y,
             clevs=self.data.levels,
-            lonlat=False,
             bound=0,
             alpha=alpha,
             fast=fast,

@@ -409,15 +409,21 @@ else imports `colorbar` except through `contour.py`.
 
 ---
 
-### L9 — `blockfill._bfill` ignores its `lonlat` parameter in favour of `plotvars.plot_type`
+### L9 — `lonlat` removed from the refactored `blockfill._bfill` API (completed)
 
-**What:** Despite accepting an explicit `lonlat` keyword, `_bfill` immediately
-reassigns it from `plotvars.plot_type == 1`. The parameter is therefore
-misleading and callers cannot override it.
+**Status (completed):** The refactored `_bfill` implementation no longer accepts
+the misleading `lonlat` keyword. Runtime behaviour is unchanged: `_bfill` still
+derives lon/lat handling from `plotvars.plot_type == 1`, but the fake override
+hook is no longer exposed in the function signature.
 
-**Recommendation:** Trust the caller's `lonlat` argument and remove the override
-from the function body, or remove the parameter and make the plotvars read
-explicit in the function's docstring.
+**What was done:**
+- Removed `lonlat` from the refactored `blockfill._bfill` signature
+- Updated refactored call sites in `contour.py` and `rotated_runtime.py`
+- Kept existing behaviour by computing `lonlat` internally from `plotvars.plot_type`
+- Added a unit test to prevent `lonlat` from reappearing in the refactored API
+
+**Result:** The refactored internal API is now honest about what it controls,
+without changing rendering behaviour.
 
 ---
 
@@ -431,6 +437,6 @@ explicit in the function's docstring.
 | 4 (done) | Fix L1: move `_apply_map_title` / `_apply_dim_titles` to `map_runtime` | `contour`, `map_runtime` |
 | 5 (done) | Fix L2: extract rotated-pole path to `rotated_runtime` | `contour`, `rotated_runtime` |
 | 6 (medium) | Fix L6: extract tick logic to `utility` or `axis_helpers` | `contour`, `utility` |
-| 7 (larger) | Fix L9: honour `lonlat` parameter in `_bfill` | `blockfill` |
+| 7 (done) | Fix L9: remove misleading `lonlat` parameter from `_bfill` | `blockfill` |
 | 8 (future) | Fix L8: thread colorbar params explicitly | `colorbar`, `contour` |
 | 9 (future) | Fix L5: decouple renderers from global `plotvars` | `contour` |

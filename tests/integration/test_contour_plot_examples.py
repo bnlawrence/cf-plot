@@ -76,7 +76,7 @@ def _assert_reference_match(example_id: str) -> None:
     if not ref.exists():
         pytest.skip(f"Missing reference image: {ref}")
     if not gen.exists():
-        pytest.xfail(f"Generated image missing for example {example_id}: {gen}")
+        pytest.fail(f"Generated image missing for example {example_id}: {gen}")
     result = mpl_compare.compare_images(
         str(ref),
         str(gen),
@@ -84,7 +84,7 @@ def _assert_reference_match(example_id: str) -> None:
         in_decorator=True,
     )
     if result is not None:
-        pytest.xfail(f"Image mismatch for example {example_id}: {result}")
+        pytest.fail(f"Image mismatch for example {example_id}: {result}")
 
 
 @pytest.fixture(autouse=True)

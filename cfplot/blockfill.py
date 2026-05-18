@@ -24,7 +24,6 @@ def _bfill(
     x=None,
     y=None,
     clevs=False,
-    lonlat=None,
     bound=False,
     alpha=1.0,
     single_fill_color=None,
@@ -37,9 +36,7 @@ def _bfill(
     """Block-fill a field with coloured rectangles."""
     _ = (orca,)
 
-    lonlat = False
-    if plotvars.plot_type == 1:
-        lonlat = True
+    lonlat = plotvars.plot_type == 1
 
     if single_fill_color is not None:
         white = False

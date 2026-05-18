@@ -1,6 +1,9 @@
+import inspect
+
 import numpy as np
 import pytest
 
+from cfplot import blockfill
 from cfplot import contour
 from cfplot import layout_runtime
 
@@ -73,3 +76,9 @@ def test_maybe_autosave_skips_when_session_open(monkeypatch):
     layout_runtime.maybe_autosave()
 
     assert calls == []
+
+
+def test_blockfill_signature_does_not_advertise_lonlat():
+    params = inspect.signature(blockfill._bfill).parameters
+
+    assert "lonlat" not in params

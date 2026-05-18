@@ -393,7 +393,6 @@ def _render_ptype6_rotated_pole(
             x=xpts,
             y=ypts,
             clevs=clevs,
-            lonlat=False,
             bound=0,
             alpha=alpha,
             fast=kwargs.get("blockfill_fast", None),
