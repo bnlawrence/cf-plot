@@ -736,6 +736,115 @@ def timeaxis(
     return (time_ticks, time_labels, axis_label)
 
 
+def _pressure_axis_ticks(ymin: float, ymax: float, ylog: bool) -> list[float] | np.ndarray:
+    """Generate pressure-like Y ticks used by ptypes 2 and 3."""
+    if ylog:
+        ylo = min(ymin, ymax)
+        yhi = max(ymin, ymax)
+        return [tick for tick in (1000, 100, 10, 1) if ylo <= tick <= yhi]
+
+    ystep = 100.0
+    yrange = abs(ymax - ymin)
+    if yrange < 1:
+        ystep = yrange / 10.0 if yrange != 0 else 0.1
+    if yrange > 1:
+        ystep = 1.0
+    if yrange > 10:
+        ystep = 10.0
+    if yrange > 100:
+        ystep = 100.0
+    if yrange > 1000:
+        ystep = 200.0
+    if yrange > 2000:
+        ystep = 500.0
+    if yrange > 5000:
+        ystep = 1000.0
+    if yrange > 15000:
+        ystep = 5000.0
+
+    return gvals(
+        dmin=min(ymin, ymax),
+        dmax=max(ymin, ymax),
+        mystep=ystep,
+        mod=False,
+    )[0]
+
+
+def compute_xy_ticks(
+    *,
+    ptype: int,
+    xmin: float,
+    xmax: float,
+    ymin: float,
+    ymax: float,
+    ylog: bool,
+    degsym: bool,
+    xticks: Any,
+    yticks: Any,
+    xticklabels: Any,
+    yticklabels: Any,
+    default_xlabel: str,
+    default_ylabel: str,
+    time_ticks: list | None = None,
+    time_labels: list | None = None,
+    time_label: str | None = None,
+) -> tuple[Any, Any, Any, Any, str, str]:
+    """Compute non-map axis ticks/labels for refactored contour rendering.
+
+    Handles ptypes 2-5 plus generic Cartesian fallback used by ptypes 0/7.
+    """
+    if ptype in (4, 5) and time_ticks is not None and time_labels is not None:
+        if ptype == 4:
+            lonlat_ticks, lonlat_labels = mapaxis(
+                min_val=xmin, max_val=xmax, axis_type=1, degsym=degsym
+            )
+            default_xlabel = default_xlabel or "Longitude"
+        else:
+            lonlat_ticks, lonlat_labels = mapaxis(
+                min_val=xmin, max_val=xmax, axis_type=2, degsym=degsym
+            )
+            default_xlabel = default_xlabel or "Latitude"
+
+        default_ylabel = time_label or default_ylabel or "time"
+
+        if xticks is None:
+            xticks = lonlat_ticks
+            xticklabels = lonlat_labels
+        if yticks is None:
+            yticks = time_ticks
+            yticklabels = time_labels
+
+        return xticks, yticks, xticklabels, yticklabels, default_xlabel, default_ylabel
+
+    if ptype == 2:
+        if xticks is None:
+            xticks, xticklabels = mapaxis(
+                min_val=xmin,
+                max_val=xmax,
+                axis_type=2,
+                degsym=degsym,
+            )
+        if yticks is None:
+            yticks = _pressure_axis_ticks(ymin=ymin, ymax=ymax, ylog=ylog)
+    elif ptype == 3:
+        if xticks is None:
+            xticks, xticklabels = mapaxis(
+                min_val=xmin,
+                max_val=xmax,
+                axis_type=1,
+                degsym=degsym,
+            )
+        if yticks is None:
+            yticks = _pressure_axis_ticks(ymin=ymin, ymax=ymax, ylog=ylog)
+    else:
+        if xticks is None:
+            xticks = gvals(dmin=xmin, dmax=xmax, mod=False)[0]
+        if yticks is None:
+            yticks = gvals(dmin=ymax, dmax=ymin, mod=False)[0]
+
+    return xticks, yticks, xticklabels, yticklabels, default_xlabel, default_ylabel
+
+
 # ---------------------------------------------------------------------------
 # CF field extraction helpers
 # ---------------------------------------------------------------------------

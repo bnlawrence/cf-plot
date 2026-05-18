@@ -1102,6 +1102,9 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         xticklabels = kwargs.get("xticklabels", None)
         yticklabels = kwargs.get("yticklabels", None)
 
+    time_ticks = None
+    time_labels = None
+    time_label = None
     if isinstance(f, cf.Field) and data.ptype in (4, 5):
         time_ticks, time_labels, time_label = utility.timeaxis(
             dtimes=f.construct("T"),
@@ -1114,115 +1117,26 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             tspace_hour=getattr(plotvars, "tspace_hour", None),
             tspace_day=getattr(plotvars, "tspace_day", None),
         )
-        if data.ptype == 4:
-            lonlat_ticks, lonlat_labels = utility.mapaxis(
-                min_val=xmin, max_val=xmax, axis_type=1, degsym=plotvars.degsym
-            )
-            default_xlabel = default_xlabel or "Longitude"
-        else:
-            lonlat_ticks, lonlat_labels = utility.mapaxis(
-                min_val=xmin, max_val=xmax, axis_type=2, degsym=plotvars.degsym
-            )
-            default_xlabel = default_xlabel or "Latitude"
-
-        default_ylabel = time_label or default_ylabel or "time"
-
-        if xticks is None:
-            xticks = lonlat_ticks
-            xticklabels = lonlat_labels
-        if yticks is None:
-            yticks = time_ticks
-            yticklabels = time_labels
-    else:
-        if data.ptype == 2:
-            if xticks is None:
-                xticks, xticklabels = utility.mapaxis(
-                    min_val=xmin,
-                    max_val=xmax,
-                    axis_type=2,
-                    degsym=plotvars.degsym,
-                )
-            if yticks is None:
-                if kwargs.get("ylog", False):
-                    ylo = min(ymin, ymax)
-                    yhi = max(ymin, ymax)
-                    yticks = [
-                        tick
-                        for tick in (1000, 100, 10, 1)
-                        if ylo <= tick <= yhi
-                    ]
-                else:
-                    ystep = 100.0
-                    yrange = abs(ymax - ymin)
-                    if yrange < 1:
-                        ystep = yrange / 10.0 if yrange != 0 else 0.1
-                    if yrange > 1:
-                        ystep = 1.0
-                    if yrange > 10:
-                        ystep = 10.0
-                    if yrange > 100:
-                        ystep = 100.0
-                    if yrange > 1000:
-                        ystep = 200.0
-                    if yrange > 2000:
-                        ystep = 500.0
-                    if yrange > 5000:
-                        ystep = 1000.0
-                    if yrange > 15000:
-                        ystep = 5000.0
-                    yticks = utility.gvals(
-                        dmin=min(ymin, ymax),
-                        dmax=max(ymin, ymax),
-                        mystep=ystep,
-                        mod=False,
-                    )[0]
-        elif data.ptype == 3:
-            if xticks is None:
-                xticks, xticklabels = utility.mapaxis(
-                    min_val=xmin,
-                    max_val=xmax,
-                    axis_type=1,
-                    degsym=plotvars.degsym,
-                )
-            if yticks is None:
-                if kwargs.get("ylog", False):
-                    ylo = min(ymin, ymax)
-                    yhi = max(ymin, ymax)
-                    yticks = [
-                        tick
-                        for tick in (1000, 100, 10, 1)
-                        if ylo <= tick <= yhi
-                    ]
-                else:
-                    ystep = 100.0
-                    yrange = abs(ymax - ymin)
-                    if yrange < 1:
-                        ystep = yrange / 10.0 if yrange != 0 else 0.1
-                    if yrange > 1:
-                        ystep = 1.0
-                    if yrange > 10:
-                        ystep = 10.0
-                    if yrange > 100:
-                        ystep = 100.0
-                    if yrange > 1000:
-                        ystep = 200.0
-                    if yrange > 2000:
-                        ystep = 500.0
-                    if yrange > 5000:
-                        ystep = 1000.0
-                    if yrange > 15000:
-                        ystep = 5000.0
-                    yticks = utility.gvals(
-                        dmin=min(ymin, ymax),
-                        dmax=max(ymin, ymax),
-                        mystep=ystep,
-                        mod=False,
-                    )[0]
-        else:
-            if xticks is None:
-                xticks = utility.gvals(dmin=xmin, dmax=xmax, mod=False)[0]
-            if yticks is None:
-                yticks = utility.gvals(dmin=ymax, dmax=ymin, mod=False)[0]
+    xticks, yticks, xticklabels, yticklabels, default_xlabel, default_ylabel = (
+        utility.compute_xy_ticks(
+            ptype=data.ptype,
+            xmin=xmin,
+            xmax=xmax,
+            ymin=ymin,
+            ymax=ymax,
+            ylog=bool(kwargs.get("ylog", False)),
+            degsym=plotvars.degsym,
+            xticks=xticks,
+            yticks=yticks,
+            xticklabels=xticklabels,
+            yticklabels=yticklabels,
+            default_xlabel=default_xlabel,
+            default_ylabel=default_ylabel,
+            time_ticks=time_ticks,
+            time_labels=time_labels,
+            time_label=time_label,
+        )
+    )
 
     if data.ptype == 1:
         layout = ContourLayout(plotvars).allocate_map_viewport(
