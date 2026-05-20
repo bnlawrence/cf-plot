@@ -18,7 +18,7 @@ import cfplot.layout_runtime as layout_runtime
 
 
 # Path to test data
-DATA_DIR = Path(__file__).parent.parent.parent / "docs" / "source" / "data"
+DATA_DIR = Path(__file__).parent.parent.parent / "docs" / "source" / "example-datasets"
 TEST_GEN_DIR = Path(__file__).parent.parent.parent / "generated-example-images"
 #REF_IMAGE_DIR = Path(__file__).parent.parent / "reference-example-images"
 REF_IMAGE_DIR = Path(__file__).parent.parent / "new_reference-example-images"

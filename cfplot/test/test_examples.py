@@ -10,7 +10,7 @@ import faulthandler
 import functools
 import hashlib
 import os
-import unittest
+from pathlib import Path
 from pprint import pformat
 
 import cartopy.crs as ccrs
@@ -18,6 +18,7 @@ import cf
 import coverage
 import matplotlib.testing.compare as mpl_compare
 import numpy as np
+import pytest
 from netCDF4 import Dataset as ncfile
 from scipy.interpolate import griddata
 
@@ -25,19 +26,11 @@ import cfplot as cfp
 
 faulthandler.enable()  # to debug seg faults and timeouts
 
-DATA_DIR = "cfplot_data"
-TEST_REF_DIR = os.path.abspath(
-    os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "..",
-        "tests",
-        "reference-example-images",
-    )
-)
-TEST_GEN_DIR = "./generated-example-images"
-if not os.path.exists(TEST_GEN_DIR):
-    os.makedirs(TEST_GEN_DIR)
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = REPO_ROOT / "docs" / "source" / "example-datasets"
+TEST_REF_DIR = REPO_ROOT / "tests" / "reference-example-images"
+TEST_GEN_DIR = REPO_ROOT / "generated-example-images"
+TEST_GEN_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def compare_plot_results(test_method):
@@ -61,8 +54,8 @@ def compare_plot_results(test_method):
         print(f"___Comparing output images for {test_name}___")
         # TODO add underscore to ref_figX names for consistency
         image_cmp_result = mpl_compare.compare_images(
-            f"{TEST_REF_DIR}/ref_fig_{tid}.png",  # expected (reference) plot
-            f"{TEST_GEN_DIR}/gen_fig_{tid}.png",  # actual (generated) plot
+            str(TEST_REF_DIR / f"ref_fig_{tid}.png"),  # expected plot
+            str(TEST_GEN_DIR / f"gen_fig_{tid}.png"),  # actual plot
             tol=0.01,
             in_decorator=True,
         )
@@ -70,13 +63,14 @@ def compare_plot_results(test_method):
         # If the plot image comparison passed, image_cmp_result will be None
         # (see https://matplotlib.org/stable/api/
         # testing_api.html#matplotlib.testing.compare.compare_images)
-        msg = f"\nPlot comparison shows differences, see result dict for details."
-        _self.assertIsNone(image_cmp_result, msg=msg)
+        msg = "\nPlot comparison shows differences, see result dict for details."
+        assert image_cmp_result is None, msg
 
     return wrapper
 
 
-class ExamplesTest(unittest.TestCase):
+@pytest.mark.integration
+class TestExamples:
     """Run through gallery examples and compare to reference plots."""
 
     data_dir = DATA_DIR
@@ -84,12 +78,12 @@ class ExamplesTest(unittest.TestCase):
     ref_dir = TEST_REF_DIR
     test_id = None
 
-    def setUp(self):
+    def setup_method(self, method):
         """Preparations called immediately before each test method."""
         # Get a filename fname with the ID of test_example_X component X
-        test_method_name = unittest.TestCase.id(self).split(".")[-1]
+        test_method_name = method.__name__
         self.test_id = test_method_name.rsplit("test_example_")[1]
-        fname = f"{self.save_gen_dir}/" f"gen_fig_{self.test_id}.png"
+        fname = str(self.save_gen_dir / f"gen_fig_{self.test_id}.png")
 
         # At the moment there is no 'getvars' to access the plotting variables
         # defined (see Issue https://github.com/NCAS-CMS/cf-plot/issues/93)
@@ -102,7 +96,7 @@ class ExamplesTest(unittest.TestCase):
         }
         cfp.setvars(**self.setvars_dict)
 
-    def tearDown(self):
+    def teardown_method(self):
         """Preparations called immediately after each test method."""
         cfp.reset()
 
@@ -1012,7 +1006,7 @@ class ExamplesTest(unittest.TestCase):
             colorbar_title="Relative Vorticity (Hz) * 1e5",
         )
 
-    @unittest.skip
+    @pytest.mark.skip(reason="WRF test data not available")
     @compare_plot_results
     def test_example_43(self):
         """Test Example 43: plotting WRF data."""
@@ -1025,7 +1019,7 @@ if __name__ == "__main__":
     print("==================\nExamples Testing\n==================\n")
     cov = coverage.Coverage()
     cov.start()
-    unittest.main()
+    pytest.main(["-v", __file__])
 
     cov.stop()
     cov.save()

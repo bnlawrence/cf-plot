@@ -10,7 +10,7 @@ import cfplot as cfp
 
 
 # Path to test data
-DATA_DIR = Path(__file__).parent.parent.parent / "docs" / "source" / "data"
+DATA_DIR = Path(__file__).parent.parent.parent / "docs" / "source" / "example-datasets"
 REF_IMAGE_DIR = Path(__file__).parent.parent / "reference-example-images"
 
 

@@ -27,7 +27,7 @@ def to_float_or_none(value: Any) -> float | None:
 def resolve_colour_scale_file(scale: str) -> str:
     """Resolve a named colour scale or explicit file path."""
     package_path = os.path.dirname(__file__)
-    file_path = os.path.join(package_path, "colourmaps", f"{scale}.rgb")
+    file_path = os.path.join(package_path, "colour", "colourmaps", f"{scale}.rgb")
     if os.path.isfile(file_path):
         return file_path
     if os.path.isfile(scale):

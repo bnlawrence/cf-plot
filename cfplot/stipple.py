@@ -2,14 +2,8 @@ import cartopy.crs as ccrs
 import cf
 import numpy as np
 
-from .parameters import plotvars
-from .utils import (
-    _cf_data_assign,
-    add_cyclic,
-    polar_regular_grid,
-    regrid,
-    stipple_points,
-)
+from .cfplot import _cf_data_assign, add_cyclic, polar_regular_grid, regrid, stipple_points
+from .state import plotvars
 from .validate import _check_data
 
 

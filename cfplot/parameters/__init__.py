@@ -17,3 +17,9 @@ from .parameters import (
     setvars_defaults,
     viridis,
 )
+
+# Keep legacy package imports pointed at the refactor state/mutator layer.
+from ..cfplot import cscale as cscale
+from ..cfplot import gset as gset
+from ..cfplot import mapset as mapset
+from ..state import plotvars as plotvars
