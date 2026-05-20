@@ -2,5 +2,6 @@ include MANIFEST.in
 include Changelog.md
 include README.md
 recursive-include cfplot *
+prune cfplot/test/cfplot_data
 recursive-exclude * *~ *.gz *.pyc
 

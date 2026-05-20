@@ -1,4 +1,0 @@
-stream
-******
-
-.. autofunction:: cfplot.stream

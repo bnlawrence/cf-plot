@@ -4,7 +4,7 @@
 
 ### Overview
 
-![cf-plot example gallery of plots](docs/source/images/cf_gallery_image.png "Examples Gallery of plots made with the cf-plot library")
+![cf-plot example gallery of plots](docs/source/images/new_gallery_view.png "Examples Gallery of plots made with the cf-plot library")
 
 **cf-plot allows you to produce and customise publication-quality contour,
 vector, line and more plots with the power of Python,
@@ -39,14 +39,14 @@ cfp.con(f.subspace(time=<chosen time value>))  # creates a contour plot of the f
 A gallery of outputs made with cf-plot, showcasing a range of plotting
 possibilities with links to relevant documentation pages and to example code,
 can be found
-[on this dedicated page within the documentation](https://ncas-cms.github.io/cf-plot/build/gallery.html),
+[on this dedicated page within the documentation](https://ncas-cms.github.io/cf-plot/gallery_of_examples.html),
 as illustrated in the (static) image at the top of this document.
 
 
 ### Documentation
 
-See [the cf-plot homepage](https://ncas-cms.github.io/cf-plot/build/)
-(`https://ncas-cms.github.io/cf-plot/build/`) for the full online documentation.
+See [the cf-plot homepage](https://ncas-cms.github.io/cf-plot/)
+(`https://ncas-cms.github.io/cf-plot`) for the full online documentation.
 
 
 ### Installation
@@ -65,8 +65,8 @@ conda install -c ncas -c conda-forge cf-python cf-plot udunits2
 ```
 
 More detail about installation is provided on the
-[installation page](https://ncas-cms.github.io/cf-plot/build/download.html)
-(`https://ncas-cms.github.io/cf-plot/build/download.html`)
+[installation page](https://ncas-cms.github.io/cf-plot/installation.html)
+(`https://ncas-cms.github.io/cf-plot/installation.html`)
 of the documentation.
 
 ### Contributing
@@ -74,11 +74,13 @@ of the documentation.
 Everyone is welcome to contribute to cf-plot in the form
 of bug reports, documentation, code, design proposals, and more.
 
-Contributing guidelines will be added to the repository shortly.
+Contributing guidelines are available in a
+[dedicated document](https://github.com/NCAS-CMS/cf-plot/blob/main/.github/CONTRIBUTING.md) which is
+copied into the [documentation here](https://ncas-cms.github.io/cf-plot/support.html#contributing-to-cf-plot).
 
 
 ### Help: Issues, Questions, Feature Requests, etc.
 
 For any queries, see the
-[guidance page](https://ncas-cms.github.io/cf-plot/build/issues.html)
-(`https://ncas-cms.github.io/cf-plot/build/issues.html`).
+[guidance page](https://ncas-cms.github.io/cf-plot/support.html)
+(`https://ncas-cms.github.io/cf-plot/support.html`).

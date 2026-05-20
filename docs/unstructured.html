@@ -1,0 +1,827 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Unstructured grids and UGRID &#8212; cf-plot 3.4.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=b0e360d0"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'unstructured';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Line plots i.e. graphs" href="graphs.html" />
+    <link rel="prev" title="Rotated pole plots" href="rotated_pole.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+<aside class="bd-header-announcement" aria-label="Announcement">
+  <div class="bd-header-announcement__content">This is the new permanent home of the cf-plot documentation: please consult this and not the old frozen version under 'http://ajheaps.github.io'.</div>
+</aside>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">cf-plot 3.4.0 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="introduction.html">
+    Introduction
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="plot_types.html">
+    Plots by type/theme
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="gallery_of_examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide.html">
+    User guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="advanced.html">
+    Advanced use
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api_reference.html">
+    API reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="versions.html">
+    Versions
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="support.html">
+    Support and contributing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="training.html">
+    Training material
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="license.html">
+    License
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="introduction.html">
+    Introduction
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="plot_types.html">
+    Plots by type/theme
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="gallery_of_examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="advanced.html">
+    Advanced use
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api_reference.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="versions.html">
+    Versions
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="support.html">
+    Support and contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="training.html">
+    Training material
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="license.html">
+    License
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="cylindrical.html">Cylindrical projection contour plots</a></li>
+<li class="toctree-l1"><a class="reference internal" href="polar.html">Polar stereographic projections</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pressure.html">Plots of latitude/longitude against pressure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hovmuller.html">Hovmöller plots</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vectors.html">Vector and stream plots</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stipple_plots.html">Stipple plots</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multiple_plots.html">Multiple plots</a></li>
+<li class="toctree-l1"><a class="reference internal" href="colour_scales.html">Colour scales</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_defined.html">User-defined axes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rotated_pole.html">Rotated pole plots</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Unstructured grids and UGRID</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graphs.html">Line plots i.e. graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projections.html">Projections in cf-plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trajectories.html">Trajectories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wrf.html">WRF data</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="plot_types.html" class="nav-link">Plots by type/theme</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Unstructured...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="unstructured-grids-and-ugrid">
+<span id="unstructured"></span><h1>Unstructured grids and UGRID<a class="headerlink" href="#unstructured-grids-and-ugrid" title="Link to this heading">#</a></h1>
+<p><em>Unstructured</em> grids have data points in non-regular locations. Examples of
+these are the LFRic model grid, the ORCA ocean grid and weather station data.</p>
+<p>The <a class="reference external" href="https://ugrid-conventions.github.io/ugrid-conventions">UGRID Conventions</a>
+are conventions for storing unstructured (or flexible mesh) model data in
+netCDF. As of CF-1.11, version 1.0 of UGRID is
+<a class="reference external" href="https://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#ugrid-conventions">partially included within the CF Conventions</a>.</p>
+<p>This page demonstrates how to plot data in the form of both UGRID-compliant
+netCDF and NumPy arrays of unstructured data.</p>
+<section id="example-24a-ugrid-blockfill-plot-with-lfric-cubed-sphere-mesh-output">
+<span id="example24a"></span><h2>Example 24a: UGRID blockfill plot with LFRic cubed sphere mesh output<a class="headerlink" href="#example-24a-ugrid-blockfill-plot-with-lfric-cubed-sphere-mesh-output" title="Link to this heading">#</a></h2>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">Making a blockfill plot of UGRID data, specifically LFRic
+model output which is defined on a cubed sphere mesh</span><a class="headerlink" href="#id1" title="Link to this code">#</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;cfplot_data/lfric_initial.nc&quot;</span><span class="p">)</span>
+
+<span class="c1"># Select the relevant fields for the objects required for the plot,</span>
+<span class="c1"># taking the air potential temperature as a variable to choose to view.</span>
+<span class="n">pot</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;air_potential_temperature&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">lats</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;latitude&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">lons</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;longitude&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">faces</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;cf_role=face_edge_connectivity&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># Reduce the variable to match the shapes</span>
+<span class="n">pot</span> <span class="o">=</span> <span class="n">pot</span><span class="p">[</span><span class="mi">4</span><span class="p">,:]</span>
+
+<span class="n">cfp</span><span class="o">.</span><span class="n">levs</span><span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">310</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+<span class="n">cfp</span><span class="o">.</span><span class="n">con</span><span class="p">(</span>
+    <span class="n">f</span><span class="o">=</span><span class="n">pot</span><span class="p">,</span> <span class="n">face_lons</span><span class="o">=</span><span class="n">lons</span><span class="p">,</span> <span class="n">face_lats</span><span class="o">=</span><span class="n">lats</span><span class="p">,</span>
+    <span class="n">face_connectivity</span><span class="o">=</span><span class="n">faces</span><span class="p">,</span> <span class="n">lines</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">blockfill</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<figure class="align-default">
+<img alt="_images/ref_fig_24a.png" src="_images/ref_fig_24a.png" />
+</figure>
+<p>Here we identify the fields in the data that have the longitudes and
+latitudes for the corner points for the field and pass them to <code class="docutils literal notranslate"><span class="pre">cfp.con</span></code>.
+Once UGRID is in the CF metadata conventions the face plotting commands
+will be simplified as the face connectivity, associated longitudes and
+latitudes will all be described within the data field. The plotted data
+is a test field of potential temperature and isn't realistic in
+regards to the actual values.</p>
+</section>
+<section id="example-24b-ugrid-plot-in-the-polar-stereographic-projection-view">
+<span id="example24b"></span><h2>Example 24b: UGRID plot in the polar stereographic projection view<a class="headerlink" href="#example-24b-ugrid-plot-in-the-polar-stereographic-projection-view" title="Link to this heading">#</a></h2>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text"><em>TODO describe Example 24b</em></span><a class="headerlink" href="#id2" title="Link to this code">#</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;cfplot_data/lfric_initial.nc&quot;</span><span class="p">)</span>
+
+<span class="c1"># Select the relevant fields for the objects required for the plot,</span>
+<span class="c1"># taking the air potential temperature as a variable to choose to view.</span>
+<span class="n">pot</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;air_potential_temperature&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">lats</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;latitude&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">lons</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;longitude&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">faces</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;cf_role=face_edge_connectivity&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># Reduce the variable to match the shapes</span>
+<span class="n">pot</span> <span class="o">=</span> <span class="n">pot</span><span class="p">[</span><span class="mi">4</span><span class="p">,:]</span>
+
+<span class="n">cfp</span><span class="o">.</span><span class="n">levs</span><span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">310</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+<span class="c1"># This time set the projection to a polar one for a different view</span>
+<span class="n">cfp</span><span class="o">.</span><span class="n">mapset</span><span class="p">(</span><span class="n">proj</span><span class="o">=</span><span class="s2">&quot;npstere&quot;</span><span class="p">)</span>
+<span class="n">cfp</span><span class="o">.</span><span class="n">con</span><span class="p">(</span>
+    <span class="n">f</span><span class="o">=</span><span class="n">pot</span><span class="p">,</span> <span class="n">face_lons</span><span class="o">=</span><span class="n">lons</span><span class="p">,</span>
+    <span class="n">face_lats</span><span class="o">=</span><span class="n">lats</span><span class="p">,</span> <span class="n">face_connectivity</span><span class="o">=</span><span class="n">faces</span><span class="p">,</span> <span class="n">lines</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">blockfill</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<figure class="align-default">
+<img alt="_images/ref_fig_24b.png" src="_images/ref_fig_24b.png" />
+</figure>
+<p>Here the projection was changed to show the north pole.</p>
+</section>
+<section id="example-24c-ugrid-contour-plot-with-lfric-cubed-sphere-mesh-output">
+<span id="example24c"></span><h2>Example 24c: UGRID contour plot with LFRic cubed sphere mesh output<a class="headerlink" href="#example-24c-ugrid-contour-plot-with-lfric-cubed-sphere-mesh-output" title="Link to this heading">#</a></h2>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">Making a contour plot of UGRID data, specifically LFRic
+model output which is defined on a cubed sphere mesh (see
+Example 24a for a more effective plot form for this,
+blockfill)</span><a class="headerlink" href="#id3" title="Link to this code">#</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;cfplot_data/lfric_initial.nc&quot;</span><span class="p">)</span>
+<span class="n">pot</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;air_potential_temperature&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="n">g</span> <span class="o">=</span> <span class="n">pot</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+<span class="n">cfp</span><span class="o">.</span><span class="n">con</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">lines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<figure class="align-default">
+<img alt="_images/ref_fig_24c.png" src="_images/ref_fig_24c.png" />
+</figure>
+<p>The data in the field has auxiliary longitudes and latitudes that can
+be contoured as normal. Internally in cf-plot this is made using the
+matplotlib <code class="docutils literal notranslate"><span class="pre">tricontourf</span></code> function as the data points are spatially irregular.</p>
+</section>
+<section id="example-25-ugrid-contour-plot-with-orca-2-output">
+<span id="example25"></span><h2>Example 25: UGRID contour plot with ORCA 2 output<a class="headerlink" href="#example-25-ugrid-contour-plot-with-orca-2-output" title="Link to this heading">#</a></h2>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-text">Making a contour plot of UGRID data, specifically ORCA 2
+ocean-only grid data</span><a class="headerlink" href="#id4" title="Link to this code">#</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cfplot_data/orca2.nc&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get an Orca grid and flatten the arrays</span>
+<span class="n">lons</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;ncvar</span><span class="si">%lo</span><span class="s2">ngitude&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">lats</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;ncvar</span><span class="si">%la</span><span class="s2">titude&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">temp</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">select_by_identity</span><span class="p">(</span><span class="s2">&quot;ncvar</span><span class="si">%s</span><span class="s2">st&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="n">lons</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">lats</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">temp</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Note: in this case we can&#39;t input the &#39;temp&#39; field as-is,</span>
+<span class="c1"># because it isn&#39;t CF-compliant, notably it doesn&#39;t have</span>
+<span class="c1"># coordinates of any kind set. So we must pull out the array</span>
+<span class="c1"># and input that, along with the corresponding lat and lon arrays.</span>
+<span class="n">cfp</span><span class="o">.</span><span class="n">con</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="n">temp</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">lons</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">lats</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">ptype</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<figure class="align-default">
+<img alt="_images/ref_fig_25.png" src="_images/ref_fig_25.png" />
+</figure>
+<p>The ORCA2 grid is an ocean grid with missing values over the land points.
+The data in this file is from before the UGRID convention was started
+and has no face connectivity or corner coordinates. In this case we can
+only plot a normal contour plot.</p>
+<p>Here we read in temperature data in a text file from meteorological
+stations around the British Isles and make a contour plot.</p>
+</section>
+<section id="example-26a-contour-plot-based-on-discrete-feature-values">
+<span id="example26a"></span><h2>Example 26a: Contour plot based on discrete feature values<a class="headerlink" href="#example-26a-contour-plot-based-on-discrete-feature-values" title="Link to this heading">#</a></h2>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-text">Making a contour plot where the contours are determined
+from discrete feature values, in this case station data</span><a class="headerlink" href="#id5" title="Link to this code">#</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Arrays for data</span>
+<span class="n">lons</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">lats</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">pressure</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">temp</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Read data and make the contour plot</span>
+<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;cfplot_data/synop_data.txt&quot;</span><span class="p">)</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+    <span class="n">mysplit</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="n">lons</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lons</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">mysplit</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">lats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lats</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">mysplit</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="n">pressure</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pressure</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">mysplit</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">mysplit</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
+
+<span class="n">cfp</span><span class="o">.</span><span class="n">con</span><span class="p">(</span>
+    <span class="n">x</span><span class="o">=</span><span class="n">lons</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">lats</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">ptype</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">colorbar_orientation</span><span class="o">=</span><span class="s2">&quot;vertical&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<figure class="align-default">
+<img alt="_images/ref_fig_26a.png" src="_images/ref_fig_26a.png" />
+</figure>
+<p>To see if this plot is correct we can add some extra code to that above
+to plot the station locations and values at that point, as below.
+The decimal point is roughly where the data point is located.</p>
+</section>
+<section id="example-26b-contour-plot-from-discrete-feature-values-with-labelling">
+<span id="example26b"></span><h2>Example 26b: Contour plot from discrete feature values with labelling<a class="headerlink" href="#example-26b-contour-plot-from-discrete-feature-values-with-labelling" title="Link to this heading">#</a></h2>
+<div class="literal-block-wrapper docutils container" id="id6">
+<div class="code-block-caption"><span class="caption-text">Making a contour plot where the contours are determined
+from discrete feature values with labels to annotate the
+values at each feature, in this case station data with
+values at each station annotated</span><a class="headerlink" href="#id6" title="Link to this code">#</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Arrays for data</span>
+<span class="n">lons</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">lats</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">pressure</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">temp</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Read data and make the contour plot</span>
+<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;cfplot_data/synop_data.txt&quot;</span><span class="p">)</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+    <span class="n">mysplit</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="n">lons</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lons</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">mysplit</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">lats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lats</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">mysplit</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="n">pressure</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pressure</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">mysplit</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">mysplit</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
+
+<span class="n">cfp</span><span class="o">.</span><span class="n">gopen</span><span class="p">()</span>
+<span class="n">cfp</span><span class="o">.</span><span class="n">con</span><span class="p">(</span>
+    <span class="n">x</span><span class="o">=</span><span class="n">lons</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">lats</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">ptype</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">colorbar_orientation</span><span class="o">=</span><span class="s2">&quot;vertical&quot;</span>
+<span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)):</span>
+    <span class="n">cfp</span><span class="o">.</span><span class="n">plotvars</span><span class="o">.</span><span class="n">mymap</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">lons</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">lats</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">temp</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+        <span class="n">horizontalalignment</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
+        <span class="n">verticalalignment</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
+        <span class="n">transform</span><span class="o">=</span><span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">(),</span>
+    <span class="p">)</span>
+
+<span class="n">cfp</span><span class="o">.</span><span class="n">gclose</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<figure class="align-default">
+<img alt="_images/ref_fig_26b.png" src="_images/ref_fig_26b.png" />
+</figure>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="rotated_pole.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Rotated pole plots</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="graphs.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Line plots i.e. graphs</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-24a-ugrid-blockfill-plot-with-lfric-cubed-sphere-mesh-output">Example 24a: UGRID blockfill plot with LFRic cubed sphere mesh output</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-24b-ugrid-plot-in-the-polar-stereographic-projection-view">Example 24b: UGRID plot in the polar stereographic projection view</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-24c-ugrid-contour-plot-with-lfric-cubed-sphere-mesh-output">Example 24c: UGRID contour plot with LFRic cubed sphere mesh output</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-25-ugrid-contour-plot-with-orca-2-output">Example 25: UGRID contour plot with ORCA 2 output</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-26a-contour-plot-based-on-discrete-feature-values">Example 26a: Contour plot based on discrete feature values</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-26b-contour-plot-from-discrete-feature-values-with-labelling">Example 26b: Contour plot from discrete feature values with labelling</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="_sources/unstructured.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, National Centre for Atmospheric Science (NCAS).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

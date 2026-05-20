@@ -1,5 +1,0 @@
-timeaxis
-********
-
-.. autofunction:: cfplot.timeaxis
-
