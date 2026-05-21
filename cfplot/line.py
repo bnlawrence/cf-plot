@@ -2,8 +2,8 @@ import cf
 import numpy as np
 
 from .graphic import gclose, gopen, gpos
-from .mapping import _mapaxis
 from .parameters import plotvars
+from .utility import mapaxis
 from .utils import (
     _dim_titles,
     _gvals,
@@ -402,9 +402,19 @@ def lineplot(
 
     if xticks is None:
         if plot_xlabel[0:3].lower() == "lon":
-            xticks, xticklabels = _mapaxis(minx, maxx, type=1)
+            xticks, xticklabels = mapaxis(
+                min_val=minx,
+                max_val=maxx,
+                axis_type=1,
+                degsym=bool(plotvars.degsym),
+            )
         if plot_xlabel[0:3].lower() == "lat":
-            xticks, xticklabels = _mapaxis(minx, maxx, type=2)
+            xticks, xticklabels = mapaxis(
+                min_val=minx,
+                max_val=maxx,
+                axis_type=2,
+                degsym=bool(plotvars.degsym),
+            )
     if cf_field:
         if xticks is None:
             if f.has_construct("T"):

@@ -7,9 +7,82 @@ import numpy as np
 
 from .colour import cbar
 from .graphic import gclose, gopen, gpos
-from .mapping import _map_title, _plot_map_axes, _set_map
+from .map_runtime import MapSet, _apply_map_axes, _apply_map_title
 from .parameters import cscale, gset, plotvars
 from .utils import _gvals, _supscr, cf_var_name
+
+
+def _set_map():
+    MapSet(plotvars).ensure_map_axes()
+
+
+def _plot_map_axes(
+    *,
+    axes=True,
+    xaxis=True,
+    yaxis=True,
+    xticks=None,
+    xticklabels=None,
+    yticks=None,
+    yticklabels=None,
+    user_xlabel=None,
+    user_ylabel=None,
+    verbose=None,
+):
+    del verbose
+
+    xlabel = user_xlabel
+    ylabel = user_ylabel
+    map_xticks = xticks
+    map_yticks = yticks
+    map_xticklabels = xticklabels
+    map_yticklabels = yticklabels
+
+    if not axes:
+        map_xticks = []
+        map_yticks = []
+        xlabel = ""
+        ylabel = ""
+    else:
+        if not xaxis:
+            map_xticks = []
+            map_xticklabels = []
+            xlabel = ""
+        if not yaxis:
+            map_yticks = []
+            map_yticklabels = []
+            ylabel = ""
+
+    _apply_map_axes(
+        xticks=map_xticks,
+        yticks=map_yticks,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        xticklabels=map_xticklabels,
+        yticklabels=map_yticklabels,
+    )
+
+    if plotvars.proj in ("npstere", "spstere"):
+        MapSet(plotvars).draw_polar_axes()
+
+
+def _map_title(title):
+    if plotvars.mymap is None:
+        return
+
+    _apply_map_title(
+        mymap=plotvars.mymap,
+        title=title,
+        proj=plotvars.proj,
+        boundinglat=plotvars.boundinglat,
+        lon_0=plotvars.lon_0,
+        lonmin=plotvars.lonmin,
+        lonmax=plotvars.lonmax,
+        latmin=plotvars.latmin,
+        latmax=plotvars.latmax,
+        title_fontsize=plotvars.title_fontsize,
+        title_fontweight=plotvars.title_fontweight,
+    )
 
 
 def traj(
