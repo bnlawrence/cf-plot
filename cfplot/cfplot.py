@@ -9195,6 +9195,7 @@ def traj(
             has_lats = True
 
     data = f.array
+    data_ndim = np.ndim(data)
 
     # Raise an error if lons and lats not found in the input data
     if not has_lons or not has_lats:
@@ -9320,7 +9321,10 @@ def traj(
     for track in np.arange(ntracks):
         xpts = lons[track, :]
         ypts = lats[track, :]
-        data2 = data[track, :]
+        if data_ndim == 1:
+            data2 = data
+        else:
+            data2 = data[track, :]
 
         xpts_orig = deepcopy(xpts)
         xpts = np.mod(xpts + 180, 360) - 180
@@ -9433,7 +9437,10 @@ def traj(
         for track in np.arange(ntracks):
             xpts = lons[track, :]
             ypts = lats[track, :]
-            data2 = data[track, :]
+            if data_ndim == 1:
+                data2 = data
+            else:
+                data2 = data[track, :]
 
             for i in np.arange(np.size(levs) - 1):
                 color = plotvars.cs[i]

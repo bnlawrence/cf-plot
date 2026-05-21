@@ -20,6 +20,7 @@ import cfplot as cfp
 DATA_DIR = Path(__file__).parent.parent.parent / "docs" / "source" / "example-datasets"
 TEST_GEN_DIR = Path(__file__).parent.parent.parent / "generated-example-images"
 REF_IMAGE_DIR = Path(__file__).parent.parent / "new_reference-example-images"
+#REF_IMAGE_DIR = Path(__file__).parent.parent / "reference-example-images"
 TEST_GEN_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -171,7 +172,7 @@ def test_example_15_polar_vector_plot(ggap_file):
 
 
 @pytest.mark.integration
-def test_example_16a_zonal_vector_plot(ggap_file):
+def test_example_16_zonal_vector_plot_on_contour(ggap_file):
     """Test Example 16a: zonal vector plot."""
     u = ggap_file["eastward_wind"]
     v = ggap_file["northward_wind"]
@@ -179,14 +180,42 @@ def test_example_16a_zonal_vector_plot(ggap_file):
     u = u.collapse("X: mean")
     v = v.collapse("X: mean")
 
-    _configure_example_output("16a")
+    _configure_example_output("16")
     cfp.gopen()
     cfp.levs(min=-15, max=25, step=5)
     cfp.con(u)
     cfp.vect(u=u, v=v, scale=100, key_length=5, stride=1)
     cfp.gclose()
-    _assert_reference_match("16a")
+    _assert_reference_match("16")
 
+
+
+@pytest.mark.integration
+def test_example_16a_zonal_vector_plot(ggap_file):
+
+    c = cf.read(str(DATA_DIR / "vaAMIPlcd_DJF.nc"))[0]
+    c = c.subspace(Y=cf.wi(-60, 60))
+    c = c.subspace(X=cf.wi(80, 160))
+    c = c.collapse("T: mean X: mean")
+
+    g = cf.read(str(DATA_DIR / "wapAMIPlcd_DJF.nc"))[0]
+    g = g.subspace(Y=cf.wi(-60, 60))
+    g = g.subspace(X=cf.wi(80, 160))
+    g = g.collapse("T: mean X: mean")
+
+    # To avoid a cf-python field bug which would appear if we instead
+    # did v = -g, see cf-python Issue #797:
+    # https://github.com/NCAS-CMS/cf-python/issues/797
+    v = -1 * g
+
+    cfp.vect(
+        u=c,
+        v=v,
+        key_length=[5, 0.05],
+        scale=[20, 0.2],
+        title="DJF",
+        key_location=[0.95, -0.05],
+    )
 
 @pytest.mark.integration
 def test_example_16b_basic_stream_plot(ggap_file):
@@ -198,8 +227,7 @@ def test_example_16b_basic_stream_plot(ggap_file):
     v = v.subspace(pressure=500)
 
     _configure_example_output("16b")
-    cfp.vect(u=u, v=v, scale=100, key_length=10, stream=True, stride=2)
-    _assert_reference_match("16b")
+    cfp.stream(u=u, v=v, density=2)
 
 
 @pytest.mark.integration
@@ -211,16 +239,24 @@ def test_example_16c_enhanced_stream_plot(ggap_file):
     u = u.subspace(pressure=500)
     v = v.subspace(pressure=500)
 
+    u = u.anchor("X", -180)
+    v = v.anchor("X", -180)
+
+    magnitude = (u**2 + v**2) ** 0.5
+    mag = np.squeeze(magnitude.array)
+
     _configure_example_output("16c")
-    cfp.vect(
-        u=u,
-        v=v,
-        scale=100,
-        key_length=10,
-        stream=True,
-        stride=2,
-        streamline_density=2.0,
+    cfp.levs(0, 60, 5, extend="max")
+    cfp.cscale("viridis", ncols=13)
+    cfp.gopen()
+    cfp.stream(u=u, v=v, density=2, color=mag)
+    cfp.cbar(
+        levs=cfp.plotvars.levels,
+        position=[0.12, 0.12, 0.8, 0.02],
+        title="Wind magnitude",
     )
+    cfp.gclose()
+   
     _assert_reference_match("16c")
 
 
