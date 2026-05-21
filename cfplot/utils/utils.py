@@ -11,9 +11,18 @@ from matplotlib.collections import PolyCollection
 from scipy.interpolate import griddata
 
 from ..colour import _cscale_get_map
-from ..mapping import _mapaxis
 from ..parameters import gset, plotvars
+from ..utility import mapaxis
 from ..validate import check_well_formed
+
+
+def _mapaxis(min=None, max=None, type=None):
+    return mapaxis(
+        min_val=min,
+        max_val=max,
+        axis_type=type,
+        degsym=bool(plotvars.degsym),
+    )
 
 
 def cf_var_name(field=None, dim=None):
