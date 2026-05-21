@@ -9,6 +9,7 @@ from .graphic import gclose, gopen, gpos
 from .layout_runtime import apply_axes
 from .map_runtime import MapSet, _apply_map_axes, _apply_map_title
 from .parameters import cscale, gset, mapset, plotvars
+from .utility import mapaxis
 from .utils import (
     _cf_data_assign,
     _dim_titles,
@@ -16,7 +17,6 @@ from .utils import (
     _supscr,
     add_cyclic,
     generate_titles,
-    mapaxis,
     regrid,
     rgaxes,
     stipple_points,
@@ -82,6 +82,9 @@ def _plot_map_axes(
         xticklabels=map_xticklabels,
         yticklabels=map_yticklabels,
     )
+
+    if plotvars.proj in ("npstere", "spstere"):
+        MapSet(plotvars).draw_polar_axes()
 
 
 def _map_title(title):
