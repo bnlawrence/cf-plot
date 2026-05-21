@@ -8,8 +8,6 @@ __author__ = "Andy Heaps, Sadie Bartholomew, Bryan Lawrence"
 __date__ = "16th May, 2026"
 __version__ = "4.0.0"
 
-import os
-
 from .colorbar import cbar
 from .contour import con
 from .graphic import gpos
@@ -34,24 +32,24 @@ mapset = _parameters_module.mapset
 
 
 def reset():
-	_parameters_module.reset()
+    _parameters_module.reset()
 
-	# Clear runtime plotting handles so a fresh figure/axes is created for
-	# subsequent plots. This avoids stale state leaking across tests.
-	plotvars.master_plot = None
-	plotvars.plot = None
-	plotvars.mymap = None
-	plotvars.norm = None
-	plotvars.image = None
-	plotvars.rows = 1
-	plotvars.columns = 1
-	plotvars.pos = 1
-	plotvars.gpos_called = False
-	plotvars.user_plot = 0
+    # Clear runtime plotting handles so a fresh figure/axes is created for
+    # subsequent plots. This avoids stale state leaking across tests.
+    plotvars.master_plot = None
+    plotvars.plot = None
+    plotvars.mymap = None
+    plotvars.norm = None
+    plotvars.image = None
+    plotvars.rows = 1
+    plotvars.columns = 1
+    plotvars.pos = 1
+    plotvars.gpos_called = False
+    plotvars.user_plot = 0
 
-	# Reset contour-runtime session state as part of global reset.
-	plotvars._contour_session_open = False
-	plotvars._contour_animation_artists = []
+    # Reset contour-runtime session state as part of global reset.
+    plotvars._contour_session_open = False
+    plotvars._contour_animation_artists = []
 
 # Still hosted in the monolith while refactor continues.
 from .cfplot import stream
@@ -71,6 +69,8 @@ def _mapaxis(min=None, max=None, type=None):
 def _which(program):
     """Check if an executable command is available on PATH."""
 
+    import os
+
     def is_exe(fpath):
         return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 
@@ -89,26 +89,26 @@ def _which(program):
 
 
 __all__ = [
-	"cbar",
-	"con",
-	"cscale",
-	"gclose",
-	"gopen",
-	"gpos",
-	"gset",
-	"levs",
-	"lineplot",
-	"mapset",
-	"plotvars",
-	"regrid",
-	"reset",
-	"rgaxes",
-	"setvars",
-	"stipple",
-	"stream",
-	"traj",
-	"vect",
-	"_gvals",
-	"_mapaxis",
-	"_which",
+    "cbar",
+    "con",
+    "cscale",
+    "gclose",
+    "gopen",
+    "gpos",
+    "gset",
+    "levs",
+    "lineplot",
+    "mapset",
+    "plotvars",
+    "regrid",
+    "reset",
+    "rgaxes",
+    "setvars",
+    "stipple",
+    "stream",
+    "traj",
+    "vect",
+    "_gvals",
+    "_mapaxis",
+    "_which",
 ]
