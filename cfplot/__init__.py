@@ -10,6 +10,8 @@ __version__ = "4.0.0"
 
 from .cfplot import *  # noqa: F403, F401
 from .layout_runtime import gclose, gopen
+from .line import lineplot
+from .trajectory import traj
 
 # Internal-use methods required for testing
 from .cfplot import _gvals
