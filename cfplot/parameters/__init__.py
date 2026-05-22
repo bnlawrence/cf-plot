@@ -9,7 +9,6 @@ from .parameters import (
     gset,
     levs,
     mapset,
-    plotvars,
     plotvars_defaults,
     pvars,
     reset,
@@ -18,8 +17,13 @@ from .parameters import (
     viridis,
 )
 
+from ..state import plotvars as plotvars
+from . import parameters as _parameters_module
+
+# Ensure parameter APIs mutate/read the shared runtime state object.
+_parameters_module.plotvars = plotvars
+
 # Keep legacy package imports pointed at the refactor state/mutator layer.
 from ..cfplot import cscale as cscale
 from ..cfplot import gset as gset
 from ..cfplot import mapset as mapset
-from ..state import plotvars as plotvars

@@ -11,7 +11,8 @@ from matplotlib.collections import PolyCollection
 from scipy.interpolate import griddata
 
 from ..colour import _cscale_get_map
-from ..parameters import gset, plotvars
+from ..parameters import gset
+from ..state import plotvars
 from ..utility import mapaxis
 from ..validate import check_well_formed
 

@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from ..parameters import plotvars
+from ..state import plotvars
 from ..utils import _gvals, fix_floats
 
 

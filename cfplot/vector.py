@@ -8,7 +8,8 @@ import numpy as np
 from .graphic import gclose, gopen, gpos
 from .layout_runtime import apply_axes
 from .map_runtime import MapSet, _apply_map_axes, _apply_map_title
-from .parameters import cscale, gset, mapset, plotvars
+from .parameters import cscale, gset, mapset
+from .state import plotvars
 from .utility import mapaxis
 from .utils import (
     _cf_data_assign,

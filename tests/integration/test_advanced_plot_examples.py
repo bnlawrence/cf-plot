@@ -135,6 +135,7 @@ def test_example_14_vector_with_colour_contour(ggap_file):
     cfp.con(t)
     cfp.vect(u=u, v=v, key_length=10, scale=50, stride=2)
     cfp.gclose()
+
     _assert_reference_match("14")
 
 
@@ -280,6 +281,7 @@ def test_example_17_basic_stipple_plot():
     cfp.stipple(f=g, min=220, max=260, size=100, color="#00ff00")
     cfp.stipple(f=g, min=300, max=330, size=50, color="#0000ff", marker="s")
     cfp.gclose()
+
     _assert_reference_match("17")
 
 
@@ -294,11 +296,13 @@ def test_example_18_polar_stipple_plot():
 
     _configure_example_output("18")
     cfp.gopen()
+
     cfp.cscale("magma")
     cfp.mapset(proj="npstere")
     cfp.con(g)
     cfp.stipple(f=g, min=265, max=295, size=100, color="#00ff00")
     cfp.gclose()
+
     _assert_reference_match("18")
 
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from typing import Any
 
 import cartopy
@@ -210,6 +211,15 @@ plotvars_defaults = {
 
 allvars_defaults = {**setvars_defaults, **plotvars_defaults}
 plotvars = pvars(**allvars_defaults)
+
+# Keep shared-state viewer defaults aligned with legacy startup behavior.
+is_inline = "inline" in matplotlib.get_backend()
+if is_inline:
+    plotvars.viewer = None
+
+if sys.platform == "darwin":
+    plotvars.global_viewer = "matplotlib"
+    plotvars.viewer = "matplotlib"
 
 
 def setvars(**kwargs: Any) -> None:

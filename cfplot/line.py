@@ -2,7 +2,7 @@ import cf
 import numpy as np
 
 from .graphic import gclose, gopen, gpos
-from .parameters import plotvars
+from .state import plotvars
 from .utility import mapaxis
 from .utils import (
     _dim_titles,
