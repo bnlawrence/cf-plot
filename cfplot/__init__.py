@@ -15,6 +15,7 @@ from .layout_runtime import gclose, gopen
 from .line import lineplot
 from .state import plotvars, setvars
 from .stipple import stipple
+from .stream import stream
 from .trajectory import traj
 from .utils import regrid, rgaxes
 from .vector import vect
@@ -51,8 +52,6 @@ def reset():
     plotvars._contour_session_open = False
     plotvars._contour_animation_artists = []
 
-# Still hosted in the monolith while refactor continues.
-from .cfplot import stream
 from .utility import mapaxis as _mapaxis_impl
 from .utils import _gvals
 

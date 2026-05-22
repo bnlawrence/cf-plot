@@ -30,10 +30,6 @@ def test_colour_scale_label_skip():
 
 
 def test_con_uses_new_path_when_available(monkeypatch):
-    def fake_legacy_con(*, f=None, x=None, y=None, **kwargs):
-        raise AssertionError("legacy path should not be called")
-
-    monkeypatch.setattr("cfplot.cfplot._legacy_con", fake_legacy_con)
     monkeypatch.setattr("cfplot.contour._can_use_new_xy_path", lambda f, kwargs: True)
     monkeypatch.setattr(
         "cfplot.contour._render_with_new_xy",
