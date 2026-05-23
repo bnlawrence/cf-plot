@@ -542,6 +542,35 @@ class MapSet:
         mymap.set_ylim((-ymax_ax, ymax_ax), emit=False)
 
 
+def mapset(
+    lonmin: float | None = None,
+    lonmax: float | None = None,
+    latmin: float | None = None,
+    latmax: float | None = None,
+    proj: str = "cyl",
+    boundinglat: float = 0,
+    lon_0: float = 0,
+    lat_0: float = 40,
+    resolution: str = "110m",
+    user_mapset: int = 1,
+    aspect: str | float | None = None,
+) -> None:
+    """Set map plotting parameters in shared state."""
+    MapSet(plotvars).configure(
+        lonmin=lonmin,
+        lonmax=lonmax,
+        latmin=latmin,
+        latmax=latmax,
+        proj=proj,
+        boundinglat=boundinglat,
+        lon_0=lon_0,
+        lat_0=lat_0,
+        resolution=resolution,
+        user_mapset=user_mapset,
+        aspect=aspect,
+    )
+
+
 def ensure_map_viewport() -> None:
     """Ensure a map viewport exists without resetting an existing map axes."""
     if plotvars.mymap is None:

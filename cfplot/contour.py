@@ -798,6 +798,73 @@ class XYContourRenderer(ContourRenderer):
         )
 
 
+def levs(min=None, max=None, step=None, manual=None, extend="both"):
+    """Set or clear the contour levels stored in shared plotting state."""
+    if all(val is not None for val in [min, max]) and step is None:
+        print(
+            "\ncfp.levs error: when the min and max are specified "
+            "a step also needs to be specified\n"
+        )
+        return
+
+    if all(val is None for val in [min, max, step, manual]):
+        plotvars.levels = None
+        plotvars.levels_min = None
+        plotvars.levels_max = None
+        plotvars.levels_step = None
+        plotvars.levels_extend = "both"
+        plotvars.norm = None
+        plotvars.user_levs = 0
+        return
+
+    if manual is not None:
+        plotvars.levels = np.array(manual)
+        plotvars.levels_min = None
+        plotvars.levels_max = None
+        plotvars.levels_step = None
+        ncolors = np.size(plotvars.levels)
+        if extend == "both" or extend == "max":
+            ncolors = ncolors - 1
+        plotvars.norm = matplotlib.colors.BoundaryNorm(
+            boundaries=plotvars.levels, ncolors=ncolors
+        )
+        plotvars.user_levs = 1
+    else:
+        if all(val is not None for val in [min, max, step]):
+            plotvars.levels_min = min
+            plotvars.levels_max = max
+            plotvars.levels_step = step
+            plotvars.norm = None
+            if all(isinstance(item, int) for item in [min, max, step]):
+                lstep = step * 1e-10
+                levs_arr = np.arange(min, max + lstep, step, dtype=np.float64)
+                levs_arr = ((levs_arr * 1e10).astype(np.int64)).astype(np.float64)
+                levs_arr = (levs_arr / 1e10).astype(np.int64)
+                plotvars.levels = levs_arr
+            else:
+                lstep = step * 1e-10
+                levs_arr = np.arange(min, max + lstep, step, dtype=np.float64)
+                levs_arr = (levs_arr * 1e10).astype(np.int64).astype(np.float64)
+                levs_arr = levs_arr / 1e10
+                plotvars.levels = levs_arr
+            plotvars.user_levs = 1
+
+            for pt in np.arange(np.size(plotvars.levels)):
+                ndecs = str(plotvars.levels[pt])[::-1].find(".")
+                if ndecs > 7:
+                    plotvars.levels[pt] = round(plotvars.levels[pt], 7)
+
+    if step is not None and all(val is None for val in [min, max]):
+        plotvars.user_levs = 0
+        plotvars.levels = None
+        plotvars.levels_step = step
+
+    if extend not in ["neither", "min", "max", "both"]:
+        errstr = "\n\n extend must be one of 'neither', 'min', 'max', 'both'\n"
+        raise TypeError(errstr)
+    plotvars.levels_extend = extend
+
+
 def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
     """Return True when the new XY renderer can safely handle this call."""
     unsupported = (

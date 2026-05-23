@@ -188,6 +188,7 @@ plotvars_defaults = {
     "gpos_called": False,
     "boundinglat": 0,
     "lon_0": 0,
+    "lat_0": 40,
     "xlog": None,
     "ylog": None,
     "twinx": False,
@@ -329,3 +330,37 @@ def apply_colour_scale(
                 hexarr[col] = "#ffffff"
 
     plotvars.cs = hexarr
+
+
+def cscale(
+    scale: str | None = None,
+    ncols: int | None = None,
+    white: Any = None,
+    below: int | None = None,
+    above: int | None = None,
+    reverse: bool = False,
+    uniform: bool = False,
+) -> None:
+    """Choose and manipulate colour maps in shared plotting state."""
+    if scale is None:
+        plotvars.cscale_flag = 0
+        return
+
+    plotvars.cs_user = scale
+    plotvars.cscale_flag = 1
+
+    vals = [ncols, white, below, above]
+    if any(val is not None for val in vals):
+        plotvars.cscale_flag = 2
+    if reverse is not False or uniform is not False:
+        plotvars.cscale_flag = 2
+
+    apply_colour_scale(
+        scale=scale,
+        ncols=ncols,
+        white=white,
+        below=below,
+        above=above,
+        reverse=reverse,
+        uniform=uniform,
+    )
