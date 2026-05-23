@@ -12,8 +12,8 @@ from .colorbar import cbar
 from .colour import cscale
 from .contour import con
 from .contour import levs
-from .graphic import gpos
 from .layout_runtime import gclose, gopen, gset
+from .layout_runtime import gpos
 from .line import lineplot
 from .map_runtime import mapset
 from .state import plotvars, setvars

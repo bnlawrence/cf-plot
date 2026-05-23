@@ -449,6 +449,14 @@ def _select_position(pos: int) -> None:
     plotvars.graph_ymax = None
     plotvars.titles_con_called = False
 
+    if plotvars.user_levs == 0:
+        from .contour import levs
+
+        if plotvars.levels_step is None:
+            levs()
+        else:
+            levs(step=plotvars.levels_step)
+
 
 def _reset_closed_figure_state() -> None:
     """Drop stale figure/axes handles after a window has been closed."""
@@ -468,6 +476,23 @@ def _reset_closed_figure_state() -> None:
     plotvars.plot = None
     plotvars.mymap = None
     plotvars.gpos_called = False
+
+
+def gpos(
+    pos: int = 1,
+    xmin: float | None = None,
+    xmax: float | None = None,
+    ymin: float | None = None,
+    ymax: float | None = None,
+) -> None:
+    """Select a subplot position, matching the legacy cfplot.gpos API."""
+    if all(val is not None for val in [xmin, xmax, ymin, ymax]):
+        plotvars.plot_xmin = xmin
+        plotvars.plot_xmax = xmax
+        plotvars.plot_ymin = ymin
+        plotvars.plot_ymax = ymax
+
+    _select_position(pos)
 
 
 def _apply_xy_axes(

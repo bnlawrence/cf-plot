@@ -6,8 +6,7 @@ import cf
 import numpy as np
 
 from .colour import cscale
-from .graphic import gclose, gopen, gpos
-from .layout_runtime import apply_axes, gset
+from .layout_runtime import apply_axes, gclose, gopen, gpos, gset
 from .map_runtime import MapSet, _apply_dim_titles, _apply_map_axes, _apply_map_title
 from .map_runtime import mapset
 from .rotated_runtime import _render_rotated_grid_axes

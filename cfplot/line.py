@@ -1,8 +1,8 @@
 import cf
 import numpy as np
 
-from .graphic import gclose, gopen, gpos
 from .map_runtime import _apply_dim_titles
+from .layout_runtime import gclose, gopen, gpos
 from .state import plotvars
 from . import utility
 from .utility import mapaxis

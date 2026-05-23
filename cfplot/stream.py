@@ -6,8 +6,7 @@ import cf
 import numpy as np
 
 from .colour import cscale
-from .graphic import gclose, gopen, gpos
-from .layout_runtime import gset
+from .layout_runtime import gclose, gopen, gpos, gset
 from .map_runtime import MapSet, _apply_map_axes, _apply_map_title
 from .map_runtime import mapset
 from .state import plotvars
