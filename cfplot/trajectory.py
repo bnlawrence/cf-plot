@@ -7,9 +7,9 @@ import numpy as np
 
 from .colour import cbar
 from .graphic import gclose, gopen, gpos
+from .layout_runtime import gset
 from .map_runtime import MapSet, _apply_map_axes, _apply_map_title
-from .parameters import cscale, gset
-from .state import plotvars
+from .state import cscale, plotvars
 from . import utility
 
 

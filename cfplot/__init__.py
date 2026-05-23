@@ -10,10 +10,12 @@ __version__ = "4.0.0"
 
 from .colorbar import cbar
 from .contour import con
+from .contour import levs
 from .graphic import gpos
-from .layout_runtime import gclose, gopen
+from .layout_runtime import gclose, gopen, gset
 from .line import lineplot
-from .state import plotvars, setvars
+from .map_runtime import mapset
+from .state import cscale, plotvars, setvars
 from .stipple import stipple
 from .stream import stream
 from .trajectory import traj
@@ -21,23 +23,14 @@ from .utility import gvals as _gvals_impl, mapaxis as _mapaxis_impl, regrid
 from .vector import vect
 from .rotated_runtime import _render_rotated_grid_axes
 
-# Parameter APIs (mapset/levs/gset/cscale/reset) live in parameters module.
-# Rebind that module to shared state so these APIs operate on the same
-# plotvars object used by refactored plotting modules.
-from .parameters import parameters as _parameters_module
-
-_parameters_module.plotvars = plotvars
-cscale = _parameters_module.cscale
-gset = _parameters_module.gset
-levs = _parameters_module.levs
-mapset = _parameters_module.mapset
-
 
 def reset():
-    _parameters_module.reset()
+    gset()
+    cscale()
+    levs()
+    mapset()
+    setvars()
 
-    # Clear runtime plotting handles so a fresh figure/axes is created for
-    # subsequent plots. This avoids stale state leaking across tests.
     plotvars.master_plot = None
     plotvars.plot = None
     plotvars.mymap = None
@@ -48,8 +41,6 @@ def reset():
     plotvars.pos = 1
     plotvars.gpos_called = False
     plotvars.user_plot = 0
-
-    # Reset contour-runtime session state as part of global reset.
     plotvars._contour_session_open = False
     plotvars._contour_animation_artists = []
 

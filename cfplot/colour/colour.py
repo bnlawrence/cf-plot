@@ -4,8 +4,7 @@ import matplotlib
 import matplotlib.pyplot as plot
 import numpy as np
 
-from ..parameters import cscale
-from ..state import plotvars
+from ..state import cscale, plotvars
 
 
 def _cscale_get_map():

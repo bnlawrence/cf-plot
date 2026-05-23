@@ -6,9 +6,10 @@ import cf
 import numpy as np
 
 from .graphic import gclose, gopen, gpos
+from .layout_runtime import gset
 from .map_runtime import MapSet, _apply_map_axes, _apply_map_title
-from .parameters import cscale, gset, mapset
-from .state import plotvars
+from .map_runtime import mapset
+from .state import cscale, plotvars
 from . import utility
 from .validate import _check_data
 

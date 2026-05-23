@@ -6,11 +6,11 @@ import cf
 import numpy as np
 
 from .graphic import gclose, gopen, gpos
-from .layout_runtime import apply_axes
+from .layout_runtime import apply_axes, gset
 from .map_runtime import MapSet, _apply_dim_titles, _apply_map_axes, _apply_map_title
-from .parameters import cscale, gset, mapset
+from .map_runtime import mapset
 from .rotated_runtime import _render_rotated_grid_axes
-from .state import plotvars
+from .state import cscale, plotvars
 from . import utility
 from .utility import mapaxis
 from .validate import _check_data

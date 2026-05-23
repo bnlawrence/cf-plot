@@ -176,6 +176,80 @@ def set_plot_limits(
         plotvars.plot.set_yscale("log")
 
 
+def gset(
+    xmin=None,
+    xmax=None,
+    ymin=None,
+    ymax=None,
+    xlog=False,
+    ylog=False,
+    user_gset=1,
+    twinx=None,
+    twiny=None,
+):
+    """Set plot limits for non-longitude-latitude plots."""
+    plotvars.user_gset = user_gset
+
+    if all(val is None for val in [xmin, xmax, ymin, ymax]):
+        plotvars.xmin = None
+        plotvars.xmax = None
+        plotvars.ymin = None
+        plotvars.ymax = None
+        plotvars.xlog = False
+        plotvars.ylog = False
+        plotvars.twinx = False
+        plotvars.twiny = False
+        plotvars.user_gset = 0
+        return
+
+    bcount = 0
+    for val in [xmin, xmax, ymin, ymax]:
+        if val is None:
+            bcount = bcount + 1
+
+    if bcount != 0 and bcount != 4:
+        errstr = (
+            "gset error\n"
+            "xmin, xmax, ymin, ymax all need to be passed to gset\n"
+            "to set the plot limits\n"
+        )
+        raise Warning(errstr)
+
+    plotvars.xmin = xmin
+    plotvars.xmax = xmax
+    plotvars.ymin = ymin
+    plotvars.ymax = ymax
+    plotvars.xlog = xlog
+    plotvars.ylog = ylog
+
+    time_xstr = False
+    time_ystr = False
+    try:
+        float(xmin)
+    except Exception:
+        time_xstr = True
+    try:
+        float(ymin)
+    except Exception:
+        time_ystr = True
+
+    if plotvars.plot is not None and twinx is None and twiny is None:
+        if not time_xstr and not time_ystr:
+            plotvars.plot.axis(
+                [plotvars.xmin, plotvars.xmax, plotvars.ymin, plotvars.ymax]
+            )
+
+        if plotvars.xlog:
+            plotvars.plot.set_xscale("log")
+        if plotvars.ylog:
+            plotvars.plot.set_yscale("log")
+
+    if twinx is not None:
+        plotvars.twinx = twinx
+    if twiny is not None:
+        plotvars.twiny = twiny
+
+
 def apply_axes(
     *,
     plot_type: int,
@@ -207,6 +281,54 @@ def apply_axes(
             xlabel=xlabel,
             ylabel=ylabel,
         )
+
+
+def axes(
+    xticks=None,
+    xticklabels=None,
+    yticks=None,
+    yticklabels=None,
+    xstep=None,
+    ystep=None,
+    xlabel=None,
+    ylabel=None,
+    title=None,
+):
+    """Set axes plotting parameters in shared state."""
+    if all(
+        val is None
+        for val in [
+            xticks,
+            yticks,
+            xticklabels,
+            yticklabels,
+            xstep,
+            ystep,
+            xlabel,
+            ylabel,
+            title,
+        ]
+    ):
+        plotvars.xticks = None
+        plotvars.yticks = None
+        plotvars.xticklabels = None
+        plotvars.yticklabels = None
+        plotvars.xstep = None
+        plotvars.ystep = None
+        plotvars.xlabel = None
+        plotvars.ylabel = None
+        plotvars.title = None
+        return
+
+    plotvars.xticks = xticks
+    plotvars.yticks = yticks
+    plotvars.xticklabels = xticklabels
+    plotvars.yticklabels = yticklabels
+    plotvars.xstep = xstep
+    plotvars.ystep = ystep
+    plotvars.xlabel = xlabel
+    plotvars.ylabel = ylabel
+    plotvars.title = title
 
 
 def _open_figure(
