@@ -34,6 +34,7 @@ from matplotlib.axes import Axes
 
 from . import utility
 from .blockfill import _bfill
+from .colour import apply_colour_scale, get_colour_scale_map
 from .colorbar import cbar
 from .layout_runtime import (
     apply_axes,
@@ -50,8 +51,6 @@ from .map_runtime import (
 )
 from .rotated_runtime import _render_ptype6_rotated_pole
 from .state import (
-    apply_colour_scale,
-    get_colour_scale_map,
     global_blockfill,
     global_fill,
     global_lines,

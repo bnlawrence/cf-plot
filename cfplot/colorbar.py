@@ -5,7 +5,8 @@ from __future__ import annotations
 import matplotlib
 import numpy as np
 
-from .state import get_colour_scale_map, plotvars
+from .colour import get_colour_scale_map
+from .state import plotvars
 
 
 def cbar(

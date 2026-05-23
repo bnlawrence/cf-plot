@@ -15,8 +15,9 @@ import matplotlib.patches as mpatches
 import numpy as np
 from matplotlib.collections import PolyCollection
 
+from .colour import get_colour_scale_map
 from . import utility
-from .state import get_colour_scale_map, plotvars
+from .state import plotvars
 
 
 def _bfill(

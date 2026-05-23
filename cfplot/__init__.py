@@ -9,13 +9,14 @@ __date__ = "16th May, 2026"
 __version__ = "4.0.0"
 
 from .colorbar import cbar
+from .colour import cscale
 from .contour import con
 from .contour import levs
 from .graphic import gpos
 from .layout_runtime import gclose, gopen, gset
 from .line import lineplot
 from .map_runtime import mapset
-from .state import cscale, plotvars, setvars
+from .state import plotvars, setvars
 from .stipple import stipple
 from .stream import stream
 from .trajectory import traj
