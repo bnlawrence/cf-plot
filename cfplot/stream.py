@@ -9,7 +9,7 @@ from .graphic import gclose, gopen, gpos
 from .map_runtime import MapSet, _apply_map_axes, _apply_map_title
 from .parameters import cscale, gset, mapset
 from .state import plotvars
-from .utils import _cf_data_assign
+from . import utility
 from .validate import _check_data
 
 
@@ -176,7 +176,9 @@ def stream(
             ylabel,
             xpole,
             ypole,
-        ) = _cf_data_assign(u, colorbar_title, rotated_vect=rotated_vect)
+        ) = utility.cf_data_assign(
+            u, colorbar_title, proj=("rotated" if rotated_vect else plotvars.proj)
+        )
         del xpole, ypole
     elif isinstance(u, cf.FieldList):
         raise TypeError("Can't plot a field list")
@@ -211,7 +213,9 @@ def stream(
             ylabel,
             xpole,
             ypole,
-        ) = _cf_data_assign(v, colorbar_title, rotated_vect=rotated_vect)
+        ) = utility.cf_data_assign(
+            v, colorbar_title, proj=("rotated" if rotated_vect else plotvars.proj)
+        )
         del v_x, v_y, xpole, ypole
     elif isinstance(v, cf.FieldList):
         raise TypeError("Can't plot a field list")

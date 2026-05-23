@@ -10,7 +10,7 @@ from .graphic import gclose, gopen, gpos
 from .map_runtime import MapSet, _apply_map_axes, _apply_map_title
 from .parameters import cscale, gset
 from .state import plotvars
-from .utils import _gvals, _supscr, cf_var_name
+from . import utility
 
 
 def _set_map():
@@ -220,7 +220,7 @@ def traj(
     has_lons = False
     has_lats = False
     for mydim in list(f.auxiliary_coordinates()):
-        name = cf_var_name(field=f, dim=mydim)
+        name = utility.cf_var_name(field=f, dim=mydim)
         if name in ["longitude"]:
             lons = np.squeeze(f.construct(mydim).array)
             has_lons = True
@@ -330,7 +330,7 @@ def traj(
                 print("traj - generating automatic legend levels")
             dmin = np.nanmin(data)
             dmax = np.nanmax(data)
-            levs, mult = _gvals(dmin=dmin, dmax=dmax, mod=False)
+            levs, mult = utility.gvals(dmin=dmin, dmax=dmax, mod=False)
 
         # Add extend options to the levels if set
         if plotvars.levels_extend == "min" or plotvars.levels_extend == "both":
@@ -597,7 +597,7 @@ def traj(
                 if str(f.Units) == "":
                     colorbar_title += ""
                 else:
-                    colorbar_title += f"({_supscr(str(f.Units))})"
+                    colorbar_title += f"({utility._supscr(str(f.Units))})"
 
         levs = plotvars.levels
         if colorbar_labels is not None:

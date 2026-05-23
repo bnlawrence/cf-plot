@@ -922,6 +922,99 @@ def cf_var_name(field: Any, dim: str) -> str:
     return name
 
 
+def cf_var_name_titles(field: Any, dim: str) -> tuple[str | None, str | None]:
+    """Return preferred coordinate name/units for dimension-title rendering."""
+    name = None
+    units = None
+    if field.has_construct(dim):
+        construct = field.construct(dim)
+        id_ = getattr(construct, "id", False)
+        ncvar = construct.nc_get_variable(False)
+        short_name = getattr(construct, "short_name", False)
+        long_name = getattr(construct, "long_name", False)
+        standard_name = getattr(construct, "standard_name", False)
+
+        if id_:
+            name = id_
+        if ncvar:
+            name = ncvar
+        if short_name:
+            name = short_name
+        if long_name:
+            name = long_name
+        if standard_name:
+            name = standard_name
+
+        units = getattr(construct, "units", "")
+        if len(units) > 0:
+            units = f"({units})"
+    return name, units
+
+
+def generate_titles(f: Any = None) -> str:
+    """Generate dimension/cell-method title text for plot annotation."""
+    import cf
+
+    from .validate import check_well_formed
+
+    mycoords = find_dim_names(f)
+    # Preserve legacy side effect/validation behavior.
+    check_well_formed(f)
+
+    title_dims = ""
+    if isinstance(f, cf.Field):
+        for idim in np.arange(len(mycoords)):
+            mycoord = mycoords[idim]
+            if mycoord == "Z":
+                mycoord = find_z(f)
+
+            title, units = cf_var_name_titles(f, mycoord)
+            if not f.coord(mycoord).T:
+                values = f.construct(mycoord).array
+                if len(values) > 1:
+                    value = ""
+                else:
+                    value = str(values)
+                title_dims += f"{mycoord}: {title} {value} {units}\n"
+
+            else:
+                values = f.construct(mycoord).dtarray
+                if len(values) > 1:
+                    value = ""
+                else:
+                    value = str(cf.Data(values).datetime_as_string)
+                title_dims += f"{mycoord}: {title} {value}\n"
+
+        if len(f.cell_methods()) > 0:
+            title_dims += "cell_methods: "
+            i = 0
+
+            for method in f.cell_methods():
+                if len(f.cell_methods()[method].get_axes()) > 0:
+                    axis = f.cell_methods()[method].get_axes()[0]
+                    try:
+                        myid = f.constructs.domain_axis_identity(axis)
+                    except ValueError:
+                        myid = axis
+
+                    value = ""
+                    if f.cell_methods()[method].has_method():
+                        value = f.cell_methods()[method].get_method()
+
+                    qualifiers = f.cell_methods()[method].qualifiers()
+                    qualifier_text = ""
+                    if len(qualifiers) > 0:
+                        qualifier_text = str(qualifiers)
+
+                    if i > 0:
+                        title_dims += ", "
+
+                    title_dims += f"{myid}: {value} {qualifier_text}"
+                    i += 1
+
+    return title_dims
+
+
 def find_dim_names(field: Any) -> list:
     """Return dimension coordinate names in [X, Y, Z, T] order.
 
@@ -1287,3 +1380,159 @@ def add_cyclic(field: np.ndarray, lons: np.ndarray) -> tuple[np.ndarray, np.ndar
         )
         lons64 = np.float64(lons).round(ndecs_max)
         return cartopy_util.add_cyclic_point(field, lons64)
+
+
+def stipple_points(
+    xmin: float,
+    xmax: float,
+    ymin: float,
+    ymax: float,
+    pts: int | list | np.ndarray,
+    stype: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Generate regular or offset sampling points over a rectangular domain.
+
+    Parameters
+    ----------
+    xmin, xmax, ymin, ymax : float
+        Domain bounds.
+    pts : int or length-2 sequence
+        Number of points in x and y directions.
+    stype : int
+        1 for regular grid rows, 2 for alternating offset rows.
+    """
+    if np.size(pts) == 1:
+        pts_x = int(pts)
+        pts_y = int(pts)
+    else:
+        pts_x = int(pts[0])
+        pts_y = int(pts[1])
+
+    xstep = (xmax - xmin) / float(pts_x)
+    x1 = [xmin + xstep / 4]
+    while (np.nanmax(x1) + xstep) < xmax - xstep / 10:
+        x1 = np.append(x1, np.nanmax(x1) + xstep)
+
+    x2 = [xmin + xstep * 3 / 4]
+    while (np.nanmax(x2) + xstep) < xmax - xstep / 10:
+        x2 = np.append(x2, np.nanmax(x2) + xstep)
+
+    ystep = (ymax - ymin) / float(pts_y)
+    y1 = [ymin + ystep / 2]
+    while (np.nanmax(y1) + ystep) < ymax - ystep / 10:
+        y1 = np.append(y1, np.nanmax(y1) + ystep)
+
+    xnew: list[float] | np.ndarray = []
+    ynew: list[float] | np.ndarray = []
+    iy = 0
+    for y in y1:
+        iy += 1
+        if stype == 1:
+            xnew = np.append(xnew, x1)
+            y2 = np.zeros(np.size(x1))
+            y2.fill(y)
+            ynew = np.append(ynew, y2)
+        if stype == 2:
+            if iy % 2 == 0:
+                xnew = np.append(xnew, x1)
+                y2 = np.zeros(np.size(x1))
+                y2.fill(y)
+                ynew = np.append(ynew, y2)
+            if iy % 2 == 1:
+                xnew = np.append(xnew, x2)
+                y2 = np.zeros(np.size(x2))
+                y2.fill(y)
+                ynew = np.append(ynew, y2)
+
+    return np.asarray(xnew), np.asarray(ynew)
+
+
+def _find_pos_in_array(vals: np.ndarray, val: float) -> int:
+    """Return lower-bracketing index for *val* in monotonic coordinate *vals*."""
+    pos = int(np.searchsorted(vals, val, side="right") - 1)
+    return max(0, min(pos, np.size(vals) - 2))
+
+
+def regrid(
+    f: np.ndarray,
+    x: np.ndarray,
+    y: np.ndarray,
+    xnew: np.ndarray,
+    ynew: np.ndarray,
+) -> np.ndarray:
+    """Bilinearly interpolate a regular 2D field onto scattered target points."""
+    regrid_f = deepcopy(f)
+    regrid_x = deepcopy(x)
+    regrid_y = deepcopy(y)
+
+    if regrid_x[0] > regrid_x[-1]:
+        regrid_x = regrid_x[::-1]
+        regrid_f = np.fliplr(regrid_f)
+
+    if regrid_y[0] > regrid_y[-1]:
+        regrid_y = regrid_y[::-1]
+        regrid_f = np.flipud(regrid_f)
+
+    out = np.array([], dtype=float)
+    for i in np.arange(np.size(xnew)):
+        xval = xnew[i]
+        yval = ynew[i]
+
+        ix = _find_pos_in_array(regrid_x, xval)
+        iy = _find_pos_in_array(regrid_y, yval)
+        ix2 = ix + 1
+        iy2 = iy + 1
+
+        dx = regrid_x[ix2] - regrid_x[ix]
+        dy = regrid_y[iy2] - regrid_y[iy]
+        alpha_x = (xval - regrid_x[ix]) / (dx if dx != 0 else 1e-30)
+        alpha_y = (yval - regrid_y[iy]) / (dy if dy != 0 else 1e-30)
+
+        v1 = regrid_f[iy, ix] - (regrid_f[iy, ix] - regrid_f[iy, ix2]) * alpha_x
+        v2 = regrid_f[iy2, ix] - (regrid_f[iy2, ix] - regrid_f[iy2, ix2]) * alpha_x
+        newval = v1 - (v1 - v2) * alpha_y
+
+        out = np.append(out, newval)
+
+    return out
+
+
+def polar_regular_grid(
+    pts: int = 50,
+    proj: str = "npstere",
+    boundinglat: float = 0,
+    lon_0: float = 0,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return lon/lat and projected x/y points over a polar stereographic cap."""
+    import cartopy.crs as ccrs
+
+    if proj == "npstere":
+        thisproj = ccrs.NorthPolarStereo(central_longitude=lon_0)
+    else:
+        thisproj = ccrs.SouthPolarStereo(central_longitude=lon_0)
+
+    lons = np.array([lon_0 - 90, lon_0, lon_0 + 90, lon_0 + 180])
+    lats = np.array([boundinglat, boundinglat, boundinglat, boundinglat])
+    extent = thisproj.transform_points(ccrs.PlateCarree(), lons, lats)
+
+    xmin = np.min(extent[:, 0])
+    xmax = np.max(extent[:, 0])
+    ymin = np.min(extent[:, 1])
+    ymax = np.max(extent[:, 1])
+
+    points_device = stipple_points(
+        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, pts=pts, stype=2
+    )
+    xnew = np.array(points_device)[0, :]
+    ynew = np.array(points_device)[1, :]
+
+    points_polar = ccrs.PlateCarree().transform_points(thisproj, xnew, ynew)
+    lons = np.array(points_polar)[:, 0]
+    lats = np.array(points_polar)[:, 1]
+
+    if proj == "npstere":
+        valid = np.where(lats >= boundinglat)
+    else:
+        valid = np.where(lats <= boundinglat)
+
+    return lons[valid], lats[valid], xnew[valid], ynew[valid]

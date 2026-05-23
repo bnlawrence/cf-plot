@@ -17,8 +17,9 @@ from .state import plotvars, setvars
 from .stipple import stipple
 from .stream import stream
 from .trajectory import traj
-from .utils import regrid, rgaxes
+from .utility import gvals as _gvals_impl, mapaxis as _mapaxis_impl, regrid
 from .vector import vect
+from .rotated_runtime import _render_rotated_grid_axes
 
 # Parameter APIs (mapset/levs/gset/cscale/reset) live in parameters module.
 # Rebind that module to shared state so these APIs operate on the same
@@ -52,8 +53,27 @@ def reset():
     plotvars._contour_session_open = False
     plotvars._contour_animation_artists = []
 
-from .utility import mapaxis as _mapaxis_impl
-from .utils import _gvals
+
+def _gvals(*args, **kwargs):
+    return _gvals_impl(*args, **kwargs)
+
+
+def rgaxes(*, xpole=None, ypole=None, xvec=None, yvec=None, xticks=None, xticklabels=None, yticks=None, yticklabels=None, axes=True, xaxis=True, yaxis=True, xlabel=None, ylabel=None):
+    return _render_rotated_grid_axes(
+        xpole=xpole,
+        ypole=ypole,
+        xvec=xvec,
+        yvec=yvec,
+        xticks=xticks,
+        xticklabels=xticklabels,
+        yticks=yticks,
+        yticklabels=yticklabels,
+        axes=axes,
+        xaxis=xaxis,
+        yaxis=yaxis,
+        xlabel=xlabel,
+        ylabel=ylabel,
+    )
 
 
 def _mapaxis(min=None, max=None, type=None):
