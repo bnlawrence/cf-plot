@@ -20,6 +20,7 @@ from .state import plotvars, setvars
 from .stipple import stipple
 from .stream import stream
 from .trajectory import traj
+from .state import reset_runtime_state
 from .utility import gvals as _gvals_impl, mapaxis as _mapaxis_impl, regrid
 from .vector import vect
 from .rotated_runtime import _render_rotated_grid_axes
@@ -31,19 +32,7 @@ def reset():
     levs()
     mapset()
     setvars()
-
-    plotvars.master_plot = None
-    plotvars.plot = None
-    plotvars.mymap = None
-    plotvars.norm = None
-    plotvars.image = None
-    plotvars.rows = 1
-    plotvars.columns = 1
-    plotvars.pos = 1
-    plotvars.gpos_called = False
-    plotvars.user_plot = 0
-    plotvars._contour_session_open = False
-    plotvars._contour_animation_artists = []
+    reset_runtime_state()
 
 
 def _gvals(*args, **kwargs):
@@ -77,28 +66,6 @@ def _mapaxis(min=None, max=None, type=None):
     )
 
 
-def _which(program):
-    """Check if an executable command is available on PATH."""
-
-    import os
-
-    def is_exe(fpath):
-        return os.path.exists(fpath) and os.access(fpath, os.X_OK)
-
-    def ext_candidates(fpath):
-        yield fpath
-        for ext in os.environ.get("PATHEXT", "").split(os.pathsep):
-            yield fpath + ext
-
-    for path in os.environ.get("PATH", "").split(os.pathsep):
-        exe_file = os.path.join(path, program)
-        for candidate in ext_candidates(exe_file):
-            if is_exe(candidate):
-                return candidate
-
-    return None
-
-
 __all__ = [
     "cbar",
     "con",
@@ -121,5 +88,4 @@ __all__ = [
     "vect",
     "_gvals",
     "_mapaxis",
-    "_which",
 ]

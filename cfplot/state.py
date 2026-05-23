@@ -21,11 +21,37 @@ class pvars:
             setattr(self, attr, value)
 
     def __str__(self):
-        a = None
-        v = None
-        out = [f"{a} = {repr(v)}"]
+        out = []
         for a, v in self.__dict__.items():
-            return "\n".join(out)
+            out.append(f"{a} = {repr(v)}")
+        return "\n".join(out)
+
+
+def reset_runtime_state() -> None:
+    """Reset shared plotting runtime state back to defaults."""
+    plotvars.master_plot = None
+    plotvars.plot = None
+    plotvars.mymap = None
+    plotvars.norm = None
+    plotvars.image = None
+    plotvars.rows = 1
+    plotvars.columns = 1
+    plotvars.pos = 1
+    plotvars.gpos_called = False
+    plotvars.user_plot = 0
+    plotvars._contour_session_open = False
+    plotvars._contour_animation_artists = []
+    plotvars.twinx = None
+    plotvars.twiny = None
+    plotvars.plot_xmin = None
+    plotvars.plot_xmax = None
+    plotvars.plot_ymin = None
+    plotvars.plot_ymax = None
+    plotvars.graph_xmin = None
+    plotvars.graph_xmax = None
+    plotvars.graph_ymin = None
+    plotvars.graph_ymax = None
+    plotvars.titles_con_called = False
 
 
 try:

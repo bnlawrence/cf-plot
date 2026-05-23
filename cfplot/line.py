@@ -2,7 +2,11 @@ import cf
 import numpy as np
 
 from .map_runtime import _apply_dim_titles
-from .layout_runtime import gclose, gopen, gpos
+from .layout_runtime import (
+    ensure_runtime_session,
+    finalize_runtime_session,
+    set_axis_visibility,
+)
 from .state import plotvars
 from . import utility
 from .utility import mapaxis
@@ -120,15 +124,9 @@ def lineplot(
         return
 
     ##################
-    # Open a new plot is necessary
+    # Open a new plot if necessary
     ##################
-    if plotvars.user_plot == 0:
-        gopen(user_plot=0)
-
-    # Call gpos(1) if not already called
-    if plotvars.rows > 1 or plotvars.columns > 1:
-        if plotvars.gpos_called is False:
-            gpos(1)
+    auto_session = ensure_runtime_session(pos=1)
 
     ##################
     # Extract required data
@@ -482,24 +480,14 @@ def lineplot(
             miny = plotvars.ymin
             maxy = plotvars.ymax
 
-    if axes:
-        if xaxis is not True:
-            xticks = [100000000]
-            xticklabels = xticks
-            plot_xlabel = ""
-
-        if yaxis is not True:
-            yticks = [100000000]
-            yticklabels = yticks
-            plot_ylabel = ""
-
-    else:
-        xticks = [100000000]
-        xticklabels = xticks
-        yticks = [100000000]
-        yticklabels = yticks
+    if not axes:
         plot_xlabel = ""
         plot_ylabel = ""
+    else:
+        if xaxis is not True:
+            plot_xlabel = ""
+        if yaxis is not True:
+            plot_ylabel = ""
 
     # Generate titles if requested
     if titles:
@@ -571,6 +559,8 @@ def lineplot(
             fontweight=plotvars.axis_label_fontweight,
         )
 
+    set_axis_visibility(graph, axes=axes, xaxis=xaxis, yaxis=yaxis)
+
     graph.plot(
         xpts,
         ypts,
@@ -633,7 +623,6 @@ def lineplot(
     ##################
     # Save or view plot
     ##################
-    if plotvars.user_plot == 0:
-        if verbose:
-            print("Saving or viewing plot")
-        gclose()
+    if auto_session and verbose:
+        print("Saving or viewing plot")
+    finalize_runtime_session(auto_session=auto_session, view=True)

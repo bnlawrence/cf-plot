@@ -590,6 +590,79 @@ def ensure_map_viewport() -> None:
                 _select_position(1)
 
 
+def _ensure_map_axes() -> None:
+    """Ensure map axes exist on the active plot state."""
+    MapSet(plotvars).ensure_map_axes()
+
+
+def _apply_map_axes_with_toggles(
+    *,
+    axes: bool = True,
+    xaxis: bool = True,
+    yaxis: bool = True,
+    xticks=None,
+    xticklabels=None,
+    yticks=None,
+    yticklabels=None,
+    user_xlabel: str | None = None,
+    user_ylabel: str | None = None,
+) -> None:
+    """Apply map axes while honoring axes/xaxis/yaxis visibility toggles."""
+    xlabel = user_xlabel
+    ylabel = user_ylabel
+    map_xticks = xticks
+    map_yticks = yticks
+    map_xticklabels = xticklabels
+    map_yticklabels = yticklabels
+
+    if not axes:
+        map_xticks = []
+        map_yticks = []
+        xlabel = ""
+        ylabel = ""
+    else:
+        if not xaxis:
+            map_xticks = []
+            map_xticklabels = []
+            xlabel = ""
+        if not yaxis:
+            map_yticks = []
+            map_yticklabels = []
+            ylabel = ""
+
+    _apply_map_axes(
+        xticks=map_xticks,
+        yticks=map_yticks,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        xticklabels=map_xticklabels,
+        yticklabels=map_yticklabels,
+    )
+
+    if plotvars.proj in ("npstere", "spstere"):
+        MapSet(plotvars).draw_polar_axes()
+
+
+def _apply_current_map_title(title: str | None) -> None:
+    """Apply a title using the current global map state values."""
+    if title is None or plotvars.mymap is None:
+        return
+
+    _apply_map_title(
+        mymap=plotvars.mymap,
+        title=title,
+        proj=plotvars.proj,
+        boundinglat=plotvars.boundinglat,
+        lon_0=plotvars.lon_0,
+        lonmin=plotvars.lonmin,
+        lonmax=plotvars.lonmax,
+        latmin=plotvars.latmin,
+        latmax=plotvars.latmax,
+        title_fontsize=plotvars.title_fontsize,
+        title_fontweight=plotvars.title_fontweight,
+    )
+
+
 def _apply_map_features(
     *,
     mymap: Any,

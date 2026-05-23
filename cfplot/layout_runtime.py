@@ -15,6 +15,7 @@ import matplotlib
 import matplotlib.pyplot as plot
 
 from .state import plotvars
+from .state import reset_runtime_state
 
 
 def gopen(
@@ -104,22 +105,7 @@ def gclose(view: bool = True) -> None:
         elif not view:
             plot.close(figure)
 
-    plotvars.plot = None
-    plotvars.twinx = None
-    plotvars.twiny = None
-    plotvars.plot_xmin = None
-    plotvars.plot_xmax = None
-    plotvars.plot_ymin = None
-    plotvars.plot_ymax = None
-    plotvars.graph_xmin = None
-    plotvars.graph_xmax = None
-    plotvars.graph_ymin = None
-    plotvars.graph_ymax = None
-    plotvars.gpos_called = False
-    plotvars.mymap = None
-    plotvars.titles_con_called = False
-    plotvars.master_plot = None
-    plotvars._contour_session_open = False
+    reset_runtime_state()
 
 
 def maybe_autosave() -> None:
@@ -127,6 +113,75 @@ def maybe_autosave() -> None:
     session_open = bool(getattr(plotvars, "_contour_session_open", False))
     if not session_open:
         gclose(view=True)
+
+
+def set_axis_visibility(
+    axis: Any,
+    *,
+    axes: bool = True,
+    xaxis: bool = True,
+    yaxis: bool = True,
+) -> None:
+    """Explicitly hide or show axis ticks and tick labels."""
+    if axis is None:
+        return
+
+    if not axes:
+        xaxis = False
+        yaxis = False
+
+    if not xaxis:
+        axis.set_xticks([])
+        axis.set_xticklabels([])
+        axis.tick_params(bottom=False, top=False, labelbottom=False, labeltop=False)
+
+    if not yaxis:
+        axis.set_yticks([])
+        axis.set_yticklabels([])
+        axis.tick_params(left=False, right=False, labelleft=False, labelright=False)
+
+
+def ensure_runtime_session(pos: int = 1) -> bool:
+    """Ensure an implicit plotting session and default subplot when needed.
+
+    Returns True when a session is implicitly managed by the caller
+    (i.e. `gopen` was auto-invoked because `plotvars.user_plot == 0`).
+    """
+    auto_session = plotvars.user_plot == 0
+    if auto_session:
+        gopen(user_plot=0)
+
+    if plotvars.rows > 1 or plotvars.columns > 1:
+        if plotvars.gpos_called is False:
+            gpos(pos)
+
+    return auto_session
+
+
+def finalize_runtime_session(
+    *,
+    auto_session: bool,
+    reset_limits: bool = False,
+    reset_colour_scale: bool = False,
+    view: bool = True,
+) -> None:
+    """Finalize an implicitly managed session.
+
+    When `auto_session` is False this is a no-op so user-managed `gopen/gclose`
+    flows are preserved.
+    """
+    if not auto_session:
+        return
+
+    if reset_limits:
+        gset()
+
+    if reset_colour_scale:
+        from .colour import cscale
+
+        cscale()
+
+    gclose(view=view)
 
 
 def ensure_xy_viewport() -> None:
