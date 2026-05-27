@@ -58,6 +58,32 @@ from .state import (
 )
 
 
+def _detect_lon_cyclic(f: "cf.Field", x: "np.ndarray | None") -> bool:
+    """Return True when the longitude axis closes on itself at 360°.
+
+    Prefers cell bounds from the CF field when available.  Falls back to a
+    centre-point heuristic (range + step ≈ 360°) when bounds are absent.
+    Returns False for non-1-D or irregular grids (e.g. ORCA).
+    """
+    try:
+        xdim = f.dim("X", default=None)
+        if xdim is not None and xdim.has_bounds():
+            b = xdim.bounds.data.array
+            if b.ndim == 2:
+                # Cyclic: right edge of last cell == left edge of first cell + 360°
+                return abs(float(b[-1, 1]) - float(b[0, 0]) - 360.0) < 1.0
+
+        # Fallback: centre-point heuristic — only valid for 1-D lon arrays
+        if x is not None and x.ndim == 1 and len(x) > 1:
+            step = (float(x[-1]) - float(x[0])) / (len(x) - 1)
+            return abs((float(x[-1]) - float(x[0]) + step) - 360.0) < 0.5 * abs(step)
+
+    except Exception:
+        pass
+
+    return False
+
+
 @dataclass(frozen=True)
 class ContourData:
     """Read-only contour inputs after extraction and validation.
@@ -84,6 +110,7 @@ class ContourData:
     blockfill: bool = False
     xpole: float | None = None
     ypole: float | None = None
+    x_is_cyclic: bool = False
 
     @classmethod
     def from_cf_field(
@@ -109,9 +136,12 @@ class ContourData:
         if colorbar_title is not None:
             cbar_title = colorbar_title
 
+        x_arr = x if x is None else np.asarray(x)
+        x_is_cyclic = _detect_lon_cyclic(f, x_arr)
+
         return cls(
             field=np.asanyarray(field),
-            x=x if x is None else np.asarray(x),
+            x=x_arr,
             y=y if y is None else np.asarray(y),
             ptype=ptype if ptype is not None else 0,
             colorbar_title=cbar_title or "",
@@ -119,6 +149,7 @@ class ContourData:
             ylabel=ylabel or "",
             xpole=utility.to_float_or_none(xpole),
             ypole=utility.to_float_or_none(ypole),
+            x_is_cyclic=x_is_cyclic,
         )
 
     @classmethod
@@ -874,7 +905,6 @@ def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
         "orca",
         "swap_axes",
         "xlog",
-        "transform_first",
     )
     for key in unsupported:
         if kwargs.get(key):
@@ -1148,17 +1178,41 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         # Add a cyclic longitude column when the grid is near-global but
         # doesn't close on itself (no explicit bounds), to avoid a gap at
         # the wrap-around seam in Cartopy.
+        # NOTE: For non-cyclic orthographic grids this can introduce large
+        # clipped wedges, so skip it there (the wrap/sort below handles those).
         if (
             data.x is not None
             and data.y is not None
             and np.ndim(data.x) == 1
             and np.ndim(data.y) == 1
             and not blockfill
+            and (plotvars.proj != "ortho" or data.x_is_cyclic)
         ):
             lonrange_data = float(np.nanmax(data.x)) - float(np.nanmin(data.x))
             if 350.0 < lonrange_data < 360.0:
                 new_field, new_x = utility.add_cyclic(data.field, data.x)
                 data = replace(data, field=new_field, x=new_x)
+
+        # For orthographic plots with a non-cyclic longitude grid, avoid a
+        # seam through the center of the visible hemisphere by rolling the
+        # array so it starts at ~-180° rather than at 0°.  Cyclic grids
+        # (whose bounds close at 360°) are already seamless and must NOT be
+        # rolled, or a new artefact appears at ±180° near the poles.
+        # Assumes the longitude array is monotonically increasing (standard
+        # for CF-convention model output).
+        if (
+            data.x is not None
+            and np.ndim(data.x) == 1
+            and plotvars.proj == "ortho"
+            and not data.x_is_cyclic
+        ):
+            split = int(np.searchsorted(data.x, 180.0))
+            wrapped_x = np.mod(data.x + 180.0, 360.0) - 180.0
+            data = replace(
+                data,
+                x=np.roll(wrapped_x, -split),
+                field=np.roll(data.field, -split, axis=-1),
+            )
 
         if np.ndim(data.y) == 1 and data.y[0] > data.y[-1]:
             data = replace(data, y=data.y[::-1], field=np.flipud(data.field))
@@ -1237,8 +1291,20 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     else:
         renderer = XYContourRenderer(layout=layout, data=data, colour_scale=cs)
 
+    transform_first = kwargs.get("transform_first", None)
+    if data.ptype == 1 and plotvars.proj == "ortho" and not data.x_is_cyclic:
+        # Non-cyclic grids on ortho are prone to clipping artefacts with
+        # transform_first=True on near-global dense grids, so force it off.
+        # Cyclic grids use the default (True for 1-D arrays) which avoids a
+        # visible seam at the 0°/360° boundary.
+        transform_first = False
+
     if fill:
-        renderer.render_filled(alpha=alpha, zorder=zorder, transform_first=None)
+        renderer.render_filled(
+            alpha=alpha,
+            zorder=zorder,
+            transform_first=transform_first,
+        )
     if blockfill:
         renderer.render_blockfill(
             fast=kwargs.get("blockfill_fast", None), alpha=alpha, zorder=zorder
