@@ -13,6 +13,7 @@ import cf
 import matplotlib.colors
 import matplotlib.patches as mpatches
 import numpy as np
+import shapely.geometry as sgeom
 from matplotlib.collections import PolyCollection
 
 from .colour import get_colour_scale_map
@@ -395,3 +396,99 @@ def _bfill(
                 plotvars.mymap.add_collection(coll)
             else:
                 plotvars.plot.add_collection(coll)
+
+
+def _bfill_ugrid(
+    f=None,
+    face_lons=None,
+    face_lats=None,
+    face_connectivity=None,
+    clevs=None,
+    alpha=None,
+    zorder=None,
+):
+    """
+    | Block fill a irregular field with colour rectangles.
+    | This is an internal routine and is not generally used by the user.
+    |
+    | f=None - field
+    | face_lons=None - longitude points for face vertices
+    | face_lats=None - latitude points for face verticies
+    | face_connectivity=None - connectivity for face verticies
+    | clevs=None - levels for filling
+    | lonlat=False - lonlat data
+    | bound=False - x and y are cf data boundaries
+    | alpha=alpha - transparency setting 0 to 1
+    | zorder=None - plotting order
+    |
+     :Returns:
+       None
+    |
+    """
+
+    # Colour faces according to value.
+    cols = ["#000000" for _ in range(len(face_connectivity))]
+
+    levs = deepcopy(np.array(clevs))
+
+    if plotvars.levels_extend == "min" or plotvars.levels_extend == "both":
+        levs = np.concatenate([[-1e20], levs])
+    ilevs_max = np.size(levs)
+    if plotvars.levels_extend == "max" or plotvars.levels_extend == "both":
+        levs = np.concatenate([levs, [1e20]])
+    else:
+        ilevs_max = ilevs_max - 1
+
+    for ilev in np.arange(ilevs_max):
+        lev = levs[ilev]
+        col = plotvars.cs[ilev]
+        pts = np.where(f.squeeze() >= lev)[0]
+
+        if len(pts) > 0 and np.min(pts) >= 0:
+            for val in np.arange(np.size(pts)):
+                pt = pts[val]
+                cols[pt] = col
+
+    plotargs = {"transform": ccrs.PlateCarree()}
+
+    coords_all = []
+
+    nfaces = np.shape(face_connectivity)[0]
+    for iface in np.arange(nfaces):
+        lons = np.array(face_lons[iface, :], copy=True)
+        lats = np.array(face_lats[iface, :], copy=True)
+
+        # Wrapping in longitude.
+        if (np.max(lons) - np.min(lons)) > 100:
+            if np.max(lons) > 180:
+                for j in np.arange(len(lons)):
+                    lons[j] = (lons[j] + 180) % 360 - 180
+            else:
+                for j in np.arange(len(lons)):
+                    lons[j] = lons[j] % 360
+
+        nverts = len(lons)
+
+        # Add extra vertices if any of the points are at the north or south pole.
+        if np.max(lats) == 90 or np.min(lats) == -90:
+            geom = sgeom.Polygon([(lons[k], lats[k]) for k in np.arange(nverts)])
+            geom_cyl = ccrs.PlateCarree().project_geometry(geom, ccrs.Geodetic())
+
+            # New method for shapely 2.0 +
+            poly_mapped = sgeom.mapping(geom_cyl.geoms[0])
+            coords = list(poly_mapped["coordinates"][0])
+        else:
+            coords = [(lons[k], lats[k]) for k in np.arange(nverts)]
+
+        coords_all.append(coords)
+
+    plotvars.mymap.add_collection(
+        PolyCollection(
+            coords_all,
+            facecolors=cols,
+            edgecolors=None,
+            alpha=alpha,
+            zorder=zorder,
+            **plotargs,
+        )
+    )

@@ -33,7 +33,7 @@ import numpy as np
 from matplotlib.axes import Axes
 
 from . import utility
-from .blockfill import _bfill
+from .blockfill import _bfill, _bfill_ugrid
 from .colour import apply_colour_scale, get_colour_scale_map
 from .colorbar import cbar
 from .layout_runtime import (
@@ -111,6 +111,9 @@ class ContourData:
     xpole: float | None = None
     ypole: float | None = None
     x_is_cyclic: bool = False
+    face_lons: np.ndarray | None = None
+    face_lats: np.ndarray | None = None
+    face_connectivity: np.ndarray | None = None
 
     @classmethod
     def from_cf_field(
@@ -138,6 +141,17 @@ class ContourData:
 
         x_arr = x if x is None else np.asarray(x)
         x_is_cyclic = _detect_lon_cyclic(f, x_arr)
+        irregular = (
+            np.asanyarray(field).ndim == 1
+            and x_arr is not None
+            and y is not None
+            and np.ndim(x_arr) == 1
+            and np.ndim(y) == 1
+            and np.asanyarray(field).size == np.asarray(x_arr).size == np.asarray(y).size
+        )
+
+        if irregular and proj == "cyl":
+            x_arr = _normalize_longitudes_for_map(x_arr)
 
         return cls(
             field=np.asanyarray(field),
@@ -150,6 +164,7 @@ class ContourData:
             xpole=utility.to_float_or_none(xpole),
             ypole=utility.to_float_or_none(ypole),
             x_is_cyclic=x_is_cyclic,
+            irregular=irregular,
         )
 
     @classmethod
@@ -554,6 +569,31 @@ class MapContourRenderer(ContourRenderer):
         lons = self.data.x
         lats = self.data.y
 
+        if self.data.irregular:
+            field, lons, lats = _window_irregular_map_data(
+                self.data.field * self.data.fmult,
+                lons,
+                lats,
+            )
+            runtime = plotvars.runtime
+            scale = plotvars.scale
+            cmap = self.cs.get_cmap()
+            runtime.image = runtime.mymap.tricontourf(
+                lons,
+                lats,
+                field,
+                self.data.levels,
+                extend=scale.levels_extend,
+                cmap=cmap,
+                norm=scale.norm,
+                alpha=alpha,
+                transform=ccrs.PlateCarree(),
+                zorder=zorder,
+            )
+            if hasattr(runtime.image, "collections"):
+                self.frame_artists.extend(list(runtime.image.collections))
+            return
+
         if transform_first is None and np.ndim(lons) == 1 and np.ndim(lats) == 1:
             if np.size(lons) >= 400:
                 transform_first = True
@@ -584,7 +624,29 @@ class MapContourRenderer(ContourRenderer):
         self, fast: bool | None, alpha: float, zorder: int
     ) -> None:
         """Render block-filled contours on a map."""
-        if self.data.x is None or self.data.y is None or self.data.levels is None:
+        if self.data.levels is None:
+            return
+
+        if self.data.is_ugrid:
+            if (
+                self.data.face_lons is None
+                or self.data.face_lats is None
+                or self.data.face_connectivity is None
+            ):
+                return
+
+            _bfill_ugrid(
+                f=self.data.field * self.data.fmult,
+                face_lons=self.data.face_lons,
+                face_lats=self.data.face_lats,
+                face_connectivity=self.data.face_connectivity,
+                clevs=self.data.levels,
+                alpha=alpha,
+                zorder=zorder,
+            )
+            return
+
+        if self.data.x is None or self.data.y is None:
             return
 
         _bfill(
@@ -609,6 +671,44 @@ class MapContourRenderer(ContourRenderer):
     ) -> None:
         """Render contour lines on a map with Cartopy transform."""
         if self.data.x is None or self.data.y is None or self.data.levels is None:
+            return
+
+        if self.data.irregular:
+            field, lons, lats = _window_irregular_map_data(
+                self.data.field * self.data.fmult,
+                self.data.x,
+                self.data.y,
+            )
+            runtime = plotvars.runtime
+            dec = plotvars.decoration
+            cs = runtime.mymap.tricontour(
+                lons,
+                lats,
+                field,
+                self.data.levels,
+                colors=colors,
+                linewidths=linewidths,
+                linestyles=linestyles,
+                alpha=1.0,
+                transform=ccrs.PlateCarree(),
+                zorder=zorder,
+            )
+            if hasattr(cs, "collections"):
+                self.frame_artists.extend(list(cs.collections))
+
+            if line_labels and not isinstance(self.data.levels, int):
+                nd = utility.ndecs(self.data.levels)
+                fmt = "%d"
+                if nd != 0:
+                    fmt = "%1." + str(nd) + "f"
+                runtime.plot.clabel(
+                    cs,
+                    levels=self.data.levels,
+                    fmt=fmt,
+                    colors=colors,
+                    fontsize=dec.text_fontsize,
+                    zorder=zorder,
+                )
             return
 
         runtime = plotvars.runtime
@@ -906,9 +1006,6 @@ def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
     """Return True when the new XY renderer can safely handle this call."""
     unsupported = (
         "irregular",
-        "face_lons",
-        "face_lats",
-        "face_connectivity",
         "orca",
         "swap_axes",
         "xlog",
@@ -917,11 +1014,20 @@ def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
         if kwargs.get(key):
             return False
 
+    face_kwargs_present = any(
+        kwargs.get(key) is not None
+        for key in ("face_lons", "face_lats", "face_connectivity")
+    )
+    if face_kwargs_present and not (isinstance(f, cf.Field) and kwargs.get("blockfill")):
+        return False
+
     ptype = kwargs.get("ptype", 0)
     if not isinstance(f, cf.Field) and ptype not in (0, 1, None):
         return False
 
     return True
+
+
 def _clear_animation_artists(plotvars: Any) -> None:
     """Remove artists from previous animation frame if present."""
     artists = getattr(plotvars.runtime, "_contour_animation_artists", None)
@@ -933,6 +1039,125 @@ def _clear_animation_artists(plotvars: Any) -> None:
         except Exception:
             continue
     plotvars.runtime._contour_animation_artists = []
+
+
+def _field_has_ugrid_faces(f: cf.Field) -> bool:
+    """Return True when a CF field exposes face connectivity for UGRID plots."""
+    try:
+        return bool(f.domain_topologies()) and f.domain_topology(
+            "cell:face", default=None
+        ) is not None
+    except Exception:
+        return False
+
+
+def _as_array(value: Any) -> np.ndarray:
+    """Convert a CF object or array-like to a NumPy array."""
+    if isinstance(value, cf.Field):
+        return np.asanyarray(value.array)
+    return np.asanyarray(value)
+
+
+def _face_vertex_array(face_values: Any, face_connectivity: Any) -> np.ndarray:
+    """Return per-face vertex coordinates from node coordinates and connectivity."""
+    try:
+        bounds = getattr(face_values, "bounds", None)
+        if bounds is not None:
+            return np.asanyarray(bounds.array)
+    except Exception:
+        pass
+
+    values = _as_array(face_values)
+    connectivity = np.asanyarray(_as_array(face_connectivity), dtype=int)
+    if values.ndim == 1 and connectivity.ndim == 2:
+        if connectivity.size and connectivity.min() >= 0 and connectivity.max() < values.size:
+            return values[connectivity]
+    return values
+
+
+def _normalize_longitudes_for_map(lons: np.ndarray) -> np.ndarray:
+    """Shift longitudes into a continuous [-180, 180] range for map plots."""
+    lons = np.asanyarray(lons, dtype=float)
+    if lons.ndim != 1 or lons.size == 0:
+        return lons
+
+    if np.nanmax(lons) > 180.0 and np.nanmin(lons) >= 0.0:
+        lons = np.where(lons > 180.0, lons - 360.0, lons)
+
+    return lons
+
+
+def _window_irregular_map_data(
+    field: np.ndarray, lons: np.ndarray, lats: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Wrap scattered lon/lat data to the current map window.
+
+    This mirrors the legacy irregular_window helper closely enough for the
+    global LFRic example: longitudes are shifted into the active map window,
+    then a seam column is interpolated at the left edge and duplicated at the
+    right edge for a full-globe plot.
+    """
+    field_irregular = np.asarray(field, dtype=float).copy()
+    lons_irregular = np.asarray(lons, dtype=float).copy()
+    lats_irregular = np.asarray(lats, dtype=float).copy()
+
+    lonmin = float(plotvars.lonmin)
+    lonmax = float(plotvars.lonmax)
+
+    found_lon = False
+    lons_offset = 0.0
+    for ilon in (-360.0, 0.0, 360.0):
+        lons_test = lons_irregular + ilon
+        if np.min(lons_test) <= lonmin:
+            found_lon = True
+            lons_offset = ilon
+
+    if found_lon:
+        lons_irregular = lons_irregular + lons_offset
+        pts = np.where(lons_irregular < lonmin)
+        lons_irregular[pts] = lons_irregular[pts] + 360.0
+
+    # Build a seam line at the left edge of the plot by interpolating the
+    # wrapped points nearby in longitude/latitude space.
+    delta = 120.0
+    pts_left = np.where(lons_irregular >= lonmin + 360.0 - delta)
+    lons_left = lons_irregular[pts_left] - 360.0
+    lats_left = lats_irregular[pts_left]
+    field_left = field_irregular[pts_left]
+
+    field_wrap = np.concatenate([field_irregular, field_left])
+    lons_wrap = np.concatenate([lons_irregular, lons_left])
+    lats_wrap = np.concatenate([lats_irregular, lats_left])
+
+    try:
+        from scipy.interpolate import griddata
+    except Exception:
+        return field_irregular, lons_irregular, lats_irregular
+
+    lons_new = np.zeros(181) + lonmin
+    lats_new = np.arange(181) - 90.0
+    field_new = griddata(
+        (lons_wrap, lats_wrap),
+        field_wrap,
+        (lons_new, lats_new),
+        method="linear",
+    )
+
+    pts = np.where(np.isfinite(field_new))
+    field_new = field_new[pts]
+    lons_new = lons_new[pts]
+    lats_new = lats_new[pts]
+
+    field_irregular = np.concatenate([field_irregular, field_new])
+    lons_irregular = np.concatenate([lons_irregular, lons_new])
+    lats_irregular = np.concatenate([lats_irregular, lats_new])
+
+    if lonmax - lonmin == 360.0:
+        field_irregular = np.concatenate([field_irregular, field_new])
+        lons_irregular = np.concatenate([lons_irregular, lons_new + 359.95])
+        lats_irregular = np.concatenate([lats_irregular, lats_new])
+
+    return field_irregular, lons_irregular, lats_irregular
 
 
 def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
@@ -981,6 +1206,25 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     else:
         data = ContourData.from_arrays(field=np.asanyarray(f), x=x, y=y)
         data = replace(data, ptype=kwargs.get("ptype", 0) or 0)
+
+    if isinstance(f, cf.Field) and bool(kwargs.get("blockfill")) and _field_has_ugrid_faces(f):
+        # Prefer the face metadata embedded in the field, which is the legacy
+        # path and is more reliable than the auxiliary coordinate variables
+        # supplied by callers.
+        face_lons = f.aux("X").bounds.array
+        face_lats = f.aux("Y").bounds.array
+        face_connectivity = f.domain_topology("cell:face").array
+
+        face_lons = _face_vertex_array(face_lons, face_connectivity)
+        face_lats = _face_vertex_array(face_lats, face_connectivity)
+
+        data = replace(
+            data,
+            is_ugrid=True,
+            face_lons=face_lons,
+            face_lats=face_lats,
+            face_connectivity=face_connectivity,
+        )
 
     # Keep legacy behavior for axis-routing logic by setting active plot type.
     pv_runtime.plot_type = data.ptype
@@ -1200,6 +1444,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             and data.y is not None
             and np.ndim(data.x) == 1
             and np.ndim(data.y) == 1
+            and not data.irregular
             and not blockfill
             and (plotvars.proj != "ortho" or data.x_is_cyclic)
         ):
@@ -1220,6 +1465,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             and np.ndim(data.x) == 1
             and plotvars.proj == "ortho"
             and not data.x_is_cyclic
+            and not data.irregular
         ):
             split = int(np.searchsorted(data.x, 180.0))
             wrapped_x = np.mod(data.x + 180.0, 360.0) - 180.0
@@ -1229,7 +1475,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
                 field=np.roll(data.field, -split, axis=-1),
             )
 
-        if np.ndim(data.y) == 1 and data.y[0] > data.y[-1]:
+        if not data.irregular and np.ndim(data.y) == 1 and data.y[0] > data.y[-1]:
             data = replace(data, y=data.y[::-1], field=np.flipud(data.field))
 
         xticks = kwargs.get("xticks", None)
