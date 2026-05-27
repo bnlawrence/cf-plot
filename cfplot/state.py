@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import Any
+from dataclasses import MISSING, dataclass, field, fields as dc_fields
+from typing import Any, ClassVar
 
 import cartopy
 import matplotlib
@@ -16,14 +17,216 @@ from .colour.colourmaps import cscale1
 class pvars:
     """Stores plotting variables in `cfp.plotvars`."""
 
+    @dataclass
+    class MapState:
+        proj: str = "cyl"
+        resolution: str = "110m"
+        lonmin: float = -180
+        lonmax: float = 180
+        latmin: float = -90
+        latmax: float = 90
+        boundinglat: float = 0
+        lon_0: float = 0
+        lat_0: float = 40
+        rotated_grid_spacing: float = 10
+        rotated_deg_spacing: float = 0.75
+        rotated_continents: bool = True
+        rotated_grid: bool = True
+        rotated_grid_thickness: float = 1.0
+        rotated_labels: bool = True
+
+    @dataclass
+    class AxesState:
+        xmin: Any = None
+        xmax: Any = None
+        ymin: Any = None
+        ymax: Any = None
+        plot_xmin: Any = None
+        plot_xmax: Any = None
+        plot_ymin: Any = None
+        plot_ymax: Any = None
+        graph_xmin: Any = None
+        graph_xmax: Any = None
+        graph_ymin: Any = None
+        graph_ymax: Any = None
+        xticks: Any = None
+        xticklabels: Any = None
+        xlabel: Any = None
+        yticks: Any = None
+        yticklabels: Any = None
+        ylabel: Any = None
+        xlog: Any = None
+        ylog: Any = None
+        xstep: Any = None
+        ystep: Any = None
+        twinx: Any = False
+        twiny: Any = False
+        xtick_label_rotation: int = 0
+        xtick_label_align: str = "center"
+        ytick_label_rotation: int = 0
+        ytick_label_align: str = "right"
+        axis_width: Any = None
+
+    @dataclass
+    class DecorationState:
+        title: Any = None
+        master_title: Any = None
+        master_title_location: list[float] = field(
+            default_factory=lambda: [0.5, 0.95]
+        )
+        text_fontsize: int = 11
+        axis_label_fontsize: int = 11
+        colorbar_fontsize: int = 11
+        title_fontsize: int = 15
+        master_title_fontsize: int = 30
+        legend_text_size: int = 11
+        fontweight: str = "normal"
+        text_fontweight: str = "normal"
+        axis_label_fontweight: str = "normal"
+        colorbar_fontweight: str = "normal"
+        title_fontweight: str = "normal"
+        master_title_fontweight: str = "normal"
+        legend_text_weight: str = "normal"
+        legend_frame: bool = True
+        legend_frame_edge_color: str = "k"
+        legend_frame_face_color: Any = None
+        grid: bool = False
+        grid_x_spacing: float = 60
+        grid_y_spacing: float = 30
+        grid_zorder: int = 100
+        grid_colour: str = "k"
+        grid_linestyle: str = "--"
+        grid_thickness: float = 1.0
+        feature_zorder: int = 999
+        land_color: Any = None
+        ocean_color: Any = None
+        lake_color: Any = None
+        continent_color: Any = None
+        continent_thickness: Any = None
+        continent_linestyle: Any = None
+        degsym: bool = False
+        titles_con_called: bool = False
+
+    @dataclass
+    class LayoutState:
+        rows: int = 1
+        columns: int = 1
+        pos: int = 1
+        gpos_called: bool = False
+        orientation: str = "landscape"
+        aspect: str = "equal"
+
+    @dataclass
+    class ScaleState:
+        levels: Any = None
+        levels_min: Any = None
+        levels_max: Any = None
+        levels_step: Any = None
+        levels_extend: str = "both"
+        level_spacing: Any = None
+        cs_uniform: bool = True
+        cs: Any = None
+        cscale_flag: int = 0
+        cs_user: str = "cscale1"
+        norm: Any = None
+
+    @dataclass
+    class RuntimeState:
+        plot_type: int = 1
+        master_plot: Any = None
+        plot: Any = None
+        mymap: Any = None
+        image: Any = None
+        user_mapset: int = 0
+        user_gset: int = 0
+        user_levs: int = 0
+        user_plot: int = 0
+        _contour_session_open: bool = False
+        _contour_animation_artists: list[Any] = field(default_factory=list)
+
+    @dataclass
+    class OutputState:
+        global_viewer: str = "display"
+        viewer: Any = "display"
+        file: Any = None
+        dpi: Any = None
+        tight: bool = False
+        tspace_year: Any = None
+        tspace_month: Any = None
+        tspace_day: Any = None
+        tspace_hour: Any = None
+
+    _SECTION_TYPES: ClassVar[dict[str, type]] = {
+        "map": MapState,
+        "axes": AxesState,
+        "decoration": DecorationState,
+        "layout": LayoutState,
+        "scale": ScaleState,
+        "runtime": RuntimeState,
+        "output": OutputState,
+    }
+    _ATTR_TO_SECTION: ClassVar[dict[str, str]] = {}
+
     def __init__(self, **kwargs):
+        object.__setattr__(self, "map", self.MapState())
+        object.__setattr__(self, "axes", self.AxesState())
+        object.__setattr__(self, "decoration", self.DecorationState())
+        object.__setattr__(self, "layout", self.LayoutState())
+        object.__setattr__(self, "scale", self.ScaleState())
+        object.__setattr__(self, "runtime", self.RuntimeState())
+        object.__setattr__(self, "output", self.OutputState())
+
         for attr, value in kwargs.items():
+            if isinstance(value, (list, dict, set)):
+                value = value.copy()
             setattr(self, attr, value)
+
+    def __getattr__(self, attr: str) -> Any:
+        section_name = self._ATTR_TO_SECTION.get(attr)
+        if section_name is None:
+            raise AttributeError(attr)
+        return getattr(getattr(self, section_name), attr)
+
+    def __setattr__(self, attr: str, value: Any) -> None:
+        section_name = self._ATTR_TO_SECTION.get(attr)
+        if section_name is not None:
+            setattr(getattr(self, section_name), attr, value)
+            return
+
+        if attr in {
+            "map",
+            "axes",
+            "decoration",
+            "layout",
+            "scale",
+            "runtime",
+            "output",
+        } or attr.startswith("_"):
+            object.__setattr__(self, attr, value)
+            return
+
+        # Preserve legacy extensibility for ad-hoc state attributes.
+        object.__setattr__(self, attr, value)
 
     def __str__(self):
         out = []
-        for a, v in self.__dict__.items():
+        for a in sorted(self._ATTR_TO_SECTION):
+            v = getattr(self, a)
             out.append(f"{a} = {repr(v)}")
+
+        for a, v in self.__dict__.items():
+            if a in {
+                "map",
+                "axes",
+                "decoration",
+                "layout",
+                "scale",
+                "runtime",
+                "output",
+            }:
+                continue
+            out.append(f"{a} = {repr(v)}")
+
         return "\n".join(out)
 
 
@@ -92,126 +295,97 @@ if os.path.exists(defaults_file):
                 global_viewer = val.strip()
 
 
-setvars_defaults = {
-    "viewer": global_viewer,
-    "file": None,
-    "dpi": None,
-    "tight": False,
-    "tspace_year": None,
-    "tspace_month": None,
-    "tspace_day": None,
-    "tspace_hour": None,
-    "xtick_label_rotation": 0,
-    "xtick_label_align": "center",
-    "ytick_label_rotation": 0,
-    "ytick_label_align": "right",
-    "text_fontsize": 11,
-    "axis_label_fontsize": 11,
-    "colorbar_fontsize": 11,
-    "title_fontsize": 15,
-    "master_title_fontsize": 30,
-    "legend_text_size": 11,
-    "fontweight": "normal",
-    "text_fontweight": "normal",
-    "axis_label_fontweight": "normal",
-    "colorbar_fontweight": "normal",
-    "title_fontweight": "normal",
-    "master_title_fontweight": "normal",
-    "legend_text_weight": "normal",
-    "master_title": None,
-    "master_title_location": [0.5, 0.95],
-    "legend_frame": True,
-    "legend_frame_edge_color": "k",
-    "legend_frame_face_color": None,
-    "grid": False,
-    "grid_x_spacing": 60,
-    "grid_y_spacing": 30,
-    "grid_zorder": 100,
-    "grid_colour": "k",
-    "grid_linestyle": "--",
-    "grid_thickness": 1.0,
-    "rotated_grid_spacing": 10,
-    "rotated_deg_spacing": 0.75,
-    "rotated_continents": True,
-    "rotated_grid": True,
-    "rotated_grid_thickness": 1.0,
-    "rotated_labels": True,
-    "feature_zorder": 999,
-    "land_color": None,
-    "ocean_color": None,
-    "lake_color": None,
-    "continent_color": None,
-    "continent_thickness": None,
-    "continent_linestyle": None,
-    "axis_width": None,
-    "degsym": global_degsym,
-    "level_spacing": None,
-    "cs_uniform": True,
-}
+def _dataclass_defaults(dc_type: type) -> dict[str, Any]:
+    defaults: dict[str, Any] = {}
+    for fld in dc_fields(dc_type):
+        if fld.default_factory is not MISSING:
+            defaults[fld.name] = fld.default_factory()
+        else:
+            defaults[fld.name] = fld.default
+    return defaults
 
-plotvars_defaults = {
-    "global_viewer": global_viewer,
-    "plot_type": 1,
-    "master_plot": None,
-    "plot": None,
-    "mymap": None,
-    "proj": "cyl",
-    "resolution": "110m",
-    "norm": None,
-    "lonmin": -180,
-    "lonmax": 180,
-    "latmin": -90,
-    "latmax": 90,
-    "xmin": None,
-    "xmax": None,
-    "ymin": None,
-    "ymax": None,
-    "plot_xmin": None,
-    "plot_xmax": None,
-    "plot_ymin": None,
-    "plot_ymax": None,
-    "graph_xmin": None,
-    "graph_xmax": None,
-    "graph_ymin": None,
-    "graph_ymax": None,
-    "levels": None,
-    "levels_min": None,
-    "levels_max": None,
-    "levels_step": None,
-    "levels_extend": "both",
-    "xticks": None,
-    "xticklabels": None,
-    "xlabel": None,
-    "yticks": None,
-    "yticklabels": None,
-    "ylabel": None,
-    "cs": cscale1,
-    "cscale_flag": 0,
-    "pos": 1,
-    "gpos_called": False,
-    "boundinglat": 0,
-    "lon_0": 0,
-    "lat_0": 40,
-    "xlog": None,
-    "ylog": None,
-    "twinx": False,
-    "twiny": False,
-    "xstep": None,
-    "ystep": None,
-    "user_mapset": 0,
-    "user_gset": 0,
-    "user_levs": 0,
-    "user_plot": 0,
-    "cs_user": "cscale1",
-    "rows": 1,
-    "columns": 1,
-    "title": None,
-    "titles_con_called": False,
-    "orientation": "landscape",
-    "aspect": "equal",
-    "_contour_session_open": False,
-    "_contour_animation_artists": [],
-}
+
+def _refresh_state_schemas() -> None:
+    attr_to_section: dict[str, str] = {}
+    for section, dc_type in pvars._SECTION_TYPES.items():
+        for fld in dc_fields(dc_type):
+            attr_to_section[fld.name] = section
+    pvars._ATTR_TO_SECTION = attr_to_section
+
+
+def _build_plotvars_defaults() -> dict[str, Any]:
+    defaults: dict[str, Any] = {}
+    for dc_type in pvars._SECTION_TYPES.values():
+        defaults.update(_dataclass_defaults(dc_type))
+
+    # Environment and startup-specific overrides.
+    defaults["global_viewer"] = global_viewer
+    defaults["viewer"] = global_viewer
+    defaults["degsym"] = global_degsym
+    defaults["cs"] = cscale1
+    return defaults
+
+
+_refresh_state_schemas()
+plotvars_defaults = _build_plotvars_defaults()
+
+_SETVARS_KEYS = [
+    "viewer",
+    "file",
+    "dpi",
+    "tight",
+    "tspace_year",
+    "tspace_month",
+    "tspace_day",
+    "tspace_hour",
+    "xtick_label_rotation",
+    "xtick_label_align",
+    "ytick_label_rotation",
+    "ytick_label_align",
+    "text_fontsize",
+    "axis_label_fontsize",
+    "colorbar_fontsize",
+    "title_fontsize",
+    "master_title_fontsize",
+    "legend_text_size",
+    "fontweight",
+    "text_fontweight",
+    "axis_label_fontweight",
+    "colorbar_fontweight",
+    "title_fontweight",
+    "master_title_fontweight",
+    "legend_text_weight",
+    "master_title",
+    "master_title_location",
+    "legend_frame",
+    "legend_frame_edge_color",
+    "legend_frame_face_color",
+    "grid",
+    "grid_x_spacing",
+    "grid_y_spacing",
+    "grid_zorder",
+    "grid_colour",
+    "grid_linestyle",
+    "grid_thickness",
+    "rotated_grid_spacing",
+    "rotated_deg_spacing",
+    "rotated_continents",
+    "rotated_grid",
+    "rotated_grid_thickness",
+    "rotated_labels",
+    "feature_zorder",
+    "land_color",
+    "ocean_color",
+    "lake_color",
+    "continent_color",
+    "continent_thickness",
+    "continent_linestyle",
+    "axis_width",
+    "degsym",
+    "level_spacing",
+    "cs_uniform",
+]
+setvars_defaults = {key: plotvars_defaults[key] for key in _SETVARS_KEYS}
 
 allvars_defaults = {**setvars_defaults, **plotvars_defaults}
 plotvars = pvars(**allvars_defaults)

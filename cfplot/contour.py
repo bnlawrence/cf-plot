@@ -179,7 +179,7 @@ class ContourLayout:
         ensure_xy_viewport()
 
         # Store reference to current axes/map for later use
-        self.viewport = plotvars.plot
+        self.viewport = self._plotvars.runtime.plot
 
         return self
 
@@ -198,7 +198,7 @@ class ContourLayout:
 
         ensure_map_viewport()
 
-        self.viewport = plotvars.plot
+        self.viewport = self._plotvars.runtime.plot
 
         return self
 
@@ -219,43 +219,46 @@ class ContourLayout:
     ) -> None:
         """Apply title and dimension titles to plot."""
         pv = self._plotvars
+        runtime = pv.runtime
+        map_state = pv.map
+        dec = pv.decoration
 
         if title and title != "":
-            if pv.plot_type == 1:
+            if runtime.plot_type == 1:
                 _apply_map_title(
-                    mymap=pv.mymap,
+                    mymap=runtime.mymap,
                     title=title,
-                    proj=pv.proj,
-                    boundinglat=pv.boundinglat,
-                    lon_0=pv.lon_0,
-                    lonmin=pv.lonmin,
-                    lonmax=pv.lonmax,
-                    latmin=pv.latmin,
-                    latmax=pv.latmax,
-                    title_fontsize=fontsize or pv.title_fontsize,
-                    title_fontweight=fontweight or pv.title_fontweight,
+                    proj=map_state.proj,
+                    boundinglat=map_state.boundinglat,
+                    lon_0=map_state.lon_0,
+                    lonmin=map_state.lonmin,
+                    lonmax=map_state.lonmax,
+                    latmin=map_state.latmin,
+                    latmax=map_state.latmax,
+                    title_fontsize=fontsize or dec.title_fontsize,
+                    title_fontweight=fontweight or dec.title_fontweight,
                 )
             else:
                 if self.viewport:
                     self.viewport.set_title(
                         title,
                         y=1.03,
-                        fontsize=fontsize or pv.title_fontsize,
-                        fontweight=fontweight or pv.title_fontweight,
+                        fontsize=fontsize or dec.title_fontsize,
+                        fontweight=fontweight or dec.title_fontweight,
                     )
 
         if dims_title:
             _apply_dim_titles(
-                plot=pv.plot,
-                mymap=pv.mymap,
-                plot_type=pv.plot_type,
-                proj=pv.proj,
-                lonmin=pv.lonmin,
-                lonmax=pv.lonmax,
-                latmin=pv.latmin,
-                latmax=pv.latmax,
-                axis_label_fontsize=pv.axis_label_fontsize,
-                axis_label_fontweight=pv.axis_label_fontweight,
+                plot=runtime.plot,
+                mymap=runtime.mymap,
+                plot_type=runtime.plot_type,
+                proj=map_state.proj,
+                lonmin=map_state.lonmin,
+                lonmax=map_state.lonmax,
+                latmin=map_state.latmin,
+                latmax=map_state.latmax,
+                axis_label_fontsize=dec.axis_label_fontsize,
+                axis_label_fontweight=dec.axis_label_fontweight,
                 title=dims_title if isinstance(dims_title, str) else None,
             )
 
@@ -273,7 +276,7 @@ class ContourLayout:
             return
 
         apply_axes(
-            plot_type=self._plotvars.plot_type,
+            plot_type=self._plotvars.runtime.plot_type,
             xticks=xticks,
             yticks=yticks,
             xlabel=xlabel,
@@ -305,11 +308,12 @@ class ColourScale:
         self._levels = np.asarray(levels)
         self._includes_zero = includes_zero
         self._levels_extend = levels_extend
+        scale = self._plotvars.scale
 
         # Replicate legacy cscale_flag == 0 logic (default colour scale).
         # If zero is present in levels, split scale1 around zero so
         # blue shades are strictly below zero and warm shades above.
-        if self._plotvars.cscale_flag == 0:
+        if scale.cscale_flag == 0:
             col_zero = 0
             includes_zero = False
             for cval in self._levels:
@@ -321,56 +325,48 @@ class ColourScale:
             if includes_zero:
                 cs_below = col_zero
                 cs_above = np.size(self._levels) - col_zero + 1
-                if self._plotvars.levels_extend in ("max", "neither"):
+                if scale.levels_extend in ("max", "neither"):
                     cs_below = cs_below - 1
-                if self._plotvars.levels_extend in ("min", "neither"):
+                if scale.levels_extend in ("min", "neither"):
                     cs_above = cs_above - 1
                 apply_colour_scale(
                     "scale1",
                     below=cs_below,
                     above=cs_above,
-                    uniform=bool(self._plotvars.cs_uniform),
+                    uniform=bool(scale.cs_uniform),
                 )
             else:
                 ncols = np.size(self._levels) + 1
-                if self._plotvars.levels_extend in ("min", "max"):
+                if scale.levels_extend in ("min", "max"):
                     ncols = ncols - 1
-                elif self._plotvars.levels_extend == "neither":
+                elif scale.levels_extend == "neither":
                     ncols = ncols - 2
                 apply_colour_scale("viridis", ncols=ncols)
 
-            self._plotvars.cscale_flag = 0
+            scale.cscale_flag = 0
 
         # Replicate cscale_flag == 1 logic (user-selected color map, fit to levels)
-        if self._plotvars.cscale_flag == 1:
+        if scale.cscale_flag == 1:
             ncols = np.size(self._levels) + 1
-            if (
-                self._plotvars.levels_extend == "min"
-                or self._plotvars.levels_extend == "max"
-            ):
+            if scale.levels_extend == "min" or scale.levels_extend == "max":
                 ncols = ncols - 1
-            if self._plotvars.levels_extend == "neither":
+            if scale.levels_extend == "neither":
                 ncols = ncols - 2
-            apply_colour_scale(self._plotvars.cs_user, ncols=ncols)
-            self._plotvars.cscale_flag = 1
+            apply_colour_scale(scale.cs_user, ncols=ncols)
+            scale.cscale_flag = 1
 
         return self
 
     def get_cmap(self) -> matplotlib.colors.ListedColormap:
         """Get colormap after fitting to levels."""
+        scale = self._plotvars.scale
         colmap = get_colour_scale_map()
         cmap = matplotlib.colors.ListedColormap(colmap)
 
-        if (
-            self._plotvars.levels_extend == "min"
-            or self._plotvars.levels_extend == "both"
-        ):
-            cmap.set_under(self._plotvars.cs[0])
-        if (
-            self._plotvars.levels_extend == "max"
-            or self._plotvars.levels_extend == "both"
-        ):
-            cmap.set_over(self._plotvars.cs[-1])
+        if scale.levels_extend == "min" or scale.levels_extend == "both":
+            cmap.set_under(scale.cs[0])
+        if scale.levels_extend == "max" or scale.levels_extend == "both":
+            cmap.set_over(scale.cs[-1])
 
         return cmap
 
@@ -535,21 +531,23 @@ class MapContourRenderer(ContourRenderer):
             lons, lats = np.meshgrid(lons, lats)
 
         cmap = self.cs.get_cmap()
-        plotvars.image = plotvars.mymap.contourf(
+        runtime = plotvars.runtime
+        scale = plotvars.scale
+        runtime.image = runtime.mymap.contourf(
             lons,
             lats,
             self.data.field * self.data.fmult,
             self.data.levels,
-            extend=plotvars.levels_extend,
+            extend=scale.levels_extend,
             cmap=cmap,
-            norm=plotvars.norm,
+            norm=scale.norm,
             alpha=alpha,
             transform=ccrs.PlateCarree(),
             zorder=zorder,
             transform_first=transform_first,
         )
-        if hasattr(plotvars.image, "collections"):
-            self.frame_artists.extend(list(plotvars.image.collections))
+        if hasattr(runtime.image, "collections"):
+            self.frame_artists.extend(list(runtime.image.collections))
 
     def render_blockfill(
         self, fast: bool | None, alpha: float, zorder: int
@@ -582,7 +580,9 @@ class MapContourRenderer(ContourRenderer):
         if self.data.x is None or self.data.y is None or self.data.levels is None:
             return
 
-        cs = plotvars.mymap.contour(
+        runtime = plotvars.runtime
+        dec = plotvars.decoration
+        cs = runtime.mymap.contour(
             self.data.x,
             self.data.y,
             self.data.field * self.data.fmult,
@@ -602,17 +602,17 @@ class MapContourRenderer(ContourRenderer):
             fmt = "%d"
             if nd != 0:
                 fmt = "%1." + str(nd) + "f"
-            plotvars.plot.clabel(
+            runtime.plot.clabel(
                 cs,
                 levels=self.data.levels,
                 fmt=fmt,
                 colors=colors,
-                fontsize=plotvars.text_fontsize,
+                fontsize=dec.text_fontsize,
                 zorder=zorder,
             )
 
         if zero_thick:
-            cs0 = plotvars.mymap.contour(
+            cs0 = runtime.mymap.contour(
                 self.data.x,
                 self.data.y,
                 self.data.field * self.data.fmult,
@@ -680,14 +680,16 @@ class XYContourRenderer(ContourRenderer):
             return
 
         cmap = self.cs.get_cmap()
-        plotvars.image = plotvars.plot.contourf(
+        runtime = plotvars.runtime
+        scale = plotvars.scale
+        runtime.image = runtime.plot.contourf(
             self.data.x,
             self.data.y,
             self.data.field * self.data.fmult,
             self.data.levels,
-            extend=plotvars.levels_extend,
+            extend=scale.levels_extend,
             cmap=cmap,
-            norm=plotvars.norm,
+            norm=scale.norm,
             alpha=alpha,
             zorder=zorder,
         )
@@ -723,7 +725,9 @@ class XYContourRenderer(ContourRenderer):
         if self.data.x is None or self.data.y is None or self.data.levels is None:
             return
 
-        cs = plotvars.plot.contour(
+        runtime = plotvars.runtime
+        dec = plotvars.decoration
+        cs = runtime.plot.contour(
             self.data.x,
             self.data.y,
             self.data.field * self.data.fmult,
@@ -738,16 +742,16 @@ class XYContourRenderer(ContourRenderer):
             fmt = "%d"
             if nd != 0:
                 fmt = "%1." + str(nd) + "f"
-            plotvars.plot.clabel(
+            runtime.plot.clabel(
                 cs,
                 fmt=fmt,
                 colors=colors,
-                fontsize=plotvars.text_fontsize,
+                fontsize=dec.text_fontsize,
                 zorder=zorder,
             )
 
         if zero_thick:
-            plotvars.plot.contour(
+            runtime.plot.contour(
                 self.data.x,
                 self.data.y,
                 self.data.field * self.data.fmult,
@@ -799,6 +803,9 @@ class XYContourRenderer(ContourRenderer):
 
 def levs(min=None, max=None, step=None, manual=None, extend="both"):
     """Set or clear the contour levels stored in shared plotting state."""
+    scale = plotvars.scale
+    runtime = plotvars.runtime
+
     if all(val is not None for val in [min, max]) and step is None:
         print(
             "\ncfp.levs error: when the min and max are specified "
@@ -807,61 +814,61 @@ def levs(min=None, max=None, step=None, manual=None, extend="both"):
         return
 
     if all(val is None for val in [min, max, step, manual]):
-        plotvars.levels = None
-        plotvars.levels_min = None
-        plotvars.levels_max = None
-        plotvars.levels_step = None
-        plotvars.levels_extend = "both"
-        plotvars.norm = None
-        plotvars.user_levs = 0
+        scale.levels = None
+        scale.levels_min = None
+        scale.levels_max = None
+        scale.levels_step = None
+        scale.levels_extend = "both"
+        scale.norm = None
+        runtime.user_levs = 0
         return
 
     if manual is not None:
-        plotvars.levels = np.array(manual)
-        plotvars.levels_min = None
-        plotvars.levels_max = None
-        plotvars.levels_step = None
-        ncolors = np.size(plotvars.levels)
+        scale.levels = np.array(manual)
+        scale.levels_min = None
+        scale.levels_max = None
+        scale.levels_step = None
+        ncolors = np.size(scale.levels)
         if extend == "both" or extend == "max":
             ncolors = ncolors - 1
-        plotvars.norm = matplotlib.colors.BoundaryNorm(
-            boundaries=plotvars.levels, ncolors=ncolors
+        scale.norm = matplotlib.colors.BoundaryNorm(
+            boundaries=scale.levels, ncolors=ncolors
         )
-        plotvars.user_levs = 1
+        runtime.user_levs = 1
     else:
         if all(val is not None for val in [min, max, step]):
-            plotvars.levels_min = min
-            plotvars.levels_max = max
-            plotvars.levels_step = step
-            plotvars.norm = None
+            scale.levels_min = min
+            scale.levels_max = max
+            scale.levels_step = step
+            scale.norm = None
             if all(isinstance(item, int) for item in [min, max, step]):
                 lstep = step * 1e-10
                 levs_arr = np.arange(min, max + lstep, step, dtype=np.float64)
                 levs_arr = ((levs_arr * 1e10).astype(np.int64)).astype(np.float64)
                 levs_arr = (levs_arr / 1e10).astype(np.int64)
-                plotvars.levels = levs_arr
+                scale.levels = levs_arr
             else:
                 lstep = step * 1e-10
                 levs_arr = np.arange(min, max + lstep, step, dtype=np.float64)
                 levs_arr = (levs_arr * 1e10).astype(np.int64).astype(np.float64)
                 levs_arr = levs_arr / 1e10
-                plotvars.levels = levs_arr
-            plotvars.user_levs = 1
+                scale.levels = levs_arr
+            runtime.user_levs = 1
 
-            for pt in np.arange(np.size(plotvars.levels)):
-                ndecs = str(plotvars.levels[pt])[::-1].find(".")
+            for pt in np.arange(np.size(scale.levels)):
+                ndecs = str(scale.levels[pt])[::-1].find(".")
                 if ndecs > 7:
-                    plotvars.levels[pt] = round(plotvars.levels[pt], 7)
+                    scale.levels[pt] = round(scale.levels[pt], 7)
 
     if step is not None and all(val is None for val in [min, max]):
-        plotvars.user_levs = 0
-        plotvars.levels = None
-        plotvars.levels_step = step
+        runtime.user_levs = 0
+        scale.levels = None
+        scale.levels_step = step
 
     if extend not in ["neither", "min", "max", "both"]:
         errstr = "\n\n extend must be one of 'neither', 'min', 'max', 'both'\n"
         raise TypeError(errstr)
-    plotvars.levels_extend = extend
+    scale.levels_extend = extend
 
 
 def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
@@ -887,7 +894,7 @@ def _can_use_new_xy_path(f: Any, kwargs: dict[str, Any]) -> bool:
     return True
 def _clear_animation_artists(plotvars: Any) -> None:
     """Remove artists from previous animation frame if present."""
-    artists = getattr(plotvars, "_contour_animation_artists", None)
+    artists = getattr(plotvars.runtime, "_contour_animation_artists", None)
     if not artists:
         return
     for artist in artists:
@@ -895,7 +902,7 @@ def _clear_animation_artists(plotvars: Any) -> None:
             artist.remove()
         except Exception:
             continue
-    plotvars._contour_animation_artists = []
+    plotvars.runtime._contour_animation_artists = []
 
 
 def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
@@ -904,6 +911,14 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     Note: Imports from cfplot are local (inside function) to maintain
     module-level independence while preserving current functionality.
     """
+    pv_map = plotvars.map
+    pv_axes = plotvars.axes
+    pv_dec = plotvars.decoration
+    pv_layout = plotvars.layout
+    pv_scale = plotvars.scale
+    pv_runtime = plotvars.runtime
+    pv_output = plotvars.output
+
     if isinstance(f, cf.Field) and (x is not None or y is not None):
         field_arr = np.asanyarray(f.array)
         x_arr = np.asarray(x.array) if isinstance(x, cf.Field) else x
@@ -917,17 +932,17 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     elif isinstance(f, cf.Field):
         # Legacy parity: when mapset is user-defined for polar stereographic
         # plots, subset latitude before data extraction and level generation.
-        if plotvars.user_mapset:
-            if plotvars.proj == "npstere":
-                f = f.subspace(Y=cf.wi(plotvars.boundinglat, 90.0))
-            elif plotvars.proj == "spstere":
-                f = f.subspace(Y=cf.wi(-90.0, plotvars.boundinglat))
+        if pv_runtime.user_mapset:
+            if pv_map.proj == "npstere":
+                f = f.subspace(Y=cf.wi(pv_map.boundinglat, 90.0))
+            elif pv_map.proj == "spstere":
+                f = f.subspace(Y=cf.wi(-90.0, pv_map.boundinglat))
 
         data = ContourData.from_cf_field(
             f=f,
             colorbar_title=kwargs.get("colorbar_title", None),
             verbose=kwargs.get("verbose", None),
-            proj=getattr(plotvars, "proj", "cyl"),
+            proj=pv_map.proj,
         )
         # Implemented CF extraction targets include generic Cartesian (ptype 0),
         # map, and selected non-map ptypes.
@@ -938,7 +953,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         data = replace(data, ptype=kwargs.get("ptype", 0) or 0)
 
     # Keep legacy behavior for axis-routing logic by setting active plot type.
-    plotvars.plot_type = data.ptype
+    pv_runtime.plot_type = data.ptype
 
     fill = kwargs.get("fill", global_fill)
     lines = kwargs.get("lines", global_lines)
@@ -958,22 +973,22 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     if not fill and not blockfill:
         colorbar = False
 
-    if plotvars.levels is None:
+    if pv_scale.levels is None:
         clevs, mult, fmult = utility.calculate_levels(
             field=data.field,
             level_spacing=kwargs.get("level_spacing", "linear"),
-            levels_step=plotvars.levels_step,
+            levels_step=pv_scale.levels_step,
             verbose=kwargs.get("verbose", None),
         )
     else:
-        clevs = np.asarray(plotvars.levels)
+        clevs = np.asarray(pv_scale.levels)
         mult = 0
         fmult = 1
 
     cs = ColourScale(plotvars).fit_to_levels(
         levels=np.asarray(clevs),
         includes_zero=bool(np.any(np.asarray(clevs) == 0)),
-        levels_extend=plotvars.levels_extend,
+        levels_extend=pv_scale.levels_extend,
     )
 
     import matplotlib
@@ -981,7 +996,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
 
     _cb_orient = kwargs.get("colorbar_orientation", None)
     if _cb_orient is None:
-        if data.ptype == 1 and plotvars.proj in ("npstere", "spstere"):
+        if data.ptype == 1 and pv_map.proj in ("npstere", "spstere"):
             _cb_orient = "vertical"
         else:
             _cb_orient = "horizontal"
@@ -990,7 +1005,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     clabels = cs.colourbar_labels(
         levels=np.asarray(clevs),
         orientation=colorbar_orientation,
-        n_columns=plotvars.columns,
+        n_columns=pv_layout.columns,
         label_skip=kwargs.get("colorbar_label_skip", None),
         custom_labels=kwargs.get("colorbar_labels"),
     )
@@ -1033,7 +1048,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             finalize_callback=maybe_autosave,
         )
 
-    if plotvars.user_plot == 0:
+    if pv_runtime.user_plot == 0:
         ensure_xy_viewport()
 
     xmin = kwargs.get("xmin", float(np.nanmin(data.x)))
@@ -1043,7 +1058,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
 
     # Legacy parity for latitude/longitude/time-pressure plots:
     # pressure-like coordinates are rendered with pressure decreasing upward.
-    if data.ptype in (2, 3, 7) and kwargs.get("user_gset", plotvars.user_gset) == 0:
+    if data.ptype in (2, 3, 7) and kwargs.get("user_gset", pv_runtime.user_gset) == 0:
         positive = "down"
         if isinstance(f, cf.Field):
             myz = utility.find_z(f)
@@ -1075,19 +1090,19 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     if isinstance(f, cf.Field) and data.ptype in (4, 5):
         if all(
             val is not None
-            for val in [plotvars.xmin, plotvars.xmax, plotvars.ymin, plotvars.ymax]
+            for val in [pv_axes.xmin, pv_axes.xmax, pv_axes.ymin, pv_axes.ymax]
         ):
-            tmin = plotvars.ymin
-            tmax = plotvars.ymax
-            xmin = plotvars.xmin
-            xmax = plotvars.xmax
+            tmin = pv_axes.ymin
+            tmax = pv_axes.ymax
+            xmin = pv_axes.xmin
+            xmax = pv_axes.xmax
 
             ref_time = f.construct("T").units
             ref_calendar = f.construct("T").calendar
             time_units = cf.Units(ref_time, ref_calendar)
-            t = cf.Data(cf.dt(plotvars.ymin), units=time_units)
+            t = cf.Data(cf.dt(pv_axes.ymin), units=time_units)
             ymin = t.array
-            t = cf.Data(cf.dt(plotvars.ymax), units=time_units)
+            t = cf.Data(cf.dt(pv_axes.ymax), units=time_units)
             ymax = t.array
 
     if kwargs.get("ylog", False) and ymax == 0:
@@ -1098,12 +1113,12 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         ymin=ymin,
         ymax=ymax,
         ylog=bool(kwargs.get("ylog", False)),
-        user_gset=kwargs.get("user_gset", plotvars.user_gset),
+        user_gset=kwargs.get("user_gset", pv_runtime.user_gset),
     )
 
     if tmin is not None and tmax is not None:
-        plotvars.ymin = tmin
-        plotvars.ymax = tmax
+        pv_axes.ymin = tmin
+        pv_axes.ymax = tmax
 
     xticks = kwargs.get("xticks", None)
     yticks = kwargs.get("yticks", None)
@@ -1134,14 +1149,14 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             mylonmax = mylonmin + 360.0
 
         if draw_static_map:
-            if not ((lonrange > 350 and latrange > 160) or plotvars.user_mapset == 1):
+            if not ((lonrange > 350 and latrange > 160) or pv_runtime.user_mapset == 1):
                 map_runtime.configure(
                     lonmin=mylonmin,
                     lonmax=mylonmax,
                     latmin=mylatmin,
                     latmax=mylatmax,
                     user_mapset=0,
-                    resolution=plotvars.resolution,
+                    resolution=pv_map.resolution,
                 )
             map_runtime.ensure_map_axes()
 
@@ -1174,14 +1189,14 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     if isinstance(f, cf.Field) and data.ptype in (4, 5):
         time_ticks, time_labels, time_label = utility.timeaxis(
             dtimes=f.construct("T"),
-            user_gset=plotvars.user_gset,
-            xmin=plotvars.xmin,
-            xmax=plotvars.xmax,
-            ymin=plotvars.ymin,
-            ymax=plotvars.ymax,
-            tspace_year=getattr(plotvars, "tspace_year", None),
-            tspace_hour=getattr(plotvars, "tspace_hour", None),
-            tspace_day=getattr(plotvars, "tspace_day", None),
+            user_gset=pv_runtime.user_gset,
+            xmin=pv_axes.xmin,
+            xmax=pv_axes.xmax,
+            ymin=pv_axes.ymin,
+            ymax=pv_axes.ymax,
+            tspace_year=pv_output.tspace_year,
+            tspace_hour=pv_output.tspace_hour,
+            tspace_day=pv_output.tspace_day,
         )
     xticks, yticks, xticklabels, yticklabels, default_xlabel, default_ylabel = (
         utility.compute_xy_ticks(
@@ -1191,7 +1206,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             ymin=ymin,
             ymax=ymax,
             ylog=bool(kwargs.get("ylog", False)),
-            degsym=plotvars.degsym,
+            degsym=pv_dec.degsym,
             xticks=xticks,
             yticks=yticks,
             xticklabels=xticklabels,
@@ -1272,19 +1287,19 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             )
 
             _apply_map_features(
-                mymap=plotvars.mymap,
-                continent_color=plotvars.continent_color or "k",
-                continent_thickness=plotvars.continent_thickness or 1.5,
-                continent_linestyle=plotvars.continent_linestyle or "solid",
+                mymap=pv_runtime.mymap,
+                continent_color=pv_dec.continent_color or "k",
+                continent_thickness=pv_dec.continent_thickness or 1.5,
+                continent_linestyle=pv_dec.continent_linestyle or "solid",
                 kwargs=kwargs,
             )
-            if kwargs.get("grid", plotvars.grid):
+            if kwargs.get("grid", pv_dec.grid):
                 map_runtime.draw_grid()
 
             map_runtime.draw_polar_axes()
 
         # Persist only dynamic contour artists for animation updates.
-        plotvars._contour_animation_artists = list(renderer.frame_artists)
+        pv_runtime._contour_animation_artists = list(renderer.frame_artists)
 
     if colorbar:
         renderer.render_colorbar(
@@ -1309,24 +1324,24 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         reuse_map_background = bool(kwargs.get("reuse_map_background", False))
         if title != "" and not (animation and reuse_map_background):
             _apply_map_title(
-                mymap=plotvars.mymap,
+                mymap=pv_runtime.mymap,
                 title=title,
-                proj=plotvars.proj,
-                boundinglat=plotvars.boundinglat,
-                lon_0=plotvars.lon_0,
-                lonmin=plotvars.lonmin,
-                lonmax=plotvars.lonmax,
-                latmin=plotvars.latmin,
-                latmax=plotvars.latmax,
-                title_fontsize=plotvars.title_fontsize,
-                title_fontweight=plotvars.title_fontweight,
+                proj=pv_map.proj,
+                boundinglat=pv_map.boundinglat,
+                lon_0=pv_map.lon_0,
+                lonmin=pv_map.lonmin,
+                lonmax=pv_map.lonmax,
+                latmin=pv_map.latmin,
+                latmax=pv_map.latmax,
+                title_fontsize=pv_dec.title_fontsize,
+                title_fontweight=pv_dec.title_fontweight,
             )
     else:
         layout.apply_title(
             title=kwargs.get("title", "") or "",
             dims_title=bool(kwargs.get("titles", False)),
-            fontsize=plotvars.title_fontsize,
-            fontweight=plotvars.title_fontweight,
+            fontsize=pv_dec.title_fontsize,
+            fontweight=pv_dec.title_fontweight,
         )
 
     maybe_autosave()
