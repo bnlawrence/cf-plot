@@ -561,6 +561,34 @@ def test_example_38_robinson_projection():
     _assert_reference_match("38")
 
 
+@pytest.mark.integration
+def test_example_37b_orthographic_full_globe():
+    """Test orthographic projection with an explicit full-globe bounding box.
+
+    Exercises the case where lonmin/lonmax/latmin/latmax are all set to the
+    full range (-180/180/-90/90), which previously produced rendering artefacts
+    (wedge gaps or a seam column through the visible hemisphere).
+    """
+    data_file = Path(__file__).parent.parent / "data" / "example_ortho_fail.nc"
+    if not data_file.exists():
+        pytest.skip(f"Missing test data: {data_file}")
+
+    pfld = cf.read(str(data_file))[0]
+    _configure_example_output("37b")
+
+    cfp.mapset(
+        proj="ortho",
+        resolution="110m",
+        lonmin=-180.0,
+        lonmax=180.0,
+        latmin=-90.0,
+        latmax=90.0,
+        lon_0=0.0,
+        lat_0=0.0,
+    )
+    cfp.con(pfld, fill=True, lines=False, line_labels=False,
+            title="time=3080592000.0")
+    _assert_reference_match("37b")
 
 
 

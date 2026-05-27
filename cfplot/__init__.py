@@ -4,9 +4,47 @@ cf-plot: code-light plotting for earth science and aligned research
 Documentation is hosted and found at: https://ncas-cms.github.io/cf-plot/
 """
 
+from importlib.metadata import PackageNotFoundError, version as pkg_version
+from pathlib import Path
+
 __author__ = "Andy Heaps, Sadie Bartholomew, Bryan Lawrence"
 __date__ = "16th May, 2026"
-__version__ = "4.0.0"
+
+
+def _version_from_pyproject():
+    pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    if not pyproject.exists():
+        return None
+
+    in_project = False
+    for raw_line in pyproject.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            in_project = line == "[project]"
+            continue
+        if in_project and line.startswith("version"):
+            _, _, value = line.partition("=")
+            return value.strip().strip('"').strip("'")
+
+    return None
+
+
+def _resolve_version():
+    # In a source checkout, pyproject.toml is the version source of truth.
+    pyproject_version = _version_from_pyproject()
+    if pyproject_version:
+        return pyproject_version
+
+    # In installed-package contexts, use distribution metadata.
+    try:
+        return pkg_version("cf-plot")
+    except PackageNotFoundError:
+        return "0+unknown"
+
+
+__version__ = _resolve_version()
 
 from .colorbar import cbar
 from .colour import cscale
