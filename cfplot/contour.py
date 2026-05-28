@@ -534,7 +534,7 @@ class ContourRenderer:
         drawedges: bool,
         labels: list[str] | None = None,
         title: str | None = None,
-    ) -> None:
+    ) -> Any:
         """Render colorbar for filled contours."""
         _ = (
             orientation,
@@ -551,6 +551,7 @@ class ContourRenderer:
             labels,
             title,
         )
+        return None
 
 
 class MapContourRenderer(ContourRenderer):
@@ -773,12 +774,12 @@ class MapContourRenderer(ContourRenderer):
         drawedges: bool,
         labels: list[str] | None = None,
         title: str | None = None,
-    ) -> None:
+    ) -> Any:
         """Render colorbar for map contour plots."""
         if self.data.levels is None:
-            return
+            return None
 
-        cbar(
+        return cbar(
             labels=labels,
             orientation=orientation,
             position=position,
@@ -909,12 +910,12 @@ class XYContourRenderer(ContourRenderer):
         drawedges: bool,
         labels: list[str] | None = None,
         title: str | None = None,
-    ) -> None:
+    ) -> Any:
         """Render colorbar for Cartesian contour plots."""
         if self.data.levels is None:
-            return
+            return None
 
-        cbar(
+        return cbar(
             labels=labels,
             orientation=orientation,
             position=position,
@@ -1039,6 +1040,192 @@ def _clear_animation_artists(plotvars: Any) -> None:
         except Exception:
             continue
     plotvars.runtime._contour_animation_artists = []
+    _clear_animation_title_artist(plotvars)
+
+
+def _clear_animation_title_artist(plotvars: Any) -> None:
+    """Remove animation title artist from previous frame if present."""
+    title_artist = getattr(plotvars.runtime, "_contour_animation_title_artist", None)
+    if title_artist is None:
+        return
+    try:
+        title_artist.remove()
+    except Exception:
+        pass
+    plotvars.runtime._contour_animation_title_artist = None
+
+
+def _clear_animation_colorbar(plotvars: Any) -> None:
+    """Remove animation colorbar from previous frame if present."""
+    colorbar_artist = getattr(plotvars.runtime, "_contour_animation_colorbar", None)
+    if colorbar_artist is None:
+        return
+
+    try:
+        colorbar_artist.remove()
+    except Exception:
+        ax = getattr(colorbar_artist, "ax", None)
+        if ax is not None:
+            try:
+                ax.remove()
+            except Exception:
+                pass
+
+    plotvars.runtime._contour_animation_colorbar = None
+
+
+def _ptype_axes(ptype: int | None) -> set[str]:
+    """Return logical axes used by each contour plot type."""
+    mapping: dict[int, set[str]] = {
+        1: {"X", "Y"},
+        2: {"Y", "Z"},
+        3: {"X", "Z"},
+        4: {"X", "T"},
+        5: {"Y", "T"},
+        6: {"X", "Y"},
+        7: {"T", "Z"},
+    }
+    if ptype is None:
+        return set()
+    return mapping.get(int(ptype), set())
+
+
+def _infer_animation_axis(f: Any, axis_spec: Any, ptype: int | None) -> str | None:
+    """Infer animation axis from a field and axis specification.
+
+    Parameters
+    ----------
+    f : Any
+        Input field.
+    axis_spec : Any
+        User axis selection. Supported values are "auto", "T", "Z", "Y", "X".
+    """
+    if not isinstance(f, cf.Field):
+        return None
+
+    if axis_spec is None:
+        return None
+
+    axis_text = str(axis_spec).strip()
+    if axis_text == "":
+        return None
+
+    axis_upper = axis_text.upper()
+    valid_axes = ("T", "Z", "Y", "X")
+
+    if axis_upper != "AUTO":
+        if axis_upper in valid_axes and f.has_construct(axis_upper):
+            return axis_upper
+        return None
+
+    try:
+        dims = utility.find_dim_names(f)
+    except Exception:
+        dims = []
+
+    ptype_axes = _ptype_axes(ptype)
+
+    # For known non-zero ptypes, infer frame axis as a singleton axis that
+    # is not part of the selected ptype axes.
+    if ptype not in (None, 0) and ptype_axes:
+        for axis in ("T", "Z", "Y", "X"):
+            if axis not in dims or axis in ptype_axes:
+                continue
+            try:
+                values = np.asanyarray(f.construct(axis).array)
+            except Exception:
+                continue
+            if values.size == 1:
+                return axis
+        return None
+
+    # ptype=0 fallback: prefer temporal slices first, then vertical,
+    # then horizontal singleton axes.
+    for axis in ("T", "Z", "Y", "X"):
+        if axis not in dims:
+            continue
+        try:
+            values = np.asanyarray(f.construct(axis).array)
+        except Exception:
+            continue
+        if values.size == 1:
+            return axis
+
+    return None
+
+
+def _animation_axis_value_text(f: cf.Field, axis: str) -> str | None:
+    """Return axis/value text used in animation titles."""
+    axis_key = axis
+    if axis == "Z":
+        try:
+            axis_key = utility.find_z(f)
+        except Exception:
+            axis_key = axis
+
+    try:
+        construct = f.construct(axis_key)
+    except Exception:
+        return None
+
+    try:
+        if axis == "T" and getattr(construct, "dtarray", None) is not None:
+            values = np.asanyarray(construct.dtarray)
+        else:
+            values = np.asanyarray(construct.array)
+    except Exception:
+        return None
+
+    if values.size != 1:
+        return None
+
+    value = values.reshape(-1)[0]
+    name, units = utility.cf_var_name_titles(f, axis_key)
+    axis_name = name or axis
+    units_text = f" {units}" if units else ""
+
+    return f"{axis_name}: {value}{units_text}"
+
+
+def _resolve_animation_title(
+    *,
+    f: Any,
+    base_title: str,
+    animation: bool,
+    animation_axis: Any,
+    ptype: int | None,
+    animation_title_template: str | None,
+) -> str:
+    """Build final title text for animation frames."""
+    if not animation:
+        return base_title
+
+    axis = _infer_animation_axis(f, animation_axis, ptype)
+    if axis is None:
+        return base_title
+
+    if not isinstance(f, cf.Field):
+        return base_title
+
+    frame_text = _animation_axis_value_text(f, axis)
+    if not frame_text:
+        return base_title
+
+    if animation_title_template:
+        try:
+            return str(
+                animation_title_template.format(
+                    title=base_title,
+                    frame=frame_text,
+                    axis=axis,
+                )
+            )
+        except Exception:
+            pass
+
+    if base_title:
+        return f"{base_title} | {frame_text}"
+    return frame_text
 
 
 def _field_has_ugrid_faces(f: cf.Field) -> bool:
@@ -1248,8 +1435,16 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         colorbar = False
 
     if pv_scale.levels is None:
+        levels_field = data.field
+        if bool(kwargs.get("animation", False)) and kwargs.get("animation_reference") is not None:
+            ref = kwargs.get("animation_reference")
+            if isinstance(ref, cf.Field):
+                levels_field = np.asanyarray(ref.array)
+            else:
+                levels_field = np.asanyarray(ref)
+
         clevs, mult, fmult = utility.calculate_levels(
-            field=data.field,
+            field=levels_field,
             level_spacing=kwargs.get("level_spacing", "linear"),
             levels_step=pv_scale.levels_step,
             verbose=kwargs.get("verbose", None),
@@ -1288,6 +1483,15 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
     colorbar_title = kwargs.get("colorbar_title", data.colorbar_title)
     if mult != 0:
         colorbar_title = f"{colorbar_title} *10^{{{mult}}}"
+
+    resolved_title = _resolve_animation_title(
+        f=f,
+        base_title=kwargs.get("title", "") or "",
+        animation=bool(kwargs.get("animation", False)),
+        animation_axis=kwargs.get("animation_axis", "auto"),
+        ptype=data.ptype,
+        animation_title_template=kwargs.get("animation_title_template", None),
+    )
 
     # ptype 6 has its own rendering/axes flow and must bypass generic XY
     # layout to avoid non-map axes state assumptions.
@@ -1585,7 +1789,12 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
 
         animation = bool(kwargs.get("animation", False))
         reuse_map_background = bool(kwargs.get("reuse_map_background", False))
+        clear_previous_frame = bool(kwargs.get("clear_previous_frame", False))
         draw_static_map = not (animation and reuse_map_background)
+
+        if animation and clear_previous_frame:
+            _clear_animation_title_artist(plotvars)
+            _clear_animation_colorbar(plotvars)
 
         if draw_static_map:
             apply_axes(
@@ -1614,7 +1823,7 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         pv_runtime._contour_animation_artists = list(renderer.frame_artists)
 
     if colorbar:
-        renderer.render_colorbar(
+        colorbar_artist = renderer.render_colorbar(
             orientation=colorbar_orientation,
             shrink=kwargs.get("colorbar_shrink", None),
             position=kwargs.get("colorbar_position", None),
@@ -1629,13 +1838,15 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             labels=list(cbar_labels),
             title=colorbar_title,
         )
+        if bool(kwargs.get("animation", False)):
+            pv_runtime._contour_animation_colorbar = colorbar_artist
 
     if data.ptype == 1:
-        title = kwargs.get("title", "") or ""
+        title = resolved_title
         animation = bool(kwargs.get("animation", False))
-        reuse_map_background = bool(kwargs.get("reuse_map_background", False))
-        if title != "" and not (animation and reuse_map_background):
-            _apply_map_title(
+
+        if title != "":
+            title_artist = _apply_map_title(
                 mymap=pv_runtime.mymap,
                 title=title,
                 proj=pv_map.proj,
@@ -1648,9 +1859,11 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
                 title_fontsize=pv_dec.title_fontsize,
                 title_fontweight=pv_dec.title_fontweight,
             )
+            if animation:
+                pv_runtime._contour_animation_title_artist = title_artist
     else:
         layout.apply_title(
-            title=kwargs.get("title", "") or "",
+            title=resolved_title,
             dims_title=bool(kwargs.get("titles", False)),
             fontsize=pv_dec.title_fontsize,
             fontweight=pv_dec.title_fontweight,
@@ -1670,6 +1883,29 @@ def con(f=None, x=None, y=None, **kwargs):
     
     For now, orchestration uses the new classes for data and styling,
     then delegates to legacy renderer.
+
+        Animation title options (map and non-map):
+        - animation: bool, enables animation-aware rendering hooks.
+        - animation_reference: cf.Field or array-like, optional reference data
+            used for automatic level generation across animation frames.
+            When supplied and levels are automatic, contour levels are computed
+            from this full reference rather than the current frame slice.
+        - animation_axis: str, one of "auto", "T", "Z", "Y", "X".
+            When "auto" and ptype != 0, the frame axis is inferred as a singleton
+            axis not used by that ptype. For ptype == 0, fallback preference is
+            singleton T, then Z, then Y, then X.
+        - animation_title_template: str, optional template used to construct
+            per-frame titles. Available fields are {title}, {frame}, and {axis}.
+
+        Example:
+                cfp.con(
+                        f,
+                        animation=True,
+                        reuse_map_background=True,
+                        animation_axis="auto",
+                        animation_title_template="{title} [{frame}]",
+                        title="Air temperature",
+                )
     """
     # Refactor mode: unsupported cases should fail explicitly rather than
     # silently routing through legacy code.

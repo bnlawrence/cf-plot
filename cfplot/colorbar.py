@@ -82,8 +82,9 @@ def cbar(
         else:
             cax = divider.append_axes("right", size="2%", pad=0.5, title=title)
 
-        plotvars.master_plot.colorbar(plotvars.image, cax=cax, orientation=orientation)
-        return
+        return plotvars.master_plot.colorbar(
+            plotvars.image, cax=cax, orientation=orientation
+        )
 
     ax1 = None
     if position is None:
@@ -279,3 +280,5 @@ def cbar(
         for tick_label in colorbar.ax.get_xticklabels():
             tick_label.set_fontsize(fontsize)
             tick_label.set_fontweight(fontweight)
+
+    return colorbar

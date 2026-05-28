@@ -143,6 +143,8 @@ class pvars:
         user_plot: int = 0
         _contour_session_open: bool = False
         _contour_animation_artists: list[Any] = field(default_factory=list)
+        _contour_animation_title_artist: Any = None
+        _contour_animation_colorbar: Any = None
 
     @dataclass
     class OutputState:
@@ -244,6 +246,8 @@ def reset_runtime_state() -> None:
     plotvars.user_plot = 0
     plotvars._contour_session_open = False
     plotvars._contour_animation_artists = []
+    plotvars._contour_animation_title_artist = None
+    plotvars._contour_animation_colorbar = None
     plotvars.twinx = None
     plotvars.twiny = None
     plotvars.plot_xmin = None

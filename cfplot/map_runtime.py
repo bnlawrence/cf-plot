@@ -28,7 +28,7 @@ def _apply_map_title(
     latmax: float,
     title_fontsize: int,
     title_fontweight: str,
-) -> None:
+) -> Any:
     """Draw a title on a map axes at the geographically correct position."""
     polar_range = 90 - abs(boundinglat)
     myprojs = ["cyl", "robin", "moll", "merc"]
@@ -62,9 +62,9 @@ def _apply_map_title(
         )
         xpt, ypt = map_proj.transform_point(lon_mid, latmax, ccrs.PlateCarree())
     else:
-        return
+        return None
 
-    mymap.text(
+    return mymap.text(
         xpt,
         ypt,
         title,
