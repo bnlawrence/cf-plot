@@ -175,6 +175,7 @@ def test_example_15_polar_vector_plot(ggap_file):
 @pytest.mark.integration
 def test_example_16_zonal_vector_plot_on_contour(ggap_file):
     """Test Example 16a: zonal vector plot."""
+    # TODO: The vectors look wrong. Needs investigation and a a comparison file
     u = ggap_file["eastward_wind"]
     v = ggap_file["northward_wind"]
 
@@ -209,6 +210,7 @@ def test_example_16a_zonal_vector_plot(ggap_file):
     # https://github.com/NCAS-CMS/cf-python/issues/797
     v = -1 * g
 
+    _configure_example_output("16a")
     cfp.vect(
         u=c,
         v=v,
@@ -217,6 +219,7 @@ def test_example_16a_zonal_vector_plot(ggap_file):
         title="DJF",
         key_location=[0.95, -0.05],
     )
+    _assert_reference_match("16")
 
 @pytest.mark.integration
 def test_example_16b_basic_stream_plot(ggap_file):
@@ -227,8 +230,12 @@ def test_example_16b_basic_stream_plot(ggap_file):
     u = u.subspace(pressure=500)
     v = v.subspace(pressure=500)
 
+    u = u.anchor("X", -180)
+    v = v.anchor("X", -180)
+
     _configure_example_output("16b")
     cfp.stream(u=u, v=v, density=2)
+    _assert_reference_match("16b")
 
 
 @pytest.mark.integration
@@ -312,43 +319,110 @@ def test_example_18_polar_stipple_plot():
 
 @pytest.mark.integration
 def test_example_24a_unstructured_grid_basic():
-    """Test Example 24a: basic unstructured grid plot."""
-    if not (DATA_DIR / "umfile.nc").exists():
-        pytest.skip(f"Missing test data: {DATA_DIR / 'umfile.nc'}")
+    """Test Example 24a.
 
-    f = cf.read(str(DATA_DIR / "umfile.nc"))[0]
+    Test example for unstructured grids: LFRic example 1, now
+    numbered to become the missing example 24, part (a).
 
+    NOTE, TODO: relative to example from docs, have added
+    'blockfill=True' to get well-defined edges on faces, otherwise
+    looks very similar to 'gen_fig_unstructured_lfric_3' plot, with
+    edges all blurred together.
+    """
+    if not (DATA_DIR / "lfric_initial.nc").exists():
+        pytest.skip(f"Missing test data: {DATA_DIR / 'lfric_initial .nc'}")
+    f = cf.read(str(DATA_DIR / "lfric_initial.nc"))
+
+    # Select the relevant fields for the objects required for the plot,
+    # taking the air potential temperature as a variable to choose to view.
+    pot = f.select_by_identity("air_potential_temperature")[0]
+    lats = f.select_by_identity("latitude")[0]
+    lons = f.select_by_identity("longitude")[0]
+    faces = f.select_by_identity("cf_role=face_edge_connectivity")[0]
+
+    # Reduce the variable to match the shapes
+    pot = pot[4, :]
     _configure_example_output("24a")
-    cfp.con(f)
+
+    cfp.levs(240, 310, 5)
+
+    cfp.con(
+        f=pot,
+        face_lons=lons,
+        face_lats=lats,
+        face_connectivity=faces,
+        lines=False,
+        blockfill=True,
+    )
     _assert_reference_match("24a")
 
 
 @pytest.mark.integration
 def test_example_24b_unstructured_grid_blockfill():
-    """Test Example 24b: unstructured grid with blockfill."""
-    if not (DATA_DIR / "umfile.nc").exists():
-        pytest.skip(f"Missing test data: {DATA_DIR / 'umfile.nc'}")
+    
+    """Test Example 24b.
 
-    f = cf.read(str(DATA_DIR / "umfile.nc"))[0]
+    Test example for unstructured grids: LFRic example 2, now
+    numbered to become the missing example 24, part (b).
+
+    NOTE, TODO: there are 3 'sides' of missing data in the cubed-sphere
+    grid, a clear issue. For now the reference plot has this in. An
+    issue will be raised to note this and eventually fix it.
+    """
+    if not (DATA_DIR / "lfric_initial.nc").exists():
+        pytest.skip(f"Missing test data: {DATA_DIR / 'lfric_initial .nc'}")
+    f = cf.read(str(DATA_DIR / "lfric_initial.nc"))
+
+    # Select the relevant fields for the objects required for the plot,
+    # taking the air potential temperature as a variable to choose to view.
+    pot = f.select_by_identity("air_potential_temperature")[0]
+    lats = f.select_by_identity("latitude")[0]
+    lons = f.select_by_identity("longitude")[0]
+    faces = f.select_by_identity("cf_role=face_edge_connectivity")[0]
+
+    # Reduce the variable to match the shapes
+    pot = pot[4, :]
 
     _configure_example_output("24b")
-    cfp.con(f, blockfill=True, lines=False)
+    cfp.levs(240, 310, 5)
+
+    # This time set the projection to a polar one for a different view
+    cfp.mapset(proj="npstere")
+    cfp.con(
+        f=pot,
+        face_lons=lons,
+        face_lats=lats,
+        face_connectivity=faces,
+        lines=False,
+        blockfill=True,
+    )
     _assert_reference_match("24b")
 
 
 @pytest.mark.integration
-def test_example_24c_unstructured_grid_with_regridding():
-    """Test Example 24c: unstructured grid with regridding."""
-    if not (DATA_DIR / "umfile.nc").exists():
-        pytest.skip(f"Missing test data: {DATA_DIR / 'umfile.nc'}")
+def test_example_24c_unstructured_grid_version3():
+    """Test Example 24c.
 
-    f = cf.read(str(DATA_DIR / "umfile.nc"))[0]
-    f = cfp.regrid(f, type="area_weighted", output_grid="t63")
+    Test example for unstructured grids: LFRic example 3, now
+    numbered to become the missing example 24, part (c).
 
+    #TODO Convince ourself this is right. There were some strange polar
+    #artifacts in the refactor transition, and it's not obvious what is right or wrong.
+
+    """
+    if not (DATA_DIR / "lfric_initial.nc").exists():
+        pytest.skip(f"Missing test data: {DATA_DIR / 'lfric_initial .nc'}")
+    f = cf.read(str(DATA_DIR / "lfric_initial.nc"))
+
+    pot = f.select_by_identity("air_potential_temperature")[0]
+
+    g = pot[0,:]   
     _configure_example_output("24c")
-    cfp.con(f)
+    cfp.con(g, lines=False)
     _assert_reference_match("24c")
 
+
+        
 
 # ============================================================================
 # Line/Graph plot tests (Examples 27-30)
@@ -550,6 +624,8 @@ def test_example_42a_intensity_legend():
 @pytest.mark.integration
 def test_example_42b_intensity_legend_with_lines():
     """Test Example 42b: intensity legend with lines."""
+    # TODO I think this is right, even though it is different from legacy.
+    # Legacy has 42a and 42b the same, which can't be right.
     if not (DATA_DIR / "ff_trs_pos.nc").exists():
         pytest.skip(f"Missing test data: {DATA_DIR / 'ff_trs_pos.nc'}")
 
