@@ -25,11 +25,14 @@ dependencies = [
 Homepage = "http://ajheaps.github.io/cf-plot"
 
 [tool.setuptools]
-packages = ["cfplot"]
 include-package-data = true
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cfplot*"]
+
 [tool.setuptools.package-data]
-cfplot = ["colourmaps/*"]
+cfplot = ["colour/colourmaps/*"]
 
 # To run the black checker with this configuration, execute 'black .' in the
 # root of this repository. See https://black.readthedocs.io/en/stable/ for

@@ -18,6 +18,7 @@ import cfplot as cfp
 
 # Path to test data
 DATA_DIR = Path(__file__).parent.parent.parent / "docs" / "source" / "example-datasets"
+CANARI_DATA_FILE = Path(__file__).parent.parent / "data" / "bnl_tmp_NAEW.nc"
 TEST_GEN_DIR = Path(__file__).parent.parent.parent / "generated-example-images"
 REF_IMAGE_DIR = Path(__file__).parent.parent / "new_reference-example-images"
 #REF_IMAGE_DIR = Path(__file__).parent.parent / "reference-example-images"
@@ -219,7 +220,7 @@ def test_example_16a_zonal_vector_plot(ggap_file):
         title="DJF",
         key_location=[0.95, -0.05],
     )
-    _assert_reference_match("16")
+    _assert_reference_match("16a")
 
 @pytest.mark.integration
 def test_example_16b_basic_stream_plot(ggap_file):
@@ -316,6 +317,21 @@ def test_example_18_polar_stipple_plot():
 # ============================================================================
 # Unstructured grid tests (Examples 24a-24c)
 # ============================================================================
+
+
+@pytest.mark.integration
+def test_canari_1():
+    """Regression test for CANARI rotated-grid plotting case."""
+    if not CANARI_DATA_FILE.exists():
+        pytest.skip(f"Missing integration dataset: {CANARI_DATA_FILE}")
+
+    _configure_example_output("canari_1")
+    flds = cf.read(str(CANARI_DATA_FILE))
+    f = flds[0]
+    field = f[0, 3, :, :]
+    cfp.mapset(proj="rotated")
+    cfp.con(field, lines=False)
+    _assert_reference_match("canari_1")
 
 @pytest.mark.integration
 def test_example_24a_unstructured_grid_basic():
