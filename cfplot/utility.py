@@ -1374,12 +1374,21 @@ def add_cyclic(field: np.ndarray, lons: np.ndarray) -> tuple[np.ndarray, np.ndar
     try:
         return cartopy_util.add_cyclic_point(field, lons)
     except Exception:
-        # Promote to float64 and round to handle uneven spacing from numpy rounding.
-        ndecs_max = max(
-            len(str(float(v)).split(".")[-1].rstrip("0") or "0") for v in lons
-        )
-        lons64 = np.float64(lons).round(ndecs_max)
-        return cartopy_util.add_cyclic_point(field, lons64)
+        # Check if spacing is nearly uniform (floating-point precision issue)
+        # rather than genuinely unequal. Float32 data often has ~1e-5 artifacts.
+        diffs = np.diff(lons)
+        mean_diff = np.mean(diffs)
+        max_deviation = np.max(np.abs(diffs - mean_diff))
+        # If max deviation is < 0.01% of mean spacing, treat as floating-point
+        # precision artifact and reconstruct with linspace.
+        if max_deviation < 1e-4 * mean_diff:
+            lons_reconstructed = np.linspace(
+                float(lons[0]), float(lons[-1]), len(lons)
+            )
+            return cartopy_util.add_cyclic_point(field, lons_reconstructed)
+        else:
+            # Spacing is genuinely unequal, re-raise the original error
+            raise
 
 
 def stipple_points(

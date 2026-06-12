@@ -1641,8 +1641,9 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         # Add a cyclic longitude column when the grid is near-global but
         # doesn't close on itself (no explicit bounds), to avoid a gap at
         # the wrap-around seam in Cartopy.
-        # NOTE: For non-cyclic orthographic grids this can introduce large
-        # clipped wedges, so skip it there (the wrap/sort below handles those).
+        # NOTE: For non-cyclic orthographic and polar stereographic grids this
+        # can introduce seam artefacts, so skip it there unless the grid is
+        # explicitly cyclic.
         if (
             data.x is not None
             and data.y is not None
@@ -1650,7 +1651,10 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
             and np.ndim(data.y) == 1
             and not data.irregular
             and not blockfill
-            and (plotvars.proj != "ortho" or data.x_is_cyclic)
+            and (
+                plotvars.proj not in ("ortho", "npstere", "spstere")
+                or data.x_is_cyclic
+            )
         ):
             lonrange_data = float(np.nanmax(data.x)) - float(np.nanmin(data.x))
             if 350.0 < lonrange_data < 360.0:
@@ -1757,7 +1761,12 @@ def _render_with_new_xy(f: Any, x: Any, y: Any, kwargs: dict[str, Any]) -> bool:
         renderer = XYContourRenderer(layout=layout, data=data, colour_scale=cs)
 
     transform_first = kwargs.get("transform_first", None)
-    if data.ptype == 1 and plotvars.proj == "ortho" and not data.x_is_cyclic:
+    if data.ptype == 1 and plotvars.proj in ("npstere", "spstere"):
+        # Polar stereographic can show longitude striping when Cartopy
+        # pre-transforms dense regular lon/lat grids in data space.
+        # Rendering in map space is robust for both cyclic and non-cyclic data.
+        transform_first = False
+    elif data.ptype == 1 and plotvars.proj == "ortho" and not data.x_is_cyclic:
         # Non-cyclic grids on ortho are prone to clipping artefacts with
         # transform_first=True on near-global dense grids, so force it off.
         # Cyclic grids use the default (True for 1-D arrays) which avoids a
